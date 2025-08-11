@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -27,6 +28,14 @@ interface Client {
   address?: string;
   contactPerson?: string;
   amlStatus: 'pending' | 'approved' | 'rejected';
+  accountingSystem?: string;
+  kycStatus?: 'pending' | 'approved' | 'rejected';
+  amlDocuments?: any;
+  tasks?: any;
+  responsiblePersonId?: string;
+  recurringTasks?: any;
+  hourlyReportNotes?: string;
+  checklistStatus?: string;
   notes?: string;
   isActive: boolean;
   createdAt: string;
@@ -41,10 +50,35 @@ const clientSchema = z.object({
   address: z.string().optional(),
   contactPerson: z.string().optional(),
   amlStatus: z.enum(['pending', 'approved', 'rejected']).default('pending'),
+  accountingSystem: z.string().optional(),
+  kycStatus: z.enum(['pending', 'approved', 'rejected']).default('pending'),
+  amlDocuments: z.any().optional(),
+  tasks: z.array(z.string()).optional(),
+  responsiblePersonId: z.string().optional(),
+  recurringTasks: z.any().optional(),
+  hourlyReportNotes: z.string().optional(),
+  checklistStatus: z.string().optional(),
   notes: z.string().optional(),
 });
 
 type ClientFormData = z.infer<typeof clientSchema>;
+
+const ACCOUNTING_SYSTEMS = [
+  { value: 'Fiken', label: 'Fiken' },
+  { value: 'Tripletex', label: 'Tripletex' },
+  { value: 'Unimicro', label: 'Unimicro' },
+  { value: 'PowerOffice', label: 'PowerOffice' },
+  { value: 'Conta', label: 'Conta' },
+  { value: 'Other', label: 'Other' },
+];
+
+const TASK_OPTIONS = [
+  'Bokføring',
+  'MVA',
+  'Lønn',
+  'Bankavstemming',
+  'Kontoavstemming'
+];
 
 export default function Clients() {
   const [, setLocation] = useLocation();
@@ -55,6 +89,11 @@ export default function Clients() {
 
   const { data: clients, isLoading } = useQuery<Client[]>({
     queryKey: ['/api/clients'],
+  });
+
+  const { data: users = [] } = useQuery({
+    queryKey: ['/api/users'],
+    queryFn: () => apiRequest('GET', '/api/users').then(res => res.json())
   });
 
   const createMutation = useMutation({
@@ -111,6 +150,14 @@ export default function Clients() {
       address: '',
       contactPerson: '',
       amlStatus: 'pending',
+      accountingSystem: '',
+      kycStatus: 'pending',
+      amlDocuments: undefined,
+      tasks: [],
+      responsiblePersonId: '',
+      recurringTasks: undefined,
+      hourlyReportNotes: '',
+      checklistStatus: '',
       notes: '',
     },
   });
@@ -133,6 +180,14 @@ export default function Clients() {
       address: client.address || '',
       contactPerson: client.contactPerson || '',
       amlStatus: client.amlStatus,
+      accountingSystem: client.accountingSystem || '',
+      kycStatus: client.kycStatus || 'pending',
+      amlDocuments: client.amlDocuments,
+      tasks: client.tasks || [],
+      responsiblePersonId: client.responsiblePersonId || '',
+      recurringTasks: client.recurringTasks,
+      hourlyReportNotes: client.hourlyReportNotes || '',
+      checklistStatus: client.checklistStatus || '',
       notes: client.notes || '',
     });
   };
@@ -147,6 +202,14 @@ export default function Clients() {
       address: '',
       contactPerson: '',
       amlStatus: 'pending',
+      accountingSystem: '',
+      kycStatus: 'pending',
+      amlDocuments: undefined,
+      tasks: [],
+      responsiblePersonId: '',
+      recurringTasks: undefined,
+      hourlyReportNotes: '',
+      checklistStatus: '',
       notes: '',
     });
     setIsCreateOpen(true);
@@ -324,6 +387,138 @@ export default function Clients() {
                         )}
                       />
                     </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="accountingSystem"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Regnskapssystem</FormLabel>
+                            <Select value={field.value} onValueChange={field.onChange}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Velg regnskapssystem" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {ACCOUNTING_SYSTEMS.map((system) => (
+                                  <SelectItem key={system.value} value={system.value}>
+                                    {system.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="kycStatus"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>KYC-status</FormLabel>
+                            <Select value={field.value} onValueChange={field.onChange}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="pending">Venter</SelectItem>
+                                <SelectItem value="approved">Godkjent</SelectItem>
+                                <SelectItem value="rejected">Avvist</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <FormField
+                      control={form.control}
+                      name="responsiblePersonId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Ansvarlig person</FormLabel>
+                          <Select value={field.value} onValueChange={field.onChange}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Velg ansvarlig person" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {users.map((user: any) => (
+                                <SelectItem key={user.id} value={user.id}>
+                                  {user.firstName} {user.lastName}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="tasks"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Oppgaver</FormLabel>
+                          <div className="flex flex-col space-y-2">
+                            {TASK_OPTIONS.map((task) => (
+                              <div key={task} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={task}
+                                  checked={field.value?.includes(task) || false}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      field.onChange([...(field.value || []), task]);
+                                    } else {
+                                      field.onChange(field.value?.filter((t: string) => t !== task) || []);
+                                    }
+                                  }}
+                                />
+                                <Label htmlFor={task}>{task}</Label>
+                              </div>
+                            ))}
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="hourlyReportNotes"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Timeregistreringsnotater</FormLabel>
+                          <FormControl>
+                            <Textarea {...field} rows={2} placeholder="Notater for timeregistrering" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="checklistStatus"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Sjekkliststatus</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="Status for klientsjekklliste" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
                     <FormField
                       control={form.control}
