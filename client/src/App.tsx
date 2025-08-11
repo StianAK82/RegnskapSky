@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -84,7 +85,18 @@ function AuthenticatedRoutes() {
       
       <Route 
         path="/norwegian-features" 
-        component={lazy(() => import("./pages/norwegian-features"))} 
+        component={() => {
+          const NorwegianFeatures = lazy(() => import("./pages/norwegian-features"));
+          return (
+            <Suspense fallback={
+              <div className="min-h-screen flex items-center justify-center">
+                <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+              </div>
+            }>
+              <NorwegianFeatures />
+            </Suspense>
+          );
+        }} 
       />
 
       <Route component={NotFound} />
