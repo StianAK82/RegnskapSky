@@ -306,7 +306,7 @@ export class PluginManagerService {
     }
 
     // Check if other plugins depend on this one
-    for (const [activeKey, activePlugin] of this.activePlugins) {
+    for (const [activeKey, activePlugin] of Array.from(this.activePlugins.entries())) {
       if (activeKey.startsWith(`${tenantId}:`) && activeKey !== key) {
         const dependencies = activePlugin.getDependencies?.() || [];
         if (dependencies.includes(pluginId)) {
@@ -394,7 +394,7 @@ export class PluginManagerService {
   }> {
     const activePlugins: Array<{ id: string; name: string; version: string }> = [];
     
-    for (const [key, plugin] of this.activePlugins) {
+    for (const [key, plugin] of Array.from(this.activePlugins.entries())) {
       if (key.startsWith(`${tenantId}:`)) {
         activePlugins.push({
           id: plugin.id,
@@ -425,7 +425,7 @@ export class PluginManagerService {
       permissions?: string[];
     }> = [];
 
-    for (const [key, plugin] of this.activePlugins) {
+    for (const [key, plugin] of Array.from(this.activePlugins.entries())) {
       if (key.startsWith(`${tenantId}:`)) {
         const pluginEndpoints = plugin.getApiEndpoints?.() || [];
         for (const endpoint of pluginEndpoints) {
@@ -461,6 +461,3 @@ export class PluginManagerService {
 }
 
 export const pluginManagerService = new PluginManagerService();
-
-export type { PluginInterface };
-export { BasePlugin };
