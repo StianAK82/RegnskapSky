@@ -27,6 +27,10 @@ interface Client {
   email?: string;
   phone?: string;
   address?: string;
+  postalAddress?: string;
+  postalCode?: string;
+  city?: string;
+  municipality?: string;
   contactPerson?: string;
   amlStatus: 'pending' | 'approved' | 'rejected';
   accountingSystem?: string;
@@ -37,6 +41,7 @@ interface Client {
   recurringTasks?: any;
   hourlyReportNotes?: string;
   checklistStatus?: string;
+  checklists?: any;
   notes?: string;
   isActive: boolean;
   createdAt: string;
@@ -77,11 +82,19 @@ const ACCOUNTING_SYSTEMS = [
 ];
 
 const TASK_OPTIONS = [
-  'Bokføring',
-  'MVA',
-  'Lønn',
-  'Bankavstemming',
-  'Kontoavstemming'
+  { value: 'Bokføring', label: 'Bokføring', frequency: ['Daglig', 'Ukentlig', 'Månedlig'] },
+  { value: 'MVA', label: 'MVA', frequency: ['Månedlig', 'Kvartalsvis'] },
+  { value: 'Lønn', label: 'Lønn', frequency: ['Månedlig'] },
+  { value: 'Bankavstemming', label: 'Bankavstemming', frequency: ['Daglig', 'Ukentlig'] },
+  { value: 'Kontoavstemming', label: 'Kontoavstemming', frequency: ['Månedlig', 'Kvartalsvis'] }
+];
+
+const TASK_FREQUENCIES = [
+  { value: 'Daglig', label: 'Daglig' },
+  { value: 'Ukentlig', label: 'Ukentlig' },
+  { value: 'Månedlig', label: 'Månedlig' },
+  { value: 'Kvartalsvis', label: 'Kvartalsvis' },
+  { value: 'Årlig', label: 'Årlig' }
 ];
 
 export default function Clients() {

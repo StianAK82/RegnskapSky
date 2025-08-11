@@ -83,9 +83,10 @@ export default function Employees() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/employees'] });
       setIsCreateOpen(false);
+      form.reset();
       toast({
         title: 'Ansatt opprettet',
-        description: 'Ny ansatt ble opprettet successfully',
+        description: 'Ny ansatt opprettet og kan nå brukes som oppdragsansvarlig',
       });
     },
     onError: (error: any) => {

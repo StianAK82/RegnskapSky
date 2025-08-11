@@ -9,7 +9,7 @@ import { ProtectedRoute } from "@/components/ui/protected-route";
 
 // Pages
 import Login from "@/pages/login";
-import Dashboard from "@/pages/dashboard";
+import Dashboard from "@/pages/Dashboard";
 import Clients from "@/pages/clients";
 import ClientDetail from "@/pages/client-detail";
 import Employees from "@/pages/employees";
