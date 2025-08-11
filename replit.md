@@ -5,13 +5,16 @@
 RegnskapsAI is a comprehensive Norwegian multi-tenant accounting and client management system built with modern web technologies. The application provides AI-assisted document categorization, accounting suggestions, role-based access control (RBAC), and integrations with third-party services like Stripe for payments and SendGrid for email communications. The system supports multiple user roles including administrators, project managers, accountants, and internal staff, with specialized features for each role type.
 
 ### Recent Updates (January 2025)
-- ✅ Enhanced client management with per-client accounting system selection (Fiken, Tripletex, Unimicro, PowerOffice, Conta)
-- ✅ Advanced client detail interface with comprehensive tabs for overview, responsibles, tasks, time tracking, and reports  
-- ✅ Client-specific task management system with standard and custom task types
-- ✅ Enhanced time tracking with client-specific entries and detailed reporting
-- ✅ Client responsible assignment system for project management
-- ✅ Integrated accounting system URL links for direct access to client's chosen platform
-- ✅ Database schema extended with client_tasks, client_responsibles tables and accounting system fields
+- ✅ **Fixed 401 Authentication Errors**: Implemented proper Bearer token headers in all API requests
+- ✅ **Complete Time Tracking Module**: Modal interface, client-specific entries, filtering, and Excel/PDF export
+- ✅ **Enhanced Client Management**: Accounting system selection (Fiken, Tripletex, Unimicro, PowerOffice, Conta) with direct URLs
+- ✅ **Client Tasks & Responsibles**: Standard task types, custom tasks, assignment system for project management
+- ✅ **Brønnøysund Integration**: Automatic company data lookup by organization number
+- ✅ **AML/KYC Module**: Document upload, provider management, comprehensive check results
+- ✅ **Regnskap Norge Checklists**: Standard monthly/quarterly/annual templates with auto-fill capabilities
+- ✅ **Plugin Architecture**: Extensible system for third-party integrations and custom features
+- ✅ **Advanced Reporting**: Time reports with filters, export capabilities, and dashboard metrics
+- ✅ **Database Schema**: Extended with client_tasks, client_responsibles, aml_checks, accounting_integrations tables
 
 ## User Preferences
 

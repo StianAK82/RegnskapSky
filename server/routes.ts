@@ -712,7 +712,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           result: result.result,
           confidence: result.confidence?.toString() || "0",
           findings: result.findings,
-          cost: result.cost || 0,
+          cost: (result.cost || 0).toString(),
           externalReferenceId: result.externalReferenceId,
           rawResponse: result.rawResponse
         };
@@ -832,7 +832,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Adapter not found" });
       }
 
-      const isConnected = await adapter.testConnection(integration.configuration || {});
+      const isConnected = await adapter.testConnection(JSON.parse(integration.settings || '{}'));
       res.json({ connected: isConnected });
     } catch (error) {
       console.error("Test accounting integration error:", error);
@@ -858,7 +858,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Adapter not found" });
       }
 
-      const syncResult = await adapter.syncData(integration.configuration || {}, syncSettings);
+      const syncResult = await adapter.syncData(JSON.parse(integration.settings || '{}'), syncSettings);
       res.json(syncResult);
     } catch (error) {
       console.error("Sync accounting integration error:", error);
@@ -1055,7 +1055,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
-  // Enhanced Client Tasks and Time Tracking API
+  
+  // Enhanced Client Tasks and Time Tracking API (moved before server creation)
   app.get("/api/clients/:clientId/tasks", authenticateToken, async (req: AuthRequest, res) => {
     try {
       const { clientId } = req.params;
