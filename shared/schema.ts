@@ -130,6 +130,182 @@ export const integrations = pgTable("integrations", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+
+
+// AML/KYC Documents
+export const amlDocuments = pgTable("aml_documents", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  clientId: uuid("client_id").notNull(),
+  tenantId: uuid("tenant_id").notNull(),
+  documentType: text("document_type").notNull(), // passport, driving_license, company_certificate, etc.
+  title: text("title").notNull(),
+  filePath: text("file_path").notNull(),
+  fileSize: integer("file_size"),
+  mimeType: text("mime_type"),
+  verificationStatus: text("verification_status").default("pending"), // pending, verified, rejected
+  verificationNotes: text("verification_notes"),
+  expiryDate: timestamp("expiry_date"),
+  issuedBy: text("issued_by"),
+  documentNumber: text("document_number"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Company registry data from Brønnøysund
+export const companyRegistryData = pgTable("company_registry_data", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  clientId: uuid("client_id").notNull().unique(),
+  orgNumber: text("org_number").notNull().unique(),
+  name: text("name").notNull(),
+  businessForm: text("business_form"),
+  registrationDate: timestamp("registration_date"),
+  address: jsonb("address"), // Full address object
+  businessAddress: jsonb("business_address"), // Business address if different
+  contactInfo: jsonb("contact_info"), // Phone, email, website
+  businessCodes: jsonb("business_codes"), // NACE codes
+  sharesInfo: jsonb("shares_info"), // Share capital, ownership
+  boardMembers: jsonb("board_members"), // Board and management
+  auditInfo: jsonb("audit_info"), // Auditor information
+  bankruptcyStatus: text("bankruptcy_status"),
+  liquidationStatus: text("liquidation_status"),
+  isActive: boolean("is_active").default(true),
+  lastSyncAt: timestamp("last_sync_at").defaultNow(),
+  rawData: jsonb("raw_data"), // Full API response for reference
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Accounting system integrations (extended)
+export const accountingSystemTypes = ["fiken", "tripletex", "unimicro", "poweroffice", "conta"] as const;
+export type AccountingSystemType = typeof accountingSystemTypes[number];
+
+export const accountingIntegrations = pgTable("accounting_integrations", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull(),
+  clientId: uuid("client_id"), // Optional: client-specific integration
+  systemType: text("system_type").notNull().$type<AccountingSystemType>(),
+  displayName: text("display_name").notNull(),
+  apiEndpoint: text("api_endpoint"),
+  apiKey: text("api_key"), // Encrypted
+  apiSecret: text("api_secret"), // Encrypted
+  accessToken: text("access_token"), // Encrypted
+  refreshToken: text("refresh_token"), // Encrypted
+  companyId: text("company_id"), // Company ID in external system
+  connectionStatus: text("connection_status").default("disconnected"), // connected, disconnected, error
+  lastSyncAt: timestamp("last_sync_at"),
+  syncFrequency: text("sync_frequency").default("daily"), // manual, hourly, daily, weekly
+  syncSettings: jsonb("sync_settings"), // Custom sync configuration
+  errorLog: jsonb("error_log"), // Recent error messages
+  capabilities: jsonb("capabilities"), // What this integration supports
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Regnskap Norge checklists
+export const checklistTemplates = pgTable("checklist_templates", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  description: text("description"),
+  category: text("category").notNull(), // monthly, quarterly, yearly, tax, audit
+  accountingStandard: text("accounting_standard").default("regnskap_norge"), // regnskap_norge, ifrs
+  applicableBusinessForms: jsonb("applicable_business_forms"), // AS, ASA, ENK, etc.
+  items: jsonb("items").notNull(), // Array of checklist items
+  autoFillRules: jsonb("auto_fill_rules"), // Rules for automatic filling
+  isActive: boolean("is_active").default(true),
+  version: text("version").default("1.0"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const clientChecklists = pgTable("client_checklists", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  clientId: uuid("client_id").notNull(),
+  tenantId: uuid("tenant_id").notNull(),
+  templateId: uuid("template_id").notNull(),
+  assignedTo: uuid("assigned_to"), // User responsible
+  period: text("period").notNull(), // 2024-01, 2024-Q1, 2024, etc.
+  status: text("status").default("pending"), // pending, in_progress, completed, overdue
+  progress: integer("progress").default(0), // 0-100%
+  items: jsonb("items").notNull(), // Checklist items with completion status
+  autoFilledAt: timestamp("auto_filled_at"),
+  completedAt: timestamp("completed_at"),
+  dueDate: timestamp("due_date"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Plugin system
+export const plugins = pgTable("plugins", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull().unique(),
+  displayName: text("display_name").notNull(),
+  description: text("description"),
+  version: text("version").notNull(),
+  author: text("author"),
+  category: text("category"), // integration, report, automation, etc.
+  configSchema: jsonb("config_schema"), // JSON schema for plugin configuration
+  apiEndpoints: jsonb("api_endpoints"), // API endpoints this plugin provides
+  dependencies: jsonb("dependencies"), // Other plugins this depends on
+  permissions: jsonb("permissions"), // Required permissions
+  isActive: boolean("is_active").default(false),
+  isSystemPlugin: boolean("is_system_plugin").default(false),
+  installPath: text("install_path"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const pluginConfigurations = pgTable("plugin_configurations", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull(),
+  pluginId: uuid("plugin_id").notNull(),
+  isEnabled: boolean("is_enabled").default(false),
+  configuration: jsonb("configuration"), // Plugin-specific configuration
+  lastExecuted: timestamp("last_executed"),
+  executionLog: jsonb("execution_log"), // Recent execution results
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// AML/KYC External Partner Integration
+export const amlProviders = pgTable("aml_providers", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull(),
+  providerName: text("provider_name").notNull(), // ComplianceAI, Thomson Reuters, etc.
+  apiEndpoint: text("api_endpoint").notNull(),
+  apiKey: text("api_key"), // Encrypted
+  apiSecret: text("api_secret"), // Encrypted
+  isActive: boolean("is_active").default(false),
+  supportedChecks: jsonb("supported_checks"), // identity, sanction, pep, etc.
+  pricing: jsonb("pricing"), // Cost per check, monthly fees, etc.
+  configuration: jsonb("configuration"), // Provider-specific settings
+  lastUsed: timestamp("last_used"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const amlChecks = pgTable("aml_checks", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  clientId: uuid("client_id").notNull(),
+  tenantId: uuid("tenant_id").notNull(),
+  providerId: uuid("provider_id"),
+  checkType: text("check_type").notNull(), // identity, sanction, pep, adverse_media
+  status: text("status").default("pending"), // pending, completed, failed, manual_review
+  result: text("result"), // pass, fail, requires_review
+  confidence: decimal("confidence", { precision: 5, scale: 2 }), // 0.00-100.00
+  findings: jsonb("findings"), // Detailed results from provider
+  documentIds: jsonb("document_ids"), // Related documents
+  manualReviewNotes: text("manual_review_notes"),
+  reviewedBy: uuid("reviewed_by"),
+  reviewedAt: timestamp("reviewed_at"),
+  cost: decimal("cost", { precision: 10, scale: 2 }), // Cost of this check
+  externalReferenceId: text("external_reference_id"), // Provider's reference
+  rawResponse: jsonb("raw_response"), // Full API response
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ one, many }) => ({
   tenant: one(tenants, {
@@ -268,6 +444,61 @@ export const insertIntegrationSchema = createInsertSchema(integrations).omit({
   updatedAt: true,
 });
 
+// New module insert schemas
+export const insertAmlDocumentSchema = createInsertSchema(amlDocuments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertCompanyRegistryDataSchema = createInsertSchema(companyRegistryData).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAccountingIntegrationSchema = createInsertSchema(accountingIntegrations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertChecklistTemplateSchema = createInsertSchema(checklistTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertClientChecklistSchema = createInsertSchema(clientChecklists).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPluginSchema = createInsertSchema(plugins).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPluginConfigurationSchema = createInsertSchema(pluginConfigurations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAmlProviderSchema = createInsertSchema(amlProviders).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAmlCheckSchema = createInsertSchema(amlChecks).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -285,3 +516,23 @@ export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type Integration = typeof integrations.$inferSelect;
 export type InsertIntegration = z.infer<typeof insertIntegrationSchema>;
+
+// New module types
+export type AmlDocument = typeof amlDocuments.$inferSelect;
+export type InsertAmlDocument = z.infer<typeof insertAmlDocumentSchema>;
+export type CompanyRegistryData = typeof companyRegistryData.$inferSelect;
+export type InsertCompanyRegistryData = z.infer<typeof insertCompanyRegistryDataSchema>;
+export type AccountingIntegration = typeof accountingIntegrations.$inferSelect;
+export type InsertAccountingIntegration = z.infer<typeof insertAccountingIntegrationSchema>;
+export type ChecklistTemplate = typeof checklistTemplates.$inferSelect;
+export type InsertChecklistTemplate = z.infer<typeof insertChecklistTemplateSchema>;
+export type ClientChecklist = typeof clientChecklists.$inferSelect;
+export type InsertClientChecklist = z.infer<typeof insertClientChecklistSchema>;
+export type Plugin = typeof plugins.$inferSelect;
+export type InsertPlugin = z.infer<typeof insertPluginSchema>;
+export type PluginConfiguration = typeof pluginConfigurations.$inferSelect;
+export type InsertPluginConfiguration = z.infer<typeof insertPluginConfigurationSchema>;
+export type AmlProvider = typeof amlProviders.$inferSelect;
+export type InsertAmlProvider = z.infer<typeof insertAmlProviderSchema>;
+export type AmlCheck = typeof amlChecks.$inferSelect;
+export type InsertAmlCheck = z.infer<typeof insertAmlCheckSchema>;

@@ -5,7 +5,13 @@ import { storage } from "./storage";
 import { authenticateToken, requireRole, requireSameTenant, hashPassword, comparePassword, generateToken, type AuthRequest } from "./auth";
 import { categorizeDocument, generateAccountingSuggestions, askAccountingQuestion, analyzeDocumentImage } from "./services/openai";
 import { sendTaskNotification, sendWelcomeEmail, sendSubscriptionNotification } from "./services/sendgrid";
-import { insertUserSchema, insertTenantSchema, insertClientSchema, insertTaskSchema, insertTimeEntrySchema, insertDocumentSchema } from "@shared/schema";
+import { 
+  insertUserSchema, insertTenantSchema, insertClientSchema, insertTaskSchema, 
+  insertTimeEntrySchema, insertDocumentSchema, insertNotificationSchema, insertIntegrationSchema,
+  insertCompanyRegistryDataSchema, insertAmlProviderSchema, insertAmlDocumentSchema,
+  insertAccountingIntegrationSchema, insertClientChecklistSchema,
+  type User 
+} from "@shared/schema";
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
@@ -421,6 +427,494 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(mockData);
     } catch (error: any) {
       res.status(500).json({ message: "Feil ved Fiken-synkronisering: " + error.message });
+    }
+  });
+
+  const requireAuth = authenticateToken;
+
+  // Brønnøysund Registry API endpoints
+  app.get("/api/bronnoyund/search", requireAuth, async (req, res) => {
+    try {
+      const { query } = req.query as { query?: string };
+      if (!query) {
+        return res.status(400).json({ error: "Query parameter required" });
+      }
+
+      const { bronnoyundService } = await import("./services/bronnoyund");
+      const results = await bronnoyundService.searchCompanies(query as string);
+      res.json(results);
+    } catch (error) {
+      console.error("Brønnøysund search error:", error);
+      res.status(500).json({ error: "Failed to search companies" });
+    }
+  });
+
+  app.get("/api/bronnoyund/company/:orgNumber", requireAuth, async (req, res) => {
+    try {
+      const { orgNumber } = req.params;
+      const { bronnoyundService } = await import("./services/bronnoyund");
+      
+      if (!bronnoyundService.validateOrgNumber(orgNumber)) {
+        return res.status(400).json({ error: "Invalid organization number" });
+      }
+
+      const [companyData, rolesData] = await Promise.all([
+        bronnoyundService.getCompanyData(orgNumber),
+        bronnoyundService.getCompanyRoles(orgNumber)
+      ]);
+
+      if (!companyData) {
+        return res.status(404).json({ error: "Company not found" });
+      }
+
+      const transformedData = bronnoyundService.transformCompanyData(companyData, rolesData || undefined);
+      res.json(transformedData);
+    } catch (error) {
+      console.error("Brønnøysund company fetch error:", error);
+      res.status(500).json({ error: "Failed to fetch company data" });
+    }
+  });
+
+  app.post("/api/clients/:clientId/registry-data", requireAuth, async (req, res) => {
+    try {
+      const { clientId } = req.params;
+      const user = req.user!;
+      
+      const insertData = insertCompanyRegistryDataSchema.parse({
+        ...req.body,
+        clientId,
+        tenantId: user.tenantId
+      });
+
+      const registryData = await storage.createCompanyRegistryData(insertData);
+      res.status(201).json(registryData);
+    } catch (error) {
+      console.error("Create company registry data error:", error);
+      res.status(500).json({ error: "Failed to save company registry data" });
+    }
+  });
+
+  app.get("/api/clients/:clientId/registry-data", requireAuth, async (req, res) => {
+    try {
+      const { clientId } = req.params;
+      const registryData = await storage.getCompanyRegistryData(clientId);
+      
+      if (!registryData) {
+        return res.status(404).json({ error: "Registry data not found" });
+      }
+
+      res.json(registryData);
+    } catch (error) {
+      console.error("Get company registry data error:", error);
+      res.status(500).json({ error: "Failed to fetch company registry data" });
+    }
+  });
+
+  // AML/KYC API endpoints
+  app.get("/api/aml/providers", requireAuth, async (req, res) => {
+    try {
+      const user = req.user!;
+      const providers = await storage.getAmlProvidersByTenant(user.tenantId);
+      res.json(providers);
+    } catch (error) {
+      console.error("Get AML providers error:", error);
+      res.status(500).json({ error: "Failed to fetch AML providers" });
+    }
+  });
+
+  app.post("/api/aml/providers", requireAuth, async (req, res) => {
+    try {
+      const user = req.user!;
+      const insertData = insertAmlProviderSchema.parse({
+        ...req.body,
+        tenantId: user.tenantId
+      });
+
+      const provider = await storage.createAmlProvider(insertData);
+      res.status(201).json(provider);
+    } catch (error) {
+      console.error("Create AML provider error:", error);
+      res.status(500).json({ error: "Failed to create AML provider" });
+    }
+  });
+
+  app.post("/api/clients/:clientId/aml-check", requireAuth, async (req, res) => {
+    try {
+      const { clientId } = req.params;
+      const user = req.user!;
+      const { providerId, checkTypes } = req.body;
+
+      // Get client and provider
+      const [client, provider] = await Promise.all([
+        storage.getClient(clientId),
+        storage.getAmlProvidersByTenant(user.tenantId).then(providers => 
+          providers.find(p => p.id === providerId)
+        )
+      ]);
+
+      if (!client) {
+        return res.status(404).json({ error: "Client not found" });
+      }
+
+      if (!provider) {
+        return res.status(404).json({ error: "AML provider not found" });
+      }
+
+      // Run AML checks
+      const { amlKycService } = await import("./services/aml-kyc");
+      const checkResults = await amlKycService.runComprehensiveCheck(client, provider, checkTypes);
+      
+      // Save check results
+      const amlChecks = [];
+      for (const { type, result } of checkResults) {
+        const checkData = {
+          clientId,
+          tenantId: user.tenantId,
+          providerId,
+          checkType: type,
+          status: result.status,
+          result: result.result,
+          confidence: result.confidence,
+          findings: result.findings,
+          cost: result.cost || 0,
+          externalReferenceId: result.externalReferenceId,
+          rawResponse: result.rawResponse
+        };
+
+        const amlCheck = await storage.createAmlCheck(checkData);
+        amlChecks.push(amlCheck);
+      }
+
+      // Calculate risk score
+      const riskAssessment = amlKycService.calculateRiskScore(checkResults);
+
+      res.json({
+        checks: amlChecks,
+        riskAssessment
+      });
+    } catch (error) {
+      console.error("AML check error:", error);
+      res.status(500).json({ error: "Failed to perform AML check" });
+    }
+  });
+
+  app.get("/api/clients/:clientId/aml-checks", requireAuth, async (req, res) => {
+    try {
+      const { clientId } = req.params;
+      const checks = await storage.getAmlChecksByClient(clientId);
+      res.json(checks);
+    } catch (error) {
+      console.error("Get AML checks error:", error);
+      res.status(500).json({ error: "Failed to fetch AML checks" });
+    }
+  });
+
+  // Document upload for AML/KYC
+  app.post("/api/clients/:clientId/aml-documents", requireAuth, async (req, res) => {
+    try {
+      const { clientId } = req.params;
+      const user = req.user!;
+      
+      const insertData = insertAmlDocumentSchema.parse({
+        ...req.body,
+        clientId,
+        tenantId: user.tenantId,
+        uploadedBy: user.id
+      });
+
+      const document = await storage.createAmlDocument(insertData);
+      res.status(201).json(document);
+    } catch (error) {
+      console.error("Create AML document error:", error);
+      res.status(500).json({ error: "Failed to upload AML document" });
+    }
+  });
+
+  app.get("/api/clients/:clientId/aml-documents", requireAuth, async (req, res) => {
+    try {
+      const { clientId } = req.params;
+      const documents = await storage.getAmlDocumentsByClient(clientId);
+      res.json(documents);
+    } catch (error) {
+      console.error("Get AML documents error:", error);
+      res.status(500).json({ error: "Failed to fetch AML documents" });
+    }
+  });
+
+  // Accounting integrations API endpoints
+  app.get("/api/accounting/adapters", requireAuth, async (req, res) => {
+    try {
+      const { accountingAdapterRegistry } = await import("./services/accounting-adapters");
+      const adapters = accountingAdapterRegistry.getSupportedSystems();
+      res.json(adapters);
+    } catch (error) {
+      console.error("Get accounting adapters error:", error);
+      res.status(500).json({ error: "Failed to fetch accounting adapters" });
+    }
+  });
+
+  app.get("/api/accounting/integrations", requireAuth, async (req, res) => {
+    try {
+      const user = req.user!;
+      const integrations = await storage.getAccountingIntegrationsByTenant(user.tenantId);
+      res.json(integrations);
+    } catch (error) {
+      console.error("Get accounting integrations error:", error);
+      res.status(500).json({ error: "Failed to fetch accounting integrations" });
+    }
+  });
+
+  app.post("/api/accounting/integrations", requireAuth, async (req, res) => {
+    try {
+      const user = req.user!;
+      const insertData = insertAccountingIntegrationSchema.parse({
+        ...req.body,
+        tenantId: user.tenantId
+      });
+
+      const integration = await storage.createAccountingIntegration(insertData);
+      res.status(201).json(integration);
+    } catch (error) {
+      console.error("Create accounting integration error:", error);
+      res.status(500).json({ error: "Failed to create accounting integration" });
+    }
+  });
+
+  app.post("/api/accounting/integrations/:id/test", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const integration = await storage.getAccountingIntegration(id);
+      
+      if (!integration) {
+        return res.status(404).json({ error: "Integration not found" });
+      }
+
+      const { accountingAdapterRegistry } = await import("./services/accounting-adapters");
+      const adapter = accountingAdapterRegistry.getAdapter(integration.systemType);
+      
+      if (!adapter) {
+        return res.status(400).json({ error: "Adapter not found" });
+      }
+
+      const isConnected = await adapter.testConnection(integration.configuration);
+      res.json({ connected: isConnected });
+    } catch (error) {
+      console.error("Test accounting integration error:", error);
+      res.status(500).json({ error: "Failed to test integration" });
+    }
+  });
+
+  app.post("/api/accounting/integrations/:id/sync", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { syncSettings } = req.body;
+      
+      const integration = await storage.getAccountingIntegration(id);
+      
+      if (!integration) {
+        return res.status(404).json({ error: "Integration not found" });
+      }
+
+      const { accountingAdapterRegistry } = await import("./services/accounting-adapters");
+      const adapter = accountingAdapterRegistry.getAdapter(integration.systemType);
+      
+      if (!adapter) {
+        return res.status(400).json({ error: "Adapter not found" });
+      }
+
+      const syncResult = await adapter.syncData(integration.configuration, syncSettings);
+      res.json(syncResult);
+    } catch (error) {
+      console.error("Sync accounting integration error:", error);
+      res.status(500).json({ error: "Failed to sync data" });
+    }
+  });
+
+  // Checklist API endpoints
+  app.get("/api/checklists/templates", requireAuth, async (req, res) => {
+    try {
+      const templates = await storage.getChecklistTemplates();
+      res.json(templates);
+    } catch (error) {
+      console.error("Get checklist templates error:", error);
+      res.status(500).json({ error: "Failed to fetch checklist templates" });
+    }
+  });
+
+  app.get("/api/checklists/templates/:category", requireAuth, async (req, res) => {
+    try {
+      const { category } = req.params;
+      const { regnskapNorgeChecklistService } = await import("./services/regnskap-norge-checklists");
+      
+      const template = regnskapNorgeChecklistService.getChecklistTemplate(category);
+      res.json(template);
+    } catch (error) {
+      console.error("Get checklist template error:", error);
+      res.status(500).json({ error: "Failed to fetch checklist template" });
+    }
+  });
+
+  app.get("/api/clients/:clientId/checklists", requireAuth, async (req, res) => {
+    try {
+      const { clientId } = req.params;
+      const checklists = await storage.getClientChecklistsByClient(clientId);
+      res.json(checklists);
+    } catch (error) {
+      console.error("Get client checklists error:", error);
+      res.status(500).json({ error: "Failed to fetch client checklists" });
+    }
+  });
+
+  app.post("/api/clients/:clientId/checklists", requireAuth, async (req, res) => {
+    try {
+      const { clientId } = req.params;
+      const user = req.user!;
+      
+      const insertData = insertClientChecklistSchema.parse({
+        ...req.body,
+        clientId,
+        tenantId: user.tenantId
+      });
+
+      const checklist = await storage.createClientChecklist(insertData);
+      res.status(201).json(checklist);
+    } catch (error) {
+      console.error("Create client checklist error:", error);
+      res.status(500).json({ error: "Failed to create checklist" });
+    }
+  });
+
+  app.put("/api/clients/:clientId/checklists/:checklistId", requireAuth, async (req, res) => {
+    try {
+      const { checklistId } = req.params;
+      const updates = req.body;
+      
+      const checklist = await storage.updateClientChecklist(checklistId, updates);
+      res.json(checklist);
+    } catch (error) {
+      console.error("Update client checklist error:", error);
+      res.status(500).json({ error: "Failed to update checklist" });
+    }
+  });
+
+  // Plugin API endpoints
+  app.get("/api/plugins/available", requireAuth, async (req, res) => {
+    try {
+      const { pluginManagerService } = await import("./services/plugin-manager");
+      const plugins = pluginManagerService.getAvailablePlugins();
+      res.json(plugins);
+    } catch (error) {
+      console.error("Get available plugins error:", error);
+      res.status(500).json({ error: "Failed to fetch available plugins" });
+    }
+  });
+
+  app.get("/api/plugins/active", requireAuth, async (req, res) => {
+    try {
+      const user = req.user!;
+      const { pluginManagerService } = await import("./services/plugin-manager");
+      const plugins = pluginManagerService.getActivePlugins(user.tenantId);
+      res.json(plugins);
+    } catch (error) {
+      console.error("Get active plugins error:", error);
+      res.status(500).json({ error: "Failed to fetch active plugins" });
+    }
+  });
+
+  app.post("/api/plugins/:pluginId/activate", requireAuth, async (req, res) => {
+    try {
+      const { pluginId } = req.params;
+      const { configuration } = req.body;
+      const user = req.user!;
+      
+      const { pluginManagerService } = await import("./services/plugin-manager");
+      await pluginManagerService.activatePlugin(pluginId, user.tenantId, configuration);
+      
+      // Save plugin configuration
+      const configData = {
+        tenantId: user.tenantId,
+        pluginId,
+        configuration,
+        isActive: true
+      };
+      
+      await storage.createPluginConfiguration(configData);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Activate plugin error:", error);
+      res.status(500).json({ error: "Failed to activate plugin" });
+    }
+  });
+
+  app.post("/api/plugins/:pluginId/deactivate", requireAuth, async (req, res) => {
+    try {
+      const { pluginId } = req.params;
+      const user = req.user!;
+      
+      const { pluginManagerService } = await import("./services/plugin-manager");
+      await pluginManagerService.deactivatePlugin(pluginId, user.tenantId);
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Deactivate plugin error:", error);
+      res.status(500).json({ error: "Failed to deactivate plugin" });
+    }
+  });
+
+  app.post("/api/plugins/:pluginId/execute", requireAuth, async (req, res) => {
+    try {
+      const { pluginId } = req.params;
+      const { action, data } = req.body;
+      const user = req.user!;
+      
+      // Get plugin configuration
+      const configs = await storage.getPluginConfigurationsByTenant(user.tenantId);
+      const config = configs.find(c => c.pluginId === pluginId && c.isActive);
+      
+      if (!config) {
+        return res.status(404).json({ error: "Plugin not configured or inactive" });
+      }
+      
+      const { pluginManagerService } = await import("./services/plugin-manager");
+      const result = await pluginManagerService.executePlugin(
+        pluginId, 
+        user.tenantId, 
+        action, 
+        data, 
+        config.configuration
+      );
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Execute plugin error:", error);
+      res.status(500).json({ error: "Failed to execute plugin" });
+    }
+  });
+
+  // Object storage endpoints for document uploads
+  app.post("/api/objects/upload", requireAuth, async (req, res) => {
+    try {
+      const { ObjectStorageService } = await import("./objectStorage");
+      const objectStorageService = new ObjectStorageService();
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      res.json({ uploadURL });
+    } catch (error) {
+      console.error("Get upload URL error:", error);
+      res.status(500).json({ error: "Failed to get upload URL" });
+    }
+  });
+
+  app.get("/api/objects/:objectPath(*)", requireAuth, async (req, res) => {
+    try {
+      const { ObjectStorageService } = await import("./objectStorage");
+      const objectStorageService = new ObjectStorageService();
+      const objectFile = await objectStorageService.getObjectEntityFile(req.path);
+      objectStorageService.downloadObject(objectFile, res);
+    } catch (error) {
+      console.error("Download object error:", error);
+      if (!res.headersSent) {
+        res.status(404).json({ error: "File not found" });
+      }
     }
   });
 

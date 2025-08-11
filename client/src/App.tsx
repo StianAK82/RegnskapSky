@@ -1,3 +1,4 @@
+import { lazy } from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -70,6 +71,11 @@ function AuthenticatedRoutes() {
             <Subscriptions />
           </ProtectedRoute>
         )} 
+      />
+      
+      <Route 
+        path="/norwegian-features" 
+        component={lazy(() => import("./pages/norwegian-features"))} 
       />
 
       <Route component={NotFound} />

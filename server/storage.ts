@@ -1,8 +1,15 @@
 import { 
   users, tenants, clients, tasks, timeEntries, documents, notifications, integrations,
+  companyRegistryData, amlDocuments, amlProviders, amlChecks, accountingIntegrations,
+  checklistTemplates, clientChecklists, plugins, pluginConfigurations,
   type User, type InsertUser, type Tenant, type InsertTenant, type Client, type InsertClient,
   type Task, type InsertTask, type TimeEntry, type InsertTimeEntry, type Document, type InsertDocument,
-  type Notification, type InsertNotification, type Integration, type InsertIntegration
+  type Notification, type InsertNotification, type Integration, type InsertIntegration,
+  type CompanyRegistryData, type InsertCompanyRegistryData, type AmlDocument, type InsertAmlDocument,
+  type AmlProvider, type InsertAmlProvider, type AmlCheck, type InsertAmlCheck,
+  type AccountingIntegration, type InsertAccountingIntegration, type ChecklistTemplate, type InsertChecklistTemplate,
+  type ClientChecklist, type InsertClientChecklist, type Plugin, type InsertPlugin,
+  type PluginConfiguration, type InsertPluginConfiguration
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, count, sql, gte, lte } from "drizzle-orm";
@@ -59,6 +66,42 @@ export interface IStorage {
     weeklyHours: number;
     documentsProcessed: number;
   }>;
+
+  // Brønnøysund and company registry
+  getCompanyRegistryData(clientId: string): Promise<CompanyRegistryData | undefined>;
+  createCompanyRegistryData(data: InsertCompanyRegistryData): Promise<CompanyRegistryData>;
+  updateCompanyRegistryData(clientId: string, data: Partial<InsertCompanyRegistryData>): Promise<CompanyRegistryData>;
+
+  // AML/KYC
+  getAmlDocumentsByClient(clientId: string): Promise<AmlDocument[]>;
+  createAmlDocument(document: InsertAmlDocument): Promise<AmlDocument>;
+  getAmlProvidersByTenant(tenantId: string): Promise<AmlProvider[]>;
+  createAmlProvider(provider: InsertAmlProvider): Promise<AmlProvider>;
+  getAmlChecksByClient(clientId: string): Promise<AmlCheck[]>;
+  createAmlCheck(check: InsertAmlCheck): Promise<AmlCheck>;
+
+  // Accounting integrations
+  getAccountingIntegrationsByTenant(tenantId: string): Promise<AccountingIntegration[]>;
+  getAccountingIntegration(id: string): Promise<AccountingIntegration | undefined>;
+  createAccountingIntegration(integration: InsertAccountingIntegration): Promise<AccountingIntegration>;
+  updateAccountingIntegration(id: string, integration: Partial<InsertAccountingIntegration>): Promise<AccountingIntegration>;
+
+  // Checklists
+  getChecklistTemplates(): Promise<ChecklistTemplate[]>;
+  getChecklistTemplate(id: string): Promise<ChecklistTemplate | undefined>;
+  createChecklistTemplate(template: InsertChecklistTemplate): Promise<ChecklistTemplate>;
+  getClientChecklistsByClient(clientId: string): Promise<ClientChecklist[]>;
+  getClientChecklist(id: string): Promise<ClientChecklist | undefined>;
+  createClientChecklist(checklist: InsertClientChecklist): Promise<ClientChecklist>;
+  updateClientChecklist(id: string, checklist: Partial<InsertClientChecklist>): Promise<ClientChecklist>;
+
+  // Plugins
+  getPlugins(): Promise<Plugin[]>;
+  getPlugin(id: string): Promise<Plugin | undefined>;
+  createPlugin(plugin: InsertPlugin): Promise<Plugin>;
+  getPluginConfigurationsByTenant(tenantId: string): Promise<PluginConfiguration[]>;
+  createPluginConfiguration(config: InsertPluginConfiguration): Promise<PluginConfiguration>;
+  updatePluginConfiguration(id: string, config: Partial<InsertPluginConfiguration>): Promise<PluginConfiguration>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -310,6 +353,149 @@ export class DatabaseStorage implements IStorage {
       weeklyHours: Number(weeklyHoursResult.sum) || 0,
       documentsProcessed: documentsResult.count,
     };
+  }
+
+  // Brønnøysund and company registry methods
+  async getCompanyRegistryData(clientId: string): Promise<CompanyRegistryData | undefined> {
+    const [data] = await db.select().from(companyRegistryData).where(eq(companyRegistryData.clientId, clientId));
+    return data || undefined;
+  }
+
+  async createCompanyRegistryData(data: InsertCompanyRegistryData): Promise<CompanyRegistryData> {
+    const [registryData] = await db.insert(companyRegistryData).values(data).returning();
+    return registryData;
+  }
+
+  async updateCompanyRegistryData(clientId: string, data: Partial<InsertCompanyRegistryData>): Promise<CompanyRegistryData> {
+    const [registryData] = await db
+      .update(companyRegistryData)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(companyRegistryData.clientId, clientId))
+      .returning();
+    return registryData;
+  }
+
+  // AML/KYC methods
+  async getAmlDocumentsByClient(clientId: string): Promise<AmlDocument[]> {
+    return db.select().from(amlDocuments).where(eq(amlDocuments.clientId, clientId)).orderBy(desc(amlDocuments.createdAt));
+  }
+
+  async createAmlDocument(document: InsertAmlDocument): Promise<AmlDocument> {
+    const [amlDoc] = await db.insert(amlDocuments).values(document).returning();
+    return amlDoc;
+  }
+
+  async getAmlProvidersByTenant(tenantId: string): Promise<AmlProvider[]> {
+    return db.select().from(amlProviders).where(eq(amlProviders.tenantId, tenantId));
+  }
+
+  async createAmlProvider(provider: InsertAmlProvider): Promise<AmlProvider> {
+    const [amlProvider] = await db.insert(amlProviders).values(provider).returning();
+    return amlProvider;
+  }
+
+  async getAmlChecksByClient(clientId: string): Promise<AmlCheck[]> {
+    return db.select().from(amlChecks).where(eq(amlChecks.clientId, clientId)).orderBy(desc(amlChecks.createdAt));
+  }
+
+  async createAmlCheck(check: InsertAmlCheck): Promise<AmlCheck> {
+    const [amlCheck] = await db.insert(amlChecks).values(check).returning();
+    return amlCheck;
+  }
+
+  // Accounting integrations methods
+  async getAccountingIntegrationsByTenant(tenantId: string): Promise<AccountingIntegration[]> {
+    return db.select().from(accountingIntegrations).where(eq(accountingIntegrations.tenantId, tenantId));
+  }
+
+  async getAccountingIntegration(id: string): Promise<AccountingIntegration | undefined> {
+    const [integration] = await db.select().from(accountingIntegrations).where(eq(accountingIntegrations.id, id));
+    return integration || undefined;
+  }
+
+  async createAccountingIntegration(integration: InsertAccountingIntegration): Promise<AccountingIntegration> {
+    const [accountingIntegration] = await db.insert(accountingIntegrations).values(integration).returning();
+    return accountingIntegration;
+  }
+
+  async updateAccountingIntegration(id: string, integration: Partial<InsertAccountingIntegration>): Promise<AccountingIntegration> {
+    const [accountingIntegration] = await db
+      .update(accountingIntegrations)
+      .set({ ...integration, updatedAt: new Date() })
+      .where(eq(accountingIntegrations.id, id))
+      .returning();
+    return accountingIntegration;
+  }
+
+  // Checklists methods
+  async getChecklistTemplates(): Promise<ChecklistTemplate[]> {
+    return db.select().from(checklistTemplates).orderBy(checklistTemplates.category);
+  }
+
+  async getChecklistTemplate(id: string): Promise<ChecklistTemplate | undefined> {
+    const [template] = await db.select().from(checklistTemplates).where(eq(checklistTemplates.id, id));
+    return template || undefined;
+  }
+
+  async createChecklistTemplate(template: InsertChecklistTemplate): Promise<ChecklistTemplate> {
+    const [checklistTemplate] = await db.insert(checklistTemplates).values(template).returning();
+    return checklistTemplate;
+  }
+
+  async getClientChecklistsByClient(clientId: string): Promise<ClientChecklist[]> {
+    return db.select().from(clientChecklists).where(eq(clientChecklists.clientId, clientId)).orderBy(desc(clientChecklists.createdAt));
+  }
+
+  async getClientChecklist(id: string): Promise<ClientChecklist | undefined> {
+    const [checklist] = await db.select().from(clientChecklists).where(eq(clientChecklists.id, id));
+    return checklist || undefined;
+  }
+
+  async createClientChecklist(checklist: InsertClientChecklist): Promise<ClientChecklist> {
+    const [clientChecklist] = await db.insert(clientChecklists).values(checklist).returning();
+    return clientChecklist;
+  }
+
+  async updateClientChecklist(id: string, checklist: Partial<InsertClientChecklist>): Promise<ClientChecklist> {
+    const [clientChecklist] = await db
+      .update(clientChecklists)
+      .set({ ...checklist, updatedAt: new Date() })
+      .where(eq(clientChecklists.id, id))
+      .returning();
+    return clientChecklist;
+  }
+
+  // Plugins methods
+  async getPlugins(): Promise<Plugin[]> {
+    return db.select().from(plugins).orderBy(plugins.name);
+  }
+
+  async getPlugin(id: string): Promise<Plugin | undefined> {
+    const [plugin] = await db.select().from(plugins).where(eq(plugins.id, id));
+    return plugin || undefined;
+  }
+
+  async createPlugin(plugin: InsertPlugin): Promise<Plugin> {
+    const [pluginRecord] = await db.insert(plugins).values(plugin).returning();
+    return pluginRecord;
+  }
+
+  async getPluginConfigurationsByTenant(tenantId: string): Promise<PluginConfiguration[]> {
+    return db.select().from(pluginConfigurations).where(eq(pluginConfigurations.tenantId, tenantId));
+  }
+
+  async createPluginConfiguration(config: InsertPluginConfiguration): Promise<PluginConfiguration> {
+    const [pluginConfig] = await db.insert(pluginConfigurations).values(config).returning();
+    return pluginConfig;
+  }
+
+  async updatePluginConfiguration(id: string, config: Partial<InsertPluginConfiguration>): Promise<PluginConfiguration> {
+    const [pluginConfig] = await db
+      .update(pluginConfigurations)
+      .set({ ...config, updatedAt: new Date() })
+      .where(eq(pluginConfigurations.id, id))
+      .returning();
+    return pluginConfig;
   }
 }
 
