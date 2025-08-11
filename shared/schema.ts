@@ -540,7 +540,7 @@ export const insertClientSchema = createInsertSchema(clients).omit({
   postalAddress: z.string().optional(),
   city: z.string().optional(),
   accountingSystem: z.string().optional(),
-  responsiblePersonId: z.string().uuid().optional().nullable(),
+  responsiblePersonId: z.string().transform(val => val === "" ? undefined : val).pipe(z.string().uuid()).optional(),
 });
 
 export const insertClientTaskSchema = createInsertSchema(clientTasks).omit({

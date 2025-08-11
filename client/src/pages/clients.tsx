@@ -863,21 +863,32 @@ export default function Clients() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Ansvarlig person</FormLabel>
-                          <Select value={field.value} onValueChange={field.onChange}>
+                          <Select value={field.value || ""} onValueChange={field.onChange}>
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Velg ansvarlig person" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {users.map((user: any) => (
-                                <SelectItem key={user.id} value={user.id}>
-                                  {user.firstName} {user.lastName}
+                              <SelectItem value="">Ingen ansvarlig</SelectItem>
+                              {employees.map((employee: any) => (
+                                <SelectItem key={employee.id} value={employee.id}>
+                                  {employee.firstName} {employee.lastName} - {employee.position}
                                 </SelectItem>
                               ))}
+                              {employees.length === 0 && (
+                                <SelectItem value="" disabled>
+                                  Ingen ansatte registrert - opprett en ansatt først
+                                </SelectItem>
+                              )}
                             </SelectContent>
                           </Select>
                           <FormMessage />
+                          {employees.length === 0 && (
+                            <p className="text-sm text-amber-600">
+                              Du må opprette minst en ansatt først for å kunne velge ansvarlig person.
+                            </p>
+                          )}
                         </FormItem>
                       )}
                     />

@@ -143,17 +143,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Firmanavn er påkrevd" });
       }
 
-      // Validate responsible person ID if provided and not empty string
-      if (clientData.responsiblePersonId && clientData.responsiblePersonId !== "") {
+      // Validate responsible person ID if provided
+      if (clientData.responsiblePersonId) {
         const employee = await storage.getEmployee(clientData.responsiblePersonId);
         if (!employee || employee.tenantId !== req.user!.tenantId) {
           return res.status(400).json({ message: "Ugyldig ansvarlig person ID" });
         }
-      }
-      
-      // Convert empty string to undefined for database
-      if (clientData.responsiblePersonId === "") {
-        clientData.responsiblePersonId = undefined;
       }
       
       const client = await storage.createClient(clientData);
