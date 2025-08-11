@@ -52,6 +52,11 @@ export interface IStorage {
   createClientTask(task: any): Promise<any>;
   updateClientTask(id: string, updates: any): Promise<any>;
   deleteClientTask(id: string): Promise<void>;
+  
+  // Client Responsible management
+  getClientResponsiblesByClient(clientId: string): Promise<any[]>;
+  createClientResponsible(data: any): Promise<any>;
+  getClientResponsibles(tenantId: string): Promise<any[]>;
 
   // Enhanced time tracking with filters
   getTimeEntriesWithFilters(filters: any): Promise<any[]>;

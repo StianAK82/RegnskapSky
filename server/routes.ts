@@ -138,6 +138,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       const client = await storage.createClient(clientData);
+      
+      // Create default standard tasks for the new client
+      const defaultTasks = [
+        { 
+          name: "Aksjonærregisteroppgave", 
+          interval: "yearly", 
+          dueDate: new Date(new Date().getFullYear(), 11, 1) // December 1st
+        },
+        { 
+          name: "Skattemelding", 
+          interval: "yearly", 
+          dueDate: new Date(new Date().getFullYear() + 1, 4, 31) // May 31st next year
+        },
+        { 
+          name: "Årsoppgjør", 
+          interval: "yearly", 
+          dueDate: new Date(new Date().getFullYear() + 1, 6, 31) // July 31st next year
+        }
+      ];
+      
+      for (const task of defaultTasks) {
+        await storage.createClientTask({
+          clientId: client.id,
+          tenantId: client.tenantId,
+          taskName: task.name,
+          taskType: "standard",
+          interval: task.interval,
+          dueDate: task.dueDate,
+          status: "ikke_startet"
+        });
+      }
+      
       res.status(201).json(client);
     } catch (error: any) {
       res.status(400).json({ message: "Feil ved opprettelse av klient: " + error.message });

@@ -43,9 +43,15 @@ export const tenants = pgTable("tenants", {
 export const employees = pgTable("employees", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").notNull(),
-  name: text("name").notNull(),
-  title: text("title"),
-  email: text("email"),
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+  email: text("email").notNull(),
+  phone: text("phone"),
+  position: text("position").notNull(),
+  department: text("department"),
+  startDate: text("start_date").notNull(),
+  salary: decimal("salary"),
+  notes: text("notes"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -56,10 +62,10 @@ export const clients = pgTable("clients", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").notNull(),
   // Step 1 - Company Information
-  companyName: text("company_name").notNull(), // From Brønnøysund or manual
-  name: text("name").notNull(), // Legacy field, same as companyName
+  name: text("name").notNull(), // Company name from Brønnøysund or manual
   orgNumber: text("org_number"),
   address: text("address"),
+  postalAddress: text("postal_address"), // Full postal address from Brønnøysund
   postcode: text("postcode"),
   city: text("city"),
   municipality: text("municipality"),
@@ -97,6 +103,10 @@ export const clientResponsibles = pgTable("client_responsibles", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Task intervals enum
+export const taskIntervals = ["weekly", "monthly", "bi-monthly", "yearly", "specific_date"] as const;
+export type TaskInterval = typeof taskIntervals[number];
+
 // Client Tasks (enhanced task system)
 export const clientTasks = pgTable("client_tasks", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -106,6 +116,7 @@ export const clientTasks = pgTable("client_tasks", {
   taskType: text("task_type").notNull(), // "standard" or "custom"
   description: text("description"),
   dueDate: timestamp("due_date"),
+  interval: text("interval").$type<TaskInterval>(), // weekly, monthly, bi-monthly, yearly, specific_date
   repeatInterval: text("repeat_interval"), // daglig, ukentlig, månedlig, årlig
   status: text("status").default("ikke_startet"), // ikke_startet, pågår, ferdig
   assignedTo: uuid("assigned_to"),
@@ -514,19 +525,25 @@ export const insertTenantSchema = createInsertSchema(tenants).omit({
   updatedAt: true,
 });
 
+export const insertEmployeeSchema = createInsertSchema(employees).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertClientSchema = createInsertSchema(clients).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
 });
 
-export const insertTaskSchema = createInsertSchema(tasks).omit({
+export const insertClientTaskSchema = createInsertSchema(clientTasks).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
 });
 
-export const insertClientTaskSchema = createInsertSchema(clientTasks).omit({
+export const insertTaskSchema = createInsertSchema(tasks).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
@@ -551,12 +568,6 @@ export const insertDocumentSchema = createInsertSchema(documents).omit({
 export const insertNotificationSchema = createInsertSchema(notifications).omit({
   id: true,
   createdAt: true,
-});
-
-export const insertEmployeeSchema = createInsertSchema(employees).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
 });
 
 export const insertIntegrationSchema = createInsertSchema(integrations).omit({
@@ -629,6 +640,8 @@ export type Employee = typeof employees.$inferSelect;
 export type InsertEmployee = z.infer<typeof insertEmployeeSchema>;
 export type Client = typeof clients.$inferSelect;
 export type InsertClient = z.infer<typeof insertClientSchema>;
+export type ClientTask = typeof clientTasks.$inferSelect;
+export type InsertClientTask = z.infer<typeof insertClientTaskSchema>;
 export type Task = typeof tasks.$inferSelect;
 export type InsertTask = z.infer<typeof insertTaskSchema>;
 export type TimeEntry = typeof timeEntries.$inferSelect;

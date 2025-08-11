@@ -49,6 +49,9 @@ const clientSchema = z.object({
   email: z.string().email('Ugyldig e-postadresse').optional().or(z.literal('')),
   phone: z.string().optional(),
   address: z.string().optional(),
+  postalAddress: z.string().optional(),
+  postalCode: z.string().optional(), 
+  city: z.string().optional(),
   contactPerson: z.string().optional(),
   amlStatus: z.enum(['pending', 'approved', 'rejected']).default('pending'),
   accountingSystem: z.string().optional(),
@@ -201,6 +204,9 @@ export default function Clients() {
       email: '',
       phone: '',
       address: '',
+      postalAddress: '',
+      postalCode: '',
+      city: '',
       contactPerson: '',
       amlStatus: 'pending',
       accountingSystem: '',
@@ -467,6 +473,202 @@ export default function Clients() {
                             <p className="text-sm text-green-600">Konfigurer regnskapssystem, oppgaver og ansvarlige personer.</p>
                           </div>
                         )}
+
+                        {/* Contact Information */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField
+                            control={form.control}
+                            name="name"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Firmanavn *</FormLabel>
+                                <FormControl>
+                                  <Input {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name="orgNumber"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Organisasjonsnummer</FormLabel>
+                                <FormControl>
+                                  <Input {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name="email"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>E-post</FormLabel>
+                                <FormControl>
+                                  <Input {...field} type="email" />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name="phone"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Telefon</FormLabel>
+                                <FormControl>
+                                  <Input {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name="contactPerson"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Kontaktperson</FormLabel>
+                                <FormControl>
+                                  <Input {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        {/* Address Information */}
+                        <div className="space-y-4">
+                          <h4 className="font-medium text-gray-900">Adresseinformasjon</h4>
+                          <div className="grid grid-cols-1 gap-4">
+                            <FormField
+                              control={form.control}
+                              name="address"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Besøksadresse</FormLabel>
+                                  <FormControl>
+                                    <Input {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            <FormField
+                              control={form.control}
+                              name="postalAddress"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Postadresse</FormLabel>
+                                  <FormControl>
+                                    <Input {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            <div className="grid grid-cols-2 gap-4">
+                              <FormField
+                                control={form.control}
+                                name="postalCode"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Postnummer</FormLabel>
+                                    <FormControl>
+                                      <Input {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+
+                              <FormField
+                                control={form.control}
+                                name="city"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Sted</FormLabel>
+                                    <FormControl>
+                                      <Input {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Accounting System Selection */}
+                        <div className="space-y-4">
+                          <h4 className="font-medium text-gray-900">Regnskapssystem</h4>
+                          <FormField
+                            control={form.control}
+                            name="accountingSystem"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Velg regnskapssystem</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Velg regnskapssystem" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    {ACCOUNTING_SYSTEMS.map((system) => (
+                                      <SelectItem key={system.value} value={system.value}>
+                                        {system.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        {/* Responsible Person Selection */}
+                        <div className="space-y-4">
+                          <h4 className="font-medium text-gray-900">Ansvarlig person</h4>
+                          <FormField
+                            control={form.control}
+                            name="responsiblePersonId"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Velg ansvarlig ansatt</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Velg ansvarlig ansatt" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    {employees.map((employee: any) => (
+                                      <SelectItem key={employee.id} value={employee.id}>
+                                        {employee.firstName} {employee.lastName}
+                                        {employee.position && ` - ${employee.position}`}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
 
                         {/* Basic Info (readonly in step 2) */}
                         <div className="grid grid-cols-2 gap-4">
