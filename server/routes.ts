@@ -569,7 +569,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const requireAuth = authenticateToken;
 
   // Brønnøysund Registry API endpoints
-  app.get("/api/bronnoyund/search", requireAuth, async (req, res) => {
+  app.get("/api/bronnoyund/search", requireAuth, async (req: AuthRequest, res) => {
     try {
       const { query } = req.query as { query?: string };
       if (!query) {
@@ -585,7 +585,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/bronnoyund/company/:orgNumber", requireAuth, async (req, res) => {
+  app.get("/api/bronnoyund/company/:orgNumber", requireAuth, async (req: AuthRequest, res) => {
     try {
       const { orgNumber } = req.params;
       const { bronnoyundService } = await import("./services/bronnoyund");
@@ -611,7 +611,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/clients/:clientId/registry-data", requireAuth, async (req, res) => {
+  app.post("/api/clients/:clientId/registry-data", requireAuth, async (req: AuthRequest, res) => {
     try {
       const { clientId } = req.params;
       const user = req.user!;
@@ -630,7 +630,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/clients/:clientId/registry-data", requireAuth, async (req, res) => {
+  app.get("/api/clients/:clientId/registry-data", requireAuth, async (req: AuthRequest, res) => {
     try {
       const { clientId } = req.params;
       const registryData = await storage.getCompanyRegistryData(clientId);
@@ -647,7 +647,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // AML/KYC API endpoints
-  app.get("/api/aml/providers", requireAuth, async (req, res) => {
+  app.get("/api/aml/providers", requireAuth, async (req: AuthRequest, res) => {
     try {
       const user = req.user!;
       const providers = await storage.getAmlProvidersByTenant(user.tenantId);
@@ -658,7 +658,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/aml/providers", requireAuth, async (req, res) => {
+  app.post("/api/aml/providers", requireAuth, async (req: AuthRequest, res) => {
     try {
       const user = req.user!;
       const insertData = insertAmlProviderSchema.parse({
@@ -674,7 +674,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/clients/:clientId/aml-check", requireAuth, async (req, res) => {
+  app.post("/api/clients/:clientId/aml-check", requireAuth, async (req: AuthRequest, res) => {
     try {
       const { clientId } = req.params;
       const user = req.user!;
@@ -710,7 +710,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           checkType: type,
           status: result.status,
           result: result.result,
-          confidence: result.confidence,
+          confidence: result.confidence?.toString() || "0",
           findings: result.findings,
           cost: result.cost || 0,
           externalReferenceId: result.externalReferenceId,
@@ -734,7 +734,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/clients/:clientId/aml-checks", requireAuth, async (req, res) => {
+  app.get("/api/clients/:clientId/aml-checks", requireAuth, async (req: AuthRequest, res) => {
     try {
       const { clientId } = req.params;
       const checks = await storage.getAmlChecksByClient(clientId);
@@ -746,7 +746,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Document upload for AML/KYC
-  app.post("/api/clients/:clientId/aml-documents", requireAuth, async (req, res) => {
+  app.post("/api/clients/:clientId/aml-documents", requireAuth, async (req: AuthRequest, res) => {
     try {
       const { clientId } = req.params;
       const user = req.user!;
@@ -766,7 +766,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/clients/:clientId/aml-documents", requireAuth, async (req, res) => {
+  app.get("/api/clients/:clientId/aml-documents", requireAuth, async (req: AuthRequest, res) => {
     try {
       const { clientId } = req.params;
       const documents = await storage.getAmlDocumentsByClient(clientId);
@@ -778,7 +778,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Accounting integrations API endpoints
-  app.get("/api/accounting/adapters", requireAuth, async (req, res) => {
+  app.get("/api/accounting/adapters", requireAuth, async (req: AuthRequest, res) => {
     try {
       const { accountingAdapterRegistry } = await import("./services/accounting-adapters");
       const adapters = accountingAdapterRegistry.getSupportedSystems();
@@ -789,7 +789,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/accounting/integrations", requireAuth, async (req, res) => {
+  app.get("/api/accounting/integrations", requireAuth, async (req: AuthRequest, res) => {
     try {
       const user = req.user!;
       const integrations = await storage.getAccountingIntegrationsByTenant(user.tenantId);
@@ -800,7 +800,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/accounting/integrations", requireAuth, async (req, res) => {
+  app.post("/api/accounting/integrations", requireAuth, async (req: AuthRequest, res) => {
     try {
       const user = req.user!;
       const insertData = insertAccountingIntegrationSchema.parse({
@@ -816,7 +816,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/accounting/integrations/:id/test", requireAuth, async (req, res) => {
+  app.post("/api/accounting/integrations/:id/test", requireAuth, async (req: AuthRequest, res) => {
     try {
       const { id } = req.params;
       const integration = await storage.getAccountingIntegration(id);
@@ -832,7 +832,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Adapter not found" });
       }
 
-      const isConnected = await adapter.testConnection(integration.configuration);
+      const isConnected = await adapter.testConnection(integration.configuration || {});
       res.json({ connected: isConnected });
     } catch (error) {
       console.error("Test accounting integration error:", error);
@@ -840,7 +840,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/accounting/integrations/:id/sync", requireAuth, async (req, res) => {
+  app.post("/api/accounting/integrations/:id/sync", requireAuth, async (req: AuthRequest, res) => {
     try {
       const { id } = req.params;
       const { syncSettings } = req.body;
@@ -858,7 +858,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Adapter not found" });
       }
 
-      const syncResult = await adapter.syncData(integration.configuration, syncSettings);
+      const syncResult = await adapter.syncData(integration.configuration || {}, syncSettings);
       res.json(syncResult);
     } catch (error) {
       console.error("Sync accounting integration error:", error);
@@ -867,7 +867,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Checklist API endpoints
-  app.get("/api/checklists/templates", requireAuth, async (req, res) => {
+  app.get("/api/checklists/templates", requireAuth, async (req: AuthRequest, res) => {
     try {
       const templates = await storage.getChecklistTemplates();
       res.json(templates);
@@ -877,7 +877,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/checklists/templates/:category", requireAuth, async (req, res) => {
+  app.get("/api/checklists/templates/:category", requireAuth, async (req: AuthRequest, res) => {
     try {
       const { category } = req.params;
       const { regnskapNorgeChecklistService } = await import("./services/regnskap-norge-checklists");
@@ -890,7 +890,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/clients/:clientId/checklists", requireAuth, async (req, res) => {
+  app.get("/api/clients/:clientId/checklists", requireAuth, async (req: AuthRequest, res) => {
     try {
       const { clientId } = req.params;
       const checklists = await storage.getClientChecklistsByClient(clientId);
@@ -901,7 +901,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/clients/:clientId/checklists", requireAuth, async (req, res) => {
+  app.post("/api/clients/:clientId/checklists", requireAuth, async (req: AuthRequest, res) => {
     try {
       const { clientId } = req.params;
       const user = req.user!;
@@ -920,7 +920,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/clients/:clientId/checklists/:checklistId", requireAuth, async (req, res) => {
+  app.put("/api/clients/:clientId/checklists/:checklistId", requireAuth, async (req: AuthRequest, res) => {
     try {
       const { checklistId } = req.params;
       const updates = req.body;
@@ -934,7 +934,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Plugin API endpoints
-  app.get("/api/plugins/available", requireAuth, async (req, res) => {
+  app.get("/api/plugins/available", requireAuth, async (req: AuthRequest, res) => {
     try {
       const { pluginManagerService } = await import("./services/plugin-manager");
       const plugins = pluginManagerService.getAvailablePlugins();
@@ -945,7 +945,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/plugins/active", requireAuth, async (req, res) => {
+  app.get("/api/plugins/active", requireAuth, async (req: AuthRequest, res) => {
     try {
       const user = req.user!;
       const { pluginManagerService } = await import("./services/plugin-manager");
@@ -957,7 +957,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/plugins/:pluginId/activate", requireAuth, async (req, res) => {
+  app.post("/api/plugins/:pluginId/activate", requireAuth, async (req: AuthRequest, res) => {
     try {
       const { pluginId } = req.params;
       const { configuration } = req.body;
@@ -982,7 +982,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/plugins/:pluginId/deactivate", requireAuth, async (req, res) => {
+  app.post("/api/plugins/:pluginId/deactivate", requireAuth, async (req: AuthRequest, res) => {
     try {
       const { pluginId } = req.params;
       const user = req.user!;
@@ -997,7 +997,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/plugins/:pluginId/execute", requireAuth, async (req, res) => {
+  app.post("/api/plugins/:pluginId/execute", requireAuth, async (req: AuthRequest, res) => {
     try {
       const { pluginId } = req.params;
       const { action, data } = req.body;
@@ -1005,7 +1005,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get plugin configuration
       const configs = await storage.getPluginConfigurationsByTenant(user.tenantId);
-      const config = configs.find(c => c.pluginId === pluginId && c.isActive);
+      const config = configs.find(c => c.pluginId === pluginId && c.isEnabled);
       
       if (!config) {
         return res.status(404).json({ error: "Plugin not configured or inactive" });
@@ -1028,7 +1028,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Object storage endpoints for document uploads
-  app.post("/api/objects/upload", requireAuth, async (req, res) => {
+  app.post("/api/objects/upload", requireAuth, async (req: AuthRequest, res) => {
     try {
       const { ObjectStorageService } = await import("./objectStorage");
       const objectStorageService = new ObjectStorageService();
@@ -1040,7 +1040,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/objects/:objectPath(*)", requireAuth, async (req, res) => {
+  app.get("/api/objects/:objectPath(*)", requireAuth, async (req: AuthRequest, res) => {
     try {
       const { ObjectStorageService } = await import("./objectStorage");
       const objectStorageService = new ObjectStorageService();
@@ -1055,5 +1055,158 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
+  // Enhanced Client Tasks and Time Tracking API
+  app.get("/api/clients/:clientId/tasks", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const { clientId } = req.params;
+      const tasks = await storage.getClientTasksByClient(clientId);
+      res.json(tasks);
+    } catch (error: any) {
+      res.status(500).json({ message: "Feil ved henting av klientoppgaver: " + error.message });
+    }
+  });
+
+  app.post("/api/clients/:clientId/tasks", authenticateToken, requireRole(["admin", "oppdragsansvarlig"]), async (req: AuthRequest, res) => {
+    try {
+      const taskData = insertClientTaskSchema.parse({
+        ...req.body,
+        clientId: req.params.clientId,
+        tenantId: req.user!.tenantId,
+      });
+      
+      const task = await storage.createClientTask(taskData);
+      res.status(201).json(task);
+    } catch (error: any) {
+      res.status(400).json({ message: "Feil ved opprettelse av oppgave: " + error.message });
+    }
+  });
+
+  app.put("/api/clients/:clientId/tasks/:taskId", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const task = await storage.updateClientTask(req.params.taskId, req.body);
+      res.json(task);
+    } catch (error: any) {
+      res.status(400).json({ message: "Feil ved oppdatering av oppgave: " + error.message });
+    }
+  });
+
+  // Client Responsibles API
+  app.get("/api/clients/:clientId/responsibles", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const { clientId } = req.params;
+      const responsibles = await storage.getClientResponsibles(clientId);
+      res.json(responsibles);
+    } catch (error: any) {
+      res.status(500).json({ message: "Feil ved henting av ansvarlige: " + error.message });
+    }
+  });
+
+  app.post("/api/clients/:clientId/responsibles", authenticateToken, requireRole(["admin", "oppdragsansvarlig"]), async (req: AuthRequest, res) => {
+    try {
+      const responsibleData = insertClientResponsibleSchema.parse({
+        ...req.body,
+        clientId: req.params.clientId,
+        tenantId: req.user!.tenantId,
+      });
+      
+      const responsible = await storage.createClientResponsible(responsibleData);
+      res.status(201).json(responsible);
+    } catch (error: any) {
+      res.status(400).json({ message: "Feil ved tildeling av ansvarlig: " + error.message });
+    }
+  });
+
+  app.delete("/api/clients/:clientId/responsibles/:responsibleId", authenticateToken, requireRole(["admin", "oppdragsansvarlig"]), async (req: AuthRequest, res) => {
+    try {
+      await storage.deleteClientResponsible(req.params.responsibleId);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(400).json({ message: "Feil ved fjerning av ansvarlig: " + error.message });
+    }
+  });
+
+  // Enhanced Time Tracking with modal functionality
+  app.post("/api/time-entries", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const timeEntryData = insertTimeEntrySchema.parse({
+        ...req.body,
+        userId: req.user!.id,
+        tenantId: req.user!.tenantId,
+      });
+      
+      const timeEntry = await storage.createTimeEntry(timeEntryData);
+      
+      // Send notification if time entry is for a specific task
+      if (timeEntry.taskId) {
+        await sendTaskNotification(
+          req.user!.email,
+          `${req.user!.firstName} ${req.user!.lastName}`,
+          "Timeføring registrert",
+          `${timeEntry.timeSpent} timer registrert for oppgave`
+        );
+      }
+      
+      res.status(201).json(timeEntry);
+    } catch (error: any) {
+      res.status(400).json({ message: "Feil ved registrering av timer: " + error.message });
+    }
+  });
+
+  app.put("/api/time-entries/:id", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const timeEntry = await storage.updateTimeEntry(req.params.id, req.body);
+      res.json(timeEntry);
+    } catch (error: any) {
+      res.status(400).json({ message: "Feil ved oppdatering av timeregistrering: " + error.message });
+    }
+  });
+
+  // Enhanced Time Reports with filtering and export
+  app.get("/api/reports/time-entries", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const { clientId, userId, taskId, startDate, endDate, exportFormat } = req.query;
+      
+      const filters = {
+        tenantId: req.user!.tenantId,
+        clientId: clientId as string,
+        userId: userId as string,
+        taskId: taskId as string,
+        startDate: startDate ? new Date(startDate as string) : undefined,
+        endDate: endDate ? new Date(endDate as string) : undefined,
+      };
+      
+      const timeEntries = await storage.getTimeEntriesWithFilters(filters);
+      
+      // If export format is requested, generate report
+      if (exportFormat === 'excel' || exportFormat === 'pdf') {
+        const { reportService } = await import("./services/reporting");
+        const reportBuffer = await reportService.generateTimeReport(timeEntries, exportFormat as 'excel' | 'pdf');
+        
+        const filename = `timeregistrering_${new Date().toISOString().split('T')[0]}.${exportFormat === 'excel' ? 'xlsx' : 'pdf'}`;
+        
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.setHeader('Content-Type', exportFormat === 'excel' ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'application/pdf');
+        res.send(reportBuffer);
+      } else {
+        res.json(timeEntries);
+      }
+    } catch (error: any) {
+      res.status(500).json({ message: "Feil ved generering av rapport: " + error.message });
+    }
+  });
+
+  // Accounting System URLs for client access
+  app.get("/api/accounting-systems/urls", authenticateToken, async (req: AuthRequest, res) => {
+    const accountingSystemUrls = {
+      fiken: "https://fiken.no",
+      tripletex: "https://tripletex.no", 
+      unimicro: "https://unimicro.no",
+      poweroffice: "https://poweroffice.no",
+      conta: "https://conta.no"
+    };
+    
+    res.json(accountingSystemUrls);
+  });
+
   return httpServer;
 }

@@ -3,15 +3,15 @@ import {
   clientTasks, clientResponsibles, companyRegistryData, amlDocuments, amlProviders, amlChecks, accountingIntegrations,
   checklistTemplates, clientChecklists, plugins, pluginConfigurations,
   type User, type InsertUser, type Tenant, type InsertTenant, type Client, type InsertClient,
-  type Task, type InsertTask, type ClientTask, type InsertClientTask, 
-  type ClientResponsible, type InsertClientResponsible,
+  type Task, type InsertTask, 
   type TimeEntry, type InsertTimeEntry, type Document, type InsertDocument,
   type Notification, type InsertNotification, type Integration, type InsertIntegration,
   type CompanyRegistryData, type InsertCompanyRegistryData, type AmlDocument, type InsertAmlDocument,
   type AmlProvider, type InsertAmlProvider, type AmlCheck, type InsertAmlCheck,
   type AccountingIntegration, type InsertAccountingIntegration, type ChecklistTemplate, type InsertChecklistTemplate,
   type ClientChecklist, type InsertClientChecklist, type Plugin, type InsertPlugin,
-  type PluginConfiguration, type InsertPluginConfiguration
+  type PluginConfiguration, type InsertPluginConfiguration,
+  insertClientTaskSchema, insertClientResponsibleSchema
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, count, sql, gte, lte } from "drizzle-orm";
@@ -41,15 +41,18 @@ export interface IStorage {
   updateTask(id: string, updates: Partial<Task>): Promise<Task>;
 
   // Client Task management
-  getClientTasksByClient(clientId: string): Promise<ClientTask[]>;
-  createClientTask(task: InsertClientTask): Promise<ClientTask>;
-  updateClientTask(id: string, updates: Partial<ClientTask>): Promise<ClientTask>;
+  getClientTasksByClient(clientId: string): Promise<any[]>;
+  createClientTask(task: any): Promise<any>;
+  updateClientTask(id: string, updates: any): Promise<any>;
   deleteClientTask(id: string): Promise<void>;
 
   // Client Responsible management  
-  getClientResponsiblesByClient(clientId: string): Promise<ClientResponsible[]>;
-  createClientResponsible(responsible: InsertClientResponsible): Promise<ClientResponsible>;
+  getClientResponsibles(clientId: string): Promise<any[]>;
+  createClientResponsible(responsible: any): Promise<any>;
   deleteClientResponsible(id: string): Promise<void>;
+
+  // Enhanced time tracking with filters
+  getTimeEntriesWithFilters(filters: any): Promise<any[]>;
 
   // Time tracking
   getTimeEntriesByUser(userId: string, startDate?: Date, endDate?: Date): Promise<TimeEntry[]>;
@@ -132,7 +135,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db.insert(users).values(insertUser).returning();
+    const [user] = await db.insert(users).values([insertUser]).returning();
     return user;
   }
 
@@ -438,7 +441,7 @@ export class DatabaseStorage implements IStorage {
       ));
 
     const [weeklyHoursResult] = await db
-      .select({ sum: sql<number>`COALESCE(SUM(${timeEntries.hours}), 0)` })
+      .select({ sum: sql<number>`COALESCE(SUM(${timeEntries.timeSpent}), 0)` })
       .from(timeEntries)
       .where(and(
         eq(timeEntries.tenantId, tenantId),
@@ -518,11 +521,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createAccountingIntegration(integration: InsertAccountingIntegration): Promise<AccountingIntegration> {
-    const [accountingIntegration] = await db.insert(accountingIntegrations).values(integration).returning();
+    const [accountingIntegration] = await db.insert(accountingIntegrations).values([integration]).returning();
     return accountingIntegration;
   }
 
-  async updateAccountingIntegration(id: string, integration: Partial<InsertAccountingIntegration>): Promise<AccountingIntegration> {
+  async updateAccountingIntegration(id: string, integration: any): Promise<AccountingIntegration> {
     const [accountingIntegration] = await db
       .update(accountingIntegrations)
       .set({ ...integration, updatedAt: new Date() })
@@ -600,6 +603,41 @@ export class DatabaseStorage implements IStorage {
       .where(eq(pluginConfigurations.id, id))
       .returning();
     return pluginConfig;
+  }
+
+  // Enhanced time tracking methods
+  async getTimeEntriesWithFilters(filters: any): Promise<any[]> {
+    const { tenantId, clientId, userId, taskId, startDate, endDate } = filters;
+    
+    let query = db.select().from(timeEntries);
+    const conditions = [];
+    
+    if (tenantId) conditions.push(eq(timeEntries.tenantId, tenantId));
+    if (clientId) conditions.push(eq(timeEntries.clientId, clientId));
+    if (userId) conditions.push(eq(timeEntries.userId, userId));
+    if (taskId) conditions.push(eq(timeEntries.taskId, taskId));
+    if (startDate) conditions.push(gte(timeEntries.date, startDate));
+    if (endDate) conditions.push(lte(timeEntries.date, endDate));
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    return query.orderBy(desc(timeEntries.date));
+  }
+
+  // Client responsibles implementation
+  async getClientResponsibles(clientId: string): Promise<any[]> {
+    return db.select().from(clientResponsibles).where(eq(clientResponsibles.clientId, clientId));
+  }
+
+  async createClientResponsible(responsible: any): Promise<any> {
+    const [clientResponsible] = await db.insert(clientResponsibles).values([responsible]).returning();
+    return clientResponsible;
+  }
+
+  async deleteClientResponsible(id: string): Promise<void> {
+    await db.delete(clientResponsibles).where(eq(clientResponsibles.id, id));
   }
 }
 
