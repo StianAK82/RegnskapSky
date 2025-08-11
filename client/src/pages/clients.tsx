@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useLocation } from 'wouter';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Sidebar } from '@/components/layout/sidebar';
 import { TopBar } from '@/components/layout/top-bar';
@@ -46,6 +47,7 @@ const clientSchema = z.object({
 type ClientFormData = z.infer<typeof clientSchema>;
 
 export default function Clients() {
+  const [, setLocation] = useLocation();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -446,14 +448,24 @@ export default function Clients() {
                         Opprettet {new Date(client.createdAt).toLocaleDateString('nb-NO')}
                       </span>
                       
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEdit(client)}
-                      >
-                        <i className="fas fa-edit mr-1"></i>
-                        Rediger
-                      </Button>
+                      <div className="flex space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setLocation(`/clients/${client.id}`)}
+                        >
+                          <i className="fas fa-eye mr-1"></i>
+                          Vis detaljer
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEdit(client)}
+                        >
+                          <i className="fas fa-edit mr-1"></i>
+                          Rediger
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>

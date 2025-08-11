@@ -1,0 +1,44 @@
+Oppdater eksisterende system ved å legge til følgende funksjoner uten å fjerne noe som allerede er bygget:
+
+1. På klientkortet:  
+   - Felt for å velge regnskapssystem: Fiken, Tripletex, Unimicro, PowerOffice, Conta, eller "Annet".  
+   - Når systemet velges, lagres det på klienten og brukeren får en knapp/lenke som sender dem direkte til riktig offisielle nettside:
+     - Fiken → https://fiken.no
+     - Tripletex → https://tripletex.no
+     - Unimicro → https://unimicro.no
+     - PowerOffice → https://poweroffice.no
+     - Conta → https://conta.no
+     - Annet → åpner et fritekstfelt for å legge inn en URL
+   - Åpning skjer i nytt nettleservindu.
+
+2. Oppdragsansvarlig per klient:  
+   - Mulighet for å legge til én eller flere ansatte som er oppdragsansvarlig for klienten.  
+   - Lagres i egen many-to-many-tabell `client_responsibles`.
+
+3. Oppgaver per klient:  
+   - Oppgavenavn velges fra standardliste: Bokføring, MVA, Lønn, Bankavstemming, Kontoavstemming, eller "Annet" med fritekstfelt.  
+   - Felter: `task_name`, `task_type` (standard/custom), `description`, `due_date`, `repeat_interval` (daglig, ukentlig, månedlig, årlig), `status` (ikke startet, pågår, ferdig), `assigned_to` (ansatt), `client_id`.  
+   - Gjentakende oppgaver genereres automatisk basert på `repeat_interval`.
+
+4. Timeføringsmodul:  
+   - Når man bytter klient eller går ut av klientkortet, åpnes en modal for å registrere timer og hva som er gjort.  
+   - Felter: `client_id`, `user_id`, `task_id` (valgfritt), `description`, `time_spent`, `date`.  
+   - Timer kan redigeres i etterkant.
+
+5. Rapportering:  
+   - Side med oppsummering av timer per klient, per ansatt og per oppgave.  
+   - Filtre: dato-intervall, klient, ansatt, oppgave.  
+   - Eksportmulighet til Excel/PDF.
+
+6. Backend/API:  
+   - CRUD-endepunkter for oppdragsansvarlige, oppgaver og timer.  
+   - Endepunkt for rapportering.  
+   - Oppdatere klient-endepunktet til å lagre valgt regnskapssystem og URL.
+
+7. Database:  
+   - Oppdater `clients`-tabellen med feltene `accounting_system` og `accounting_system_url`.  
+   - Ny tabell `client_responsibles`.  
+   - Ny tabell `client_tasks`.  
+   - Ny tabell `time_entries`.
+
+Behold all eksisterende funksjonalitet, men utvid med dette.

@@ -11,6 +11,7 @@ import { ProtectedRoute } from "@/components/ui/protected-route";
 import Login from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
 import Clients from "@/pages/clients";
+import ClientDetail from "@/pages/client-detail";
 import Tasks from "@/pages/tasks";
 import AIAssistant from "@/pages/ai-assistant";
 import Subscriptions from "@/pages/subscriptions";
@@ -42,6 +43,15 @@ function AuthenticatedRoutes() {
         component={() => (
           <ProtectedRoute allowedRoles={['admin', 'oppdragsansvarlig', 'regnskapsfører', 'intern']}>
             <Clients />
+          </ProtectedRoute>
+        )} 
+      />
+
+      <Route 
+        path="/clients/:id" 
+        component={() => (
+          <ProtectedRoute allowedRoles={['admin', 'oppdragsansvarlig', 'regnskapsfører', 'intern']}>
+            <ClientDetail />
           </ProtectedRoute>
         )} 
       />

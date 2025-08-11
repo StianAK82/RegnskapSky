@@ -4,6 +4,15 @@
 
 RegnskapsAI is a comprehensive Norwegian multi-tenant accounting and client management system built with modern web technologies. The application provides AI-assisted document categorization, accounting suggestions, role-based access control (RBAC), and integrations with third-party services like Stripe for payments and SendGrid for email communications. The system supports multiple user roles including administrators, project managers, accountants, and internal staff, with specialized features for each role type.
 
+### Recent Updates (January 2025)
+- ✅ Enhanced client management with per-client accounting system selection (Fiken, Tripletex, Unimicro, PowerOffice, Conta)
+- ✅ Advanced client detail interface with comprehensive tabs for overview, responsibles, tasks, time tracking, and reports  
+- ✅ Client-specific task management system with standard and custom task types
+- ✅ Enhanced time tracking with client-specific entries and detailed reporting
+- ✅ Client responsible assignment system for project management
+- ✅ Integrated accounting system URL links for direct access to client's chosen platform
+- ✅ Database schema extended with client_tasks, client_responsibles tables and accounting system fields
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.

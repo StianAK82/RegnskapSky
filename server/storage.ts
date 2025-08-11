@@ -1,9 +1,11 @@
 import { 
   users, tenants, clients, tasks, timeEntries, documents, notifications, integrations,
-  companyRegistryData, amlDocuments, amlProviders, amlChecks, accountingIntegrations,
+  clientTasks, clientResponsibles, companyRegistryData, amlDocuments, amlProviders, amlChecks, accountingIntegrations,
   checklistTemplates, clientChecklists, plugins, pluginConfigurations,
   type User, type InsertUser, type Tenant, type InsertTenant, type Client, type InsertClient,
-  type Task, type InsertTask, type TimeEntry, type InsertTimeEntry, type Document, type InsertDocument,
+  type Task, type InsertTask, type ClientTask, type InsertClientTask, 
+  type ClientResponsible, type InsertClientResponsible,
+  type TimeEntry, type InsertTimeEntry, type Document, type InsertDocument,
   type Notification, type InsertNotification, type Integration, type InsertIntegration,
   type CompanyRegistryData, type InsertCompanyRegistryData, type AmlDocument, type InsertAmlDocument,
   type AmlProvider, type InsertAmlProvider, type AmlCheck, type InsertAmlCheck,
@@ -38,10 +40,24 @@ export interface IStorage {
   createTask(task: InsertTask): Promise<Task>;
   updateTask(id: string, updates: Partial<Task>): Promise<Task>;
 
+  // Client Task management
+  getClientTasksByClient(clientId: string): Promise<ClientTask[]>;
+  createClientTask(task: InsertClientTask): Promise<ClientTask>;
+  updateClientTask(id: string, updates: Partial<ClientTask>): Promise<ClientTask>;
+  deleteClientTask(id: string): Promise<void>;
+
+  // Client Responsible management  
+  getClientResponsiblesByClient(clientId: string): Promise<ClientResponsible[]>;
+  createClientResponsible(responsible: InsertClientResponsible): Promise<ClientResponsible>;
+  deleteClientResponsible(id: string): Promise<void>;
+
   // Time tracking
   getTimeEntriesByUser(userId: string, startDate?: Date, endDate?: Date): Promise<TimeEntry[]>;
   getTimeEntriesByTenant(tenantId: string, startDate?: Date, endDate?: Date): Promise<TimeEntry[]>;
+  getTimeEntriesByClient(clientId: string, startDate?: Date, endDate?: Date): Promise<TimeEntry[]>;
   createTimeEntry(entry: InsertTimeEntry): Promise<TimeEntry>;
+  updateTimeEntry(id: string, updates: Partial<TimeEntry>): Promise<TimeEntry>;
+  deleteTimeEntry(id: string): Promise<void>;
 
   // Documents
   getDocumentsByClient(clientId: string): Promise<Document[]>;
@@ -209,6 +225,63 @@ export class DatabaseStorage implements IStorage {
     return task;
   }
 
+  // Client Task methods
+  async getClientTasksByClient(clientId: string): Promise<ClientTask[]> {
+    return await db
+      .select()
+      .from(clientTasks)
+      .where(eq(clientTasks.clientId, clientId))
+      .orderBy(desc(clientTasks.dueDate));
+  }
+
+  async createClientTask(task: InsertClientTask): Promise<ClientTask> {
+    const [newTask] = await db
+      .insert(clientTasks)
+      .values(task)
+      .returning();
+    
+    return newTask;
+  }
+
+  async updateClientTask(id: string, updates: Partial<ClientTask>): Promise<ClientTask> {
+    const [updatedTask] = await db
+      .update(clientTasks)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(clientTasks.id, id))
+      .returning();
+    
+    if (!updatedTask) {
+      throw new Error("Client task not found");
+    }
+    
+    return updatedTask;
+  }
+
+  async deleteClientTask(id: string): Promise<void> {
+    await db.delete(clientTasks).where(eq(clientTasks.id, id));
+  }
+
+  // Client Responsible methods
+  async getClientResponsiblesByClient(clientId: string): Promise<ClientResponsible[]> {
+    return await db
+      .select()
+      .from(clientResponsibles)
+      .where(eq(clientResponsibles.clientId, clientId));
+  }
+
+  async createClientResponsible(responsible: InsertClientResponsible): Promise<ClientResponsible> {
+    const [newResponsible] = await db
+      .insert(clientResponsibles)
+      .values(responsible)
+      .returning();
+    
+    return newResponsible;
+  }
+
+  async deleteClientResponsible(id: string): Promise<void> {
+    await db.delete(clientResponsibles).where(eq(clientResponsibles.id, id));
+  }
+
   async getTimeEntriesByUser(userId: string, startDate?: Date, endDate?: Date): Promise<TimeEntry[]> {
     const conditions = [eq(timeEntries.userId, userId)];
     
@@ -235,9 +308,40 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(timeEntries).where(and(...conditions)).orderBy(desc(timeEntries.date));
   }
 
+  async getTimeEntriesByClient(clientId: string, startDate?: Date, endDate?: Date): Promise<TimeEntry[]> {
+    const conditions = [eq(timeEntries.clientId, clientId)];
+    
+    if (startDate) {
+      conditions.push(gte(timeEntries.date, startDate));
+    }
+    if (endDate) {
+      conditions.push(lte(timeEntries.date, endDate));
+    }
+    
+    return db.select().from(timeEntries).where(and(...conditions)).orderBy(desc(timeEntries.date));
+  }
+
   async createTimeEntry(insertTimeEntry: InsertTimeEntry): Promise<TimeEntry> {
     const [entry] = await db.insert(timeEntries).values(insertTimeEntry).returning();
     return entry;
+  }
+
+  async updateTimeEntry(id: string, updates: Partial<TimeEntry>): Promise<TimeEntry> {
+    const [updatedEntry] = await db
+      .update(timeEntries)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(timeEntries.id, id))
+      .returning();
+    
+    if (!updatedEntry) {
+      throw new Error("Time entry not found");
+    }
+    
+    return updatedEntry;
+  }
+
+  async deleteTimeEntry(id: string): Promise<void> {
+    await db.delete(timeEntries).where(eq(timeEntries.id, id));
   }
 
   async getDocumentsByClient(clientId: string): Promise<Document[]> {

@@ -7,6 +7,7 @@ import { categorizeDocument, generateAccountingSuggestions, askAccountingQuestio
 import { sendTaskNotification, sendWelcomeEmail, sendSubscriptionNotification } from "./services/sendgrid";
 import { 
   insertUserSchema, insertTenantSchema, insertClientSchema, insertTaskSchema, 
+  insertClientTaskSchema, insertClientResponsibleSchema,
   insertTimeEntrySchema, insertDocumentSchema, insertNotificationSchema, insertIntegrationSchema,
   insertCompanyRegistryDataSchema, insertAmlProviderSchema, insertAmlDocumentSchema,
   insertAccountingIntegrationSchema, insertClientChecklistSchema,
@@ -209,6 +210,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Client Responsibles management
+  app.get("/api/clients/:clientId/responsibles", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const { clientId } = req.params;
+      const responsibles = await storage.getClientResponsiblesByClient(clientId);
+      res.json(responsibles);
+    } catch (error: any) {
+      res.status(500).json({ message: "Feil ved henting av oppdragsansvarlige: " + error.message });
+    }
+  });
+
+  app.post("/api/clients/:clientId/responsibles", authenticateToken, requireRole(["admin", "oppdragsansvarlig"]), async (req: AuthRequest, res) => {
+    try {
+      const { clientId } = req.params;
+      const { userId } = req.body;
+      const responsible = await storage.createClientResponsible({
+        clientId,
+        userId,
+        tenantId: req.user!.tenantId,
+      });
+      res.status(201).json(responsible);
+    } catch (error: any) {
+      res.status(400).json({ message: "Feil ved opprettelse av oppdragsansvarlig: " + error.message });
+    }
+  });
+
+  app.delete("/api/clients/responsibles/:id", authenticateToken, requireRole(["admin", "oppdragsansvarlig"]), async (req: AuthRequest, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteClientResponsible(id);
+      res.sendStatus(204);
+    } catch (error: any) {
+      res.status(400).json({ message: "Feil ved sletting av oppdragsansvarlig: " + error.message });
+    }
+  });
+
+  // Client Tasks management
+  app.get("/api/clients/:clientId/tasks", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const { clientId } = req.params;
+      const tasks = await storage.getClientTasksByClient(clientId);
+      res.json(tasks);
+    } catch (error: any) {
+      res.status(500).json({ message: "Feil ved henting av klientoppgaver: " + error.message });
+    }
+  });
+
+  app.post("/api/clients/:clientId/tasks", authenticateToken, requireRole(["admin", "oppdragsansvarlig", "regnskapsfører"]), async (req: AuthRequest, res) => {
+    try {
+      const { clientId } = req.params;
+      const taskData = insertClientTaskSchema.parse({
+        ...req.body,
+        clientId,
+        tenantId: req.user!.tenantId,
+      });
+      
+      const task = await storage.createClientTask(taskData);
+      res.status(201).json(task);
+    } catch (error: any) {
+      res.status(400).json({ message: "Feil ved opprettelse av klientoppgave: " + error.message });
+    }
+  });
+
+  app.put("/api/clients/tasks/:id", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const { id } = req.params;
+      const task = await storage.updateClientTask(id, req.body);
+      res.json(task);
+    } catch (error: any) {
+      res.status(400).json({ message: "Feil ved oppdatering av klientoppgave: " + error.message });
+    }
+  });
+
+  app.delete("/api/clients/tasks/:id", authenticateToken, requireRole(["admin", "oppdragsansvarlig"]), async (req: AuthRequest, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteClientTask(id);
+      res.sendStatus(204);
+    } catch (error: any) {
+      res.status(400).json({ message: "Feil ved sletting av klientoppgave: " + error.message });
+    }
+  });
+
   // Time tracking
   app.get("/api/time-entries", authenticateToken, async (req: AuthRequest, res) => {
     try {
@@ -236,6 +320,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(entry);
     } catch (error: any) {
       res.status(400).json({ message: "Feil ved registrering av timer: " + error.message });
+    }
+  });
+
+  app.put("/api/time-entries/:id", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const { id } = req.params;
+      const entry = await storage.updateTimeEntry(id, req.body);
+      res.json(entry);
+    } catch (error: any) {
+      res.status(400).json({ message: "Feil ved oppdatering av timeføring: " + error.message });
+    }
+  });
+
+  app.delete("/api/time-entries/:id", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteTimeEntry(id);
+      res.sendStatus(204);
+    } catch (error: any) {
+      res.status(400).json({ message: "Feil ved sletting av timeføring: " + error.message });
+    }
+  });
+
+  // Time reporting routes
+  app.get("/api/reports/time", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const { startDate, endDate, clientId, userId, taskId } = req.query;
+      let entries;
+
+      if (clientId) {
+        entries = await storage.getTimeEntriesByClient(
+          clientId as string,
+          startDate ? new Date(startDate as string) : undefined,
+          endDate ? new Date(endDate as string) : undefined
+        );
+      } else if (userId) {
+        entries = await storage.getTimeEntriesByUser(
+          userId as string,
+          startDate ? new Date(startDate as string) : undefined,
+          endDate ? new Date(endDate as string) : undefined
+        );
+      } else {
+        entries = await storage.getTimeEntriesByTenant(
+          req.user!.tenantId,
+          startDate ? new Date(startDate as string) : undefined,
+          endDate ? new Date(endDate as string) : undefined
+        );
+      }
+      
+      res.json(entries);
+    } catch (error: any) {
+      res.status(500).json({ message: "Feil ved henting av timerapport: " + error.message });
     }
   });
 

@@ -50,13 +50,40 @@ export const clients = pgTable("clients", {
   address: text("address"),
   contactPerson: text("contact_person"),
   amlStatus: text("aml_status").default("pending"), // pending, approved, rejected
+  accountingSystem: text("accounting_system"), // Fiken, Tripletex, Unimicro, PowerOffice, Conta, Annet
+  accountingSystemUrl: text("accounting_system_url"), // Custom URL for "Annet"
   notes: text("notes"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Tasks
+// Client Responsibles (many-to-many)
+export const clientResponsibles = pgTable("client_responsibles", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  clientId: uuid("client_id").notNull(),
+  userId: uuid("user_id").notNull(),
+  tenantId: uuid("tenant_id").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Client Tasks (enhanced task system)
+export const clientTasks = pgTable("client_tasks", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  clientId: uuid("client_id").notNull(),
+  tenantId: uuid("tenant_id").notNull(),
+  taskName: text("task_name").notNull(), // From standard list or custom
+  taskType: text("task_type").notNull(), // "standard" or "custom"
+  description: text("description"),
+  dueDate: timestamp("due_date"),
+  repeatInterval: text("repeat_interval"), // daglig, ukentlig, månedlig, årlig
+  status: text("status").default("ikke_startet"), // ikke_startet, pågår, ferdig
+  assignedTo: uuid("assigned_to"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Tasks (existing system)
 export const tasks = pgTable("tasks", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").notNull(),
@@ -72,18 +99,20 @@ export const tasks = pgTable("tasks", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Time tracking
+// Time tracking (enhanced)
 export const timeEntries = pgTable("time_entries", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").notNull(),
   userId: uuid("user_id").notNull(),
-  clientId: uuid("client_id"),
-  taskId: uuid("task_id"),
-  description: text("description"),
-  hours: decimal("hours", { precision: 5, scale: 2 }).notNull(),
+  clientId: uuid("client_id").notNull(),
+  taskId: uuid("task_id"), // Can be from tasks or clientTasks
+  taskType: text("task_type"), // "task" or "client_task"
+  description: text("description").notNull(),
+  timeSpent: decimal("time_spent", { precision: 5, scale: 2 }).notNull(), // in hours
   date: timestamp("date").notNull(),
   billable: boolean("billable").default(true),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Documents/Bilag
@@ -331,8 +360,32 @@ export const clientsRelations = relations(clients, ({ one, many }) => ({
     references: [tenants.id],
   }),
   tasks: many(tasks),
+  clientTasks: many(clientTasks),
+  responsibles: many(clientResponsibles),
   documents: many(documents),
   timeEntries: many(timeEntries),
+}));
+
+export const clientTasksRelations = relations(clientTasks, ({ one }) => ({
+  client: one(clients, {
+    fields: [clientTasks.clientId],
+    references: [clients.id],
+  }),
+  assignedUser: one(users, {
+    fields: [clientTasks.assignedTo],
+    references: [users.id],
+  }),
+}));
+
+export const clientResponsiblesRelations = relations(clientResponsibles, ({ one }) => ({
+  client: one(clients, {
+    fields: [clientResponsibles.clientId],
+    references: [clients.id],
+  }),
+  user: one(users, {
+    fields: [clientResponsibles.userId],
+    references: [users.id],
+  }),
 }));
 
 export const tasksRelations = relations(tasks, ({ one }) => ({
@@ -423,9 +476,21 @@ export const insertTaskSchema = createInsertSchema(tasks).omit({
   updatedAt: true,
 });
 
+export const insertClientTaskSchema = createInsertSchema(clientTasks).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertClientResponsibleSchema = createInsertSchema(clientResponsibles).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertTimeEntrySchema = createInsertSchema(timeEntries).omit({
   id: true,
   createdAt: true,
+  updatedAt: true,
 });
 
 export const insertDocumentSchema = createInsertSchema(documents).omit({
