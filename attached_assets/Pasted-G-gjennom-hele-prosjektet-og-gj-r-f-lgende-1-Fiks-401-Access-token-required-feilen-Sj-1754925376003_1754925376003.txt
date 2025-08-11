@@ -1,0 +1,36 @@
+Gå gjennom hele prosjektet og gjør følgende:
+
+1. Fiks "401 Access token required"-feilen:
+   - Sjekk alle API-kall i frontend (fetch/Axios) og bekreft at Authorization-header settes som:
+     Authorization: Bearer <token>
+     hvor token hentes fra riktig lagringsplass (localStorage, sessionStorage eller auth context).
+   - Hvis token mangler etter login, oppdater login-flyten til å lagre token riktig.
+   - Sørg for at logout fjerner token.
+   - Test at oppretting av ny klient nå fungerer når man er innlogget.
+
+2. Verifiser og fullfør følgende funksjoner (som vi har diskutert i denne tråden):
+   - Automatisk henting av klientdata fra Brønnøysund når orgnr legges inn.
+   - Modulære integrasjoner med Fiken, Tripletex, Unimicro, PowerOffice, Conta (+ mulighet for flere senere).
+   - AML/KYC-modul med dokumentopplasting og lagring per klient.
+   - Regnskap Norge sjekklister per klient, med mulighet for automatisk utfylling.
+   - Oppdragsansvarlig(e) per klient (kobling til ansatte).
+   - Oppgaver per klient:
+       - Standardliste: Bokføring, MVA, Lønn, Bankavstemming, Kontoavstemming
+       - "Annet" med fritekst
+       - Fristdato, gjentakende intervall, status, tildeling til ansatte
+   - Timeføringsmodul:
+       - Modal som åpnes når man bytter/forlater klient
+       - Felter: client_id, user_id, task_id (valgfritt), beskrivelse, timer, dato
+       - Redigerbare timer i etterkant
+   - Rapportering:
+       - Timer per klient, ansatt, oppgave
+       - Filtre (dato, klient, ansatt, oppgave)
+       - Eksport til Excel/PDF
+   - På klientkort: valg av regnskapssystem med automatisk knapp/lenke til riktig offisielle nettside (Fiken, Tripletex, Unimicro, PowerOffice, Conta, eller egendefinert URL).
+
+3. Kjør hele appen og bekreft:
+   - Ingen build-feil (inkl. lazy-importer)
+   - Preview fungerer i Replit
+   - Alle funksjonene over er tilgjengelige og virker som beskrevet
+
+Ikke fjern eksisterende kode – utvid eller fiks kun der det er nødvendig.
