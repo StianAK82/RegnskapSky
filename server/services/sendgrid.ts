@@ -1,11 +1,20 @@
 import { MailService } from '@sendgrid/mail';
 
+// Check if SendGrid is properly configured, log warning but don't crash server
+const isSendGridConfigured = process.env.SENDGRID_API_KEY && process.env.SENDGRID_API_KEY.startsWith('SG.');
+
 if (!process.env.SENDGRID_API_KEY) {
-  throw new Error("SENDGRID_API_KEY environment variable must be set");
+  console.warn("SENDGRID_API_KEY environment variable not set. Email sending will be disabled.");
+} else if (!process.env.SENDGRID_API_KEY.startsWith('SG.')) {
+  console.warn('API key does not start with "SG.". Email sending will be disabled.');
 }
 
-const mailService = new MailService();
-mailService.setApiKey(process.env.SENDGRID_API_KEY);
+let mailService: MailService | null = null;
+
+if (isSendGridConfigured) {
+  mailService = new MailService();
+  mailService.setApiKey(process.env.SENDGRID_API_KEY!);
+}
 
 interface EmailParams {
   to: string;
@@ -16,6 +25,11 @@ interface EmailParams {
 }
 
 export async function sendEmail(params: EmailParams): Promise<boolean> {
+  if (!isSendGridConfigured || !mailService) {
+    console.log('SendGrid not configured, skipping email send to:', params.to);
+    return false;
+  }
+
   try {
     await mailService.send({
       to: params.to,
@@ -37,6 +51,11 @@ export async function sendTaskNotification(
   dueDate: Date,
   isOverdue: boolean = false
 ): Promise<boolean> {
+  if (!isSendGridConfigured) {
+    console.log('SendGrid not configured, skipping task notification email to:', userEmail);
+    return false;
+  }
+
   const subject = isOverdue 
     ? `Forfall: ${taskTitle}` 
     : `Påminnelse: ${taskTitle}`;
@@ -66,6 +85,11 @@ export async function sendTaskNotification(
 }
 
 export async function sendWelcomeEmail(userEmail: string, userName: string, tenantName: string): Promise<boolean> {
+  if (!isSendGridConfigured) {
+    console.log('SendGrid not configured, skipping welcome email to:', userEmail);
+    return false;
+  }
+
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h2 style="color: #2563EB;">Velkommen til RegnskapsAI!</h2>
@@ -96,6 +120,11 @@ export async function sendSubscriptionNotification(
   tenantName: string, 
   expiryDate: Date
 ): Promise<boolean> {
+  if (!isSendGridConfigured) {
+    console.log('SendGrid not configured, skipping subscription notification email to:', userEmail);
+    return false;
+  }
+
   const daysUntilExpiry = Math.ceil((expiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
   
   const html = `
