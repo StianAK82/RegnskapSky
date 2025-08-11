@@ -1,0 +1,62 @@
+I want you to update my project with the following requirements:
+
+1. **Fix the "accounting_system does not exist" error**:
+   - Create a database migration for the `clients` table that adds the following columns:
+     - `accounting_system` (TEXT)
+     - `kyc_status` (TEXT)
+     - `aml_documents` (JSONB)
+     - `tasks` (JSONB)
+     - `responsible_person_id` (UUID)
+     - `recurring_tasks` (JSONB)
+     - `hourly_report_notes` (TEXT)
+     - `checklist_status` (TEXT)
+
+2. **Update the shared schema** (`shared/schema.ts`) to include these new fields in the `clients` definition so backend and frontend can use them.
+
+3. **Update the "New Client" form in frontend**:
+   - Add dropdown for `accounting_system` with options: `Fiken`, `Tripletex`, `Unimicro`, `PowerOffice`, `Conta`, `Other`.
+   - Add dropdown for `kyc_status` with options: `Pending`, `Approved`, `Rejected`.
+   - Add file upload for `aml_documents`.
+   - Add multi-select or checklist for `tasks` with predefined options: `Bokføring`, `MVA`, `Lønn`, `Bankavstemming`, `Kontoavstemming` + free-text option.
+   - Add dropdown or search to select `responsible_person_id` from employees.
+   - Add a repeater field for `recurring_tasks` with task name + frequency + due date.
+   - Add text area for `hourly_report_notes`.
+   - Add dropdown for `checklist_status` with options: `Not Started`, `In Progress`, `Completed`.
+
+4. **When a user selects an accounting system**, redirect them to the correct external login/setup page:
+   - `Fiken`: `https://fiken.no`
+   - `Tripletex`: `https://tripletex.no`
+   - `Unimicro`: `https://unimicro.no`
+   - `PowerOffice`: `https://poweroffice.no`
+   - `Conta`: `https://conta.no`
+
+5. **Integrate Brønnøysund API**:
+   - When a user enters an organization number in the "New Client" form, automatically fetch and fill out:
+     - Company name
+     - Address
+     - Postcode
+     - City
+     - Municipality
+     - NACE industry code
+   - Use the `openapi.json` file I have already uploaded for API structure.
+   - Show an error if the org number is invalid.
+
+6. **Activate AI Assistant**:
+   - Make sure the AI Assistant page is functional and connected to my backend.
+   - AI should be able to answer accounting-related questions and analyze documents.
+
+7. **User role handling**:
+   - Add role-based dashboard:
+     - **Admin**: Can see all employees, number of tasks per employee, reassign tasks, see total time per client.
+     - **Employee**: Can see only their own tasks and time reports.
+
+8. **Fix any broken integration buttons** in the Integrations page so they open their respective setup modals or redirect links.
+
+After making all these changes:
+- Run the migration so the database schema is updated.
+- Test that creating a new client works without errors.
+- Test Brønnøysund data fetching.
+- Test AI Assistant functionality.
+- Test role-based dashboard features.
+
+Make sure no existing functionality is removed — only add and fix as described.

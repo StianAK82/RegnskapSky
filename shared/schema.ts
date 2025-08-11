@@ -54,6 +54,12 @@ export const clients = pgTable("clients", {
   accountingSystemUrl: text("accounting_system_url"), // Custom URL for "Annet"
   notes: text("notes"),
   kycStatus: text("kyc_status").default("pending"), // pending, verified, rejected, expired
+  amlDocuments: jsonb("aml_documents"), // AML document uploads
+  tasks: jsonb("tasks"), // Client task assignments
+  responsiblePersonId: uuid("responsible_person_id"), // Assigned responsible person
+  recurringTasks: jsonb("recurring_tasks"), // Recurring task templates
+  hourlyReportNotes: text("hourly_report_notes"), // Notes for hourly reports
+  checklistStatus: text("checklist_status"), // Status of client checklist
   lastBackupDate: timestamp("last_backup_date"),
   calendarIntegration: jsonb("calendar_integration"), // Google Calendar, Outlook
   emailIntegration: jsonb("email_integration"), // Email reminder settings
