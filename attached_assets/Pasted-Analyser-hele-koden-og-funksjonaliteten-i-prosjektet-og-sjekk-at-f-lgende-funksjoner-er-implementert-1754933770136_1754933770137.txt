@@ -1,0 +1,54 @@
+Analyser hele koden og funksjonaliteten i prosjektet og sjekk at følgende funksjoner er implementert og fungerer som beskrevet. Hvis noe mangler, skriv ut en detaljert liste over hva som mangler og hvordan det skal implementeres. Sørg for at all funksjonalitet er migrert riktig i database og frontend. Pass på at feltnavn, API-integrasjoner og UI-flyt fungerer uten feil.
+
+1. Klienthåndtering (CRM)
+- Opprette, redigere og slette klienter.
+- To-trinns registrering:
+  Trinn 1: Bruker legger inn selskapsnavn og organisasjonsnummer → systemet henter automatisk opplysninger fra Brønnøysund API (org form, adresse, e-post, telefon, postnummer, poststed).
+  Trinn 2: Velg AML-status, oppgaver med intervall, regnskapssystem og legg til oppdragsansvarlig (fra ansatte-listen).
+- Automatisk utfylling av firmanavn, organisasjonsnummer, adresse, postnummer, poststed, e-post, telefon, næringskode.
+- Mulighet for å legge inn notater på klientkortet.
+- Mulighet for å legge til ny ansatt (navn, tittel, e-post).
+
+2. Oppgavehåndtering
+- Standardoppgaver: Bokføring, MVA, Lønn, Bankavstemming, Kontoavstemming.
+- Mulighet for egendefinerte oppgaver (fri tekst).
+- Oppgaveintervaller: Ukentlig, Månedlig, Annenhver måned, Årlig, Spesifikk dato.
+- Forhåndsdefinerte spesialoppgaver med faste frister:
+  - Aksjonærregisteroppgave (desember hvert år)
+  - Skattemelding (31. mai hvert år)
+  - Årsoppgjør (31. juli hvert år)
+
+3. Timeføring
+- Når bruker bytter klient eller logger ut, må timer registreres (antall timer, hvem som jobbet, beskrivelse).
+- Samlerapport: timer per ansatt, timer per klient, oppgaver utført.
+
+4. AML/KYC og hvitvasking
+- AML-status per klient.
+- KYC-sjekklister på klientkort.
+- Mulighet for opplasting eller avkryssing av gjennomførte kontroller.
+
+5. Brukerroller
+- Admin: kan se total oversikt, fordele oppgaver, se belastning på ansatte.
+- Ansatt: kan kun se egne oppgaver og registrere timer.
+
+6. Regnskapssystem-integrasjoner
+- Valg av system per klient (Fiken, Tripletex, PowerOffice, Visma, Uni Micro).
+- Direkte link til valgt system.
+
+7. AI-assistent
+- Aktivert og tilgjengelig for bruk.
+- Skal kunne foreslå oppgaver, datoer og forbedringer.
+
+8. Integrasjoner
+- Brønnøysund API fungerer og returnerer korrekt data.
+- Fremtidig støtte for e-post, kalender, dokumentdeling.
+
+9. Sjekklister
+- Sjekklister per klient med statusvisning.
+
+10. Systemadministrasjon
+- Legge til ansatte (navn, tittel, e-post).
+- Legge til oppdragsansvarlig på klient.
+- Database migrert med nødvendige felter: accounting_system, interval, responsiblePersonId.
+
+Etter analysen: Lag en sjekkliste over hva som fungerer, hva som mangler, og konkrete kodelinjer eller filstier som må endres. 

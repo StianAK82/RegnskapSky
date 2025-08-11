@@ -11,6 +11,7 @@ export function Sidebar() {
     { name: 'Klienter', href: '/clients', icon: 'fas fa-users', roles: ['admin', 'oppdragsansvarlig', 'regnskapsfører', 'intern'] },
     { name: 'Ansatte', href: '/employees', icon: 'fas fa-user-tie', roles: ['admin', 'oppdragsansvarlig'] },
     { name: 'Oppgaver', href: '/tasks', icon: 'fas fa-tasks', roles: ['admin', 'oppdragsansvarlig', 'regnskapsfører', 'intern'] },
+    { name: 'Rapporter', href: '/reports', icon: 'fas fa-chart-bar', roles: ['admin', 'oppdragsansvarlig', 'regnskapsfører'] },
     { name: 'Timeføring', href: '/timetracking', icon: 'fas fa-clock', roles: ['admin', 'oppdragsansvarlig', 'regnskapsfører', 'intern'] },
     { name: 'Dokumenter', href: '/documents', icon: 'fas fa-file-invoice', roles: ['admin', 'oppdragsansvarlig', 'regnskapsfører'] },
     { name: 'AI-Assistent', href: '/ai-assistant', icon: 'fas fa-robot', roles: ['admin', 'oppdragsansvarlig', 'regnskapsfører', 'intern'] },

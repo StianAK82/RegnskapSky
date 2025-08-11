@@ -15,6 +15,7 @@ import ClientDetail from "@/pages/client-detail";
 import Employees from "@/pages/employees";
 import Tasks from "@/pages/tasks";
 import AIAssistant from "@/pages/ai-assistant";
+import Reports from "@/pages/reports";
 import Subscriptions from "@/pages/subscriptions";
 import NotFound from "@/pages/not-found";
 
@@ -80,6 +81,15 @@ function AuthenticatedRoutes() {
         component={() => (
           <ProtectedRoute allowedRoles={['admin', 'oppdragsansvarlig', 'regnskapsfører', 'intern']}>
             <AIAssistant />
+          </ProtectedRoute>
+        )} 
+      />
+      
+      <Route 
+        path="/reports" 
+        component={() => (
+          <ProtectedRoute allowedRoles={['admin', 'oppdragsansvarlig', 'regnskapsfører']}>
+            <Reports />
           </ProtectedRoute>
         )} 
       />

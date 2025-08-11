@@ -513,6 +513,109 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Time report export
+  app.get("/api/reports/time/export", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const { startDate, endDate, clientId, userId, format = 'excel' } = req.query;
+      
+      // Get time entries with same logic as above
+      let entries;
+      if (clientId) {
+        entries = await storage.getTimeEntriesByClient(
+          clientId as string,
+          startDate ? new Date(startDate as string) : undefined,
+          endDate ? new Date(endDate as string) : undefined
+        );
+      } else if (userId) {
+        entries = await storage.getTimeEntriesByUser(
+          userId as string,
+          startDate ? new Date(startDate as string) : undefined,
+          endDate ? new Date(endDate as string) : undefined
+        );
+      } else {
+        entries = await storage.getTimeEntriesByTenant(
+          req.user!.tenantId,
+          startDate ? new Date(startDate as string) : undefined,
+          endDate ? new Date(endDate as string) : undefined
+        );
+      }
+
+      if (format === 'excel') {
+        // Simple CSV export (can be opened in Excel)
+        const csvData = [
+          ['Dato', 'Ansatt', 'Klient', 'Beskrivelse', 'Timer', 'Fakturerbar'],
+          ...entries.map((entry: any) => [
+            new Date(entry.date).toLocaleDateString('no-NO'),
+            entry.user ? `${entry.user.firstName} ${entry.user.lastName}` : 'Ukjent',
+            entry.client?.name || 'Ukjent',
+            entry.description || '',
+            entry.timeSpent.toString(),
+            entry.billable ? 'Ja' : 'Nei'
+          ])
+        ].map(row => row.join(';')).join('\n');
+
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename="timerapport_${startDate}_${endDate}.csv"`);
+        res.send('\uFEFF' + csvData); // BOM for Norwegian characters
+      } else if (format === 'pdf') {
+        // Simple HTML report that can be printed as PDF
+        const htmlReport = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <title>Timerapport</title>
+            <style>
+              body { font-family: Arial, sans-serif; margin: 20px; }
+              table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+              th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+              th { background-color: #f2f2f2; }
+              .header { margin-bottom: 20px; }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <h1>Timerapport</h1>
+              <p>Periode: ${startDate} - ${endDate}</p>
+              <p>Totalt timer: ${entries.reduce((sum: number, e: any) => sum + e.timeSpent, 0).toFixed(1)}</p>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Dato</th>
+                  <th>Ansatt</th>
+                  <th>Klient</th>
+                  <th>Beskrivelse</th>
+                  <th>Timer</th>
+                  <th>Fakturerbar</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${entries.map((entry: any) => `
+                  <tr>
+                    <td>${new Date(entry.date).toLocaleDateString('no-NO')}</td>
+                    <td>${entry.user ? `${entry.user.firstName} ${entry.user.lastName}` : 'Ukjent'}</td>
+                    <td>${entry.client?.name || 'Ukjent'}</td>
+                    <td>${entry.description || ''}</td>
+                    <td>${entry.timeSpent.toFixed(1)}</td>
+                    <td>${entry.billable ? 'Ja' : 'Nei'}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </body>
+          </html>
+        `;
+
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename="timerapport_${startDate}_${endDate}.html"`);
+        res.send(htmlReport);
+      }
+    } catch (error: any) {
+      res.status(500).json({ message: "Feil ved eksport av timerapport: " + error.message });
+    }
+  });
+
   // Document management
   app.get("/api/documents/client/:clientId", authenticateToken, async (req: AuthRequest, res) => {
     try {
