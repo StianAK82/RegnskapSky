@@ -132,29 +132,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/clients", authenticateToken, requireRole(["admin", "oppdragsansvarlig"]), async (req: AuthRequest, res) => {
     try {
+      // Validate client data
       const clientData = insertClientSchema.parse({
         ...req.body,
         tenantId: req.user!.tenantId,
       });
+
+      // Ensure companyName is set (from name field)
+      if (!clientData.name) {
+        return res.status(400).json({ message: "Firmanavn er påkrevd" });
+      }
+
+      // Validate responsible person ID if provided
+      if (clientData.responsiblePersonId) {
+        const employee = await storage.getEmployee(clientData.responsiblePersonId);
+        if (!employee || employee.tenantId !== req.user!.tenantId) {
+          return res.status(400).json({ message: "Ugyldig ansvarlig person ID" });
+        }
+      }
       
       const client = await storage.createClient(clientData);
       
-      // Create default standard tasks for the new client
+      // Create default standard tasks for the new client with specific dates
+      const currentYear = new Date().getFullYear();
       const defaultTasks = [
         { 
           name: "Aksjonærregisteroppgave", 
-          interval: "yearly", 
-          dueDate: new Date(new Date().getFullYear(), 11, 1) // December 1st
+          interval: "specific_date", 
+          dueDate: new Date(currentYear, 11, 1) // December 1st current year
         },
         { 
           name: "Skattemelding", 
-          interval: "yearly", 
-          dueDate: new Date(new Date().getFullYear() + 1, 4, 31) // May 31st next year
+          interval: "specific_date", 
+          dueDate: new Date(currentYear + 1, 4, 31) // May 31st next year
         },
         { 
           name: "Årsoppgjør", 
-          interval: "yearly", 
-          dueDate: new Date(new Date().getFullYear() + 1, 6, 31) // July 31st next year
+          interval: "specific_date", 
+          dueDate: new Date(currentYear + 1, 6, 31) // July 31st next year
         }
       ];
       
@@ -172,6 +187,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.status(201).json(client);
     } catch (error: any) {
+      console.error('Client creation error:', error);
       res.status(400).json({ message: "Feil ved opprettelse av klient: " + error.message });
     }
   });
@@ -244,20 +260,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { orgNumber } = req.params;
       
-      if (!bronnoyundService.validateOrgNumber(orgNumber)) {
-        return res.status(400).json({ message: "Ugyldig organisasjonsnummer" });
+      // Validate organization number
+      if (!orgNumber || !/^\d{9}$/.test(orgNumber.replace(/\s/g, ''))) {
+        return res.status(400).json({ 
+          message: "Ugyldig organisasjonsnummer. Må være 9 siffer." 
+        });
       }
+
+      const { bronnoyundService } = await import("./services/bronnoyund");
       
+      // Fetch company data from Brønnøysund
       const companyData = await bronnoyundService.getCompanyData(orgNumber);
-      
       if (!companyData) {
-        return res.status(404).json({ message: "Selskap ikke funnet" });
+        return res.status(404).json({ 
+          message: "Fant ikke selskap med dette organisasjonsnummeret" 
+        });
       }
-      
+
+      // Transform and return the data
       const transformedData = bronnoyundService.transformCompanyData(companyData);
       res.json(transformedData);
     } catch (error: any) {
-      res.status(500).json({ message: "Feil ved henting av selskapsdata: " + error.message });
+      console.error('Brønnøysund API error:', error);
+      res.status(500).json({ 
+        message: "Feil ved henting av selskapsdata: " + error.message 
+      });
     }
   });
 
@@ -855,6 +882,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to fetch AML checks" });
     }
   });
+
+
 
   // Document upload for AML/KYC
   app.post("/api/clients/:clientId/aml-documents", requireAuth, async (req: AuthRequest, res) => {

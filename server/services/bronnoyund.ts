@@ -54,6 +54,7 @@ export interface TransformedCompanyData {
   businessAddress?: string;
   postalAddress?: string;
   postalCode?: string;
+  city?: string;
   municipality?: string;
   businessCode?: string;
   businessDescription?: string;
@@ -148,13 +149,10 @@ class BronnoyundService {
       name: companyData.name,
       organizationalForm: companyData.organisationalForm.description,
       registrationDate: companyData.registrationDate,
-      businessAddress: businessAddress ? 
-        `${businessAddress.address}, ${businessAddress.postalCode} ${businessAddress.postalArea}` : 
-        undefined,
-      postalAddress: postalAddress ? 
-        `${postalAddress.address}, ${postalAddress.postalCode} ${postalAddress.postalArea}` : 
-        undefined,
-      postalCode: businessAddress?.postalCode || postalAddress?.postalCode,
+      businessAddress: businessAddress?.address,
+      postalAddress: postalAddress?.address || businessAddress?.address,
+      postalCode: postalAddress?.postalCode || businessAddress?.postalCode,
+      city: postalAddress?.postalArea || businessAddress?.postalArea,
       municipality: businessAddress?.municipality,
       businessCode: companyData.businessCode?.code,
       businessDescription: companyData.businessCode?.description,

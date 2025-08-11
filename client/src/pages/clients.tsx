@@ -126,9 +126,13 @@ export default function Clients() {
       
       if (response.ok) {
         setCompanyData(data);
-        // Auto-fill form fields
+        // Auto-fill form fields with comprehensive Brønnøysund data
         form.setValue('name', data.name || '');
+        form.setValue('orgNumber', data.orgNumber || '');
         form.setValue('address', data.businessAddress || '');
+        form.setValue('postalAddress', data.postalAddress || '');
+        form.setValue('postalCode', data.postalCode || '');
+        form.setValue('city', data.city || '');
         
         toast({
           title: 'Selskapsdata hentet',
@@ -238,6 +242,9 @@ export default function Clients() {
       email: client.email || '',
       phone: client.phone || '',
       address: client.address || '',
+      postalAddress: client.postalAddress || '',
+      postalCode: client.postalCode || '',
+      city: client.city || '',
       contactPerson: client.contactPerson || '',
       amlStatus: client.amlStatus,
       accountingSystem: client.accountingSystem || '',
@@ -268,6 +275,9 @@ export default function Clients() {
       email: '',
       phone: '',
       address: '',
+      postalAddress: '',
+      postalCode: '',
+      city: '',
       contactPerson: '',
       amlStatus: 'pending',
       accountingSystem: '',

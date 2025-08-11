@@ -66,19 +66,19 @@ export const clients = pgTable("clients", {
   orgNumber: text("org_number"),
   address: text("address"),
   postalAddress: text("postal_address"), // Full postal address from Brønnøysund
-  postcode: text("postcode"),
+  postalCode: text("postal_code"),
   city: text("city"),
   municipality: text("municipality"),
   phone: text("phone"),
   email: text("email"),
   contactPerson: text("contact_person"),
   // Step 2 - Engagement & Settings
+  accountingSystem: text("accounting_system"), // Fiken, Tripletex, Unimicro, PowerOffice, Conta, Andre
+  accountingSystemUrl: text("accounting_system_url"), // Custom URL for "Other"
+  responsiblePersonId: uuid("responsible_person_id"), // References employees.id
   amlStatus: text("aml_status").default("pending"), // pending, approved, rejected
   kycStatus: text("kyc_status").default("pending"), // pending, approved, rejected
   tasks: jsonb("tasks"), // Multi-select task list
-  accountingSystem: text("accounting_system"), // Fiken, Tripletex, Unimicro, PowerOffice, Conta, Other
-  accountingSystemUrl: text("accounting_system_url"), // Custom URL for "Other"
-  responsiblePersonId: uuid("responsible_person_id"), // From employees table
   checklists: jsonb("checklists"), // Regnskap Norge checklists
   // Legacy/Additional fields
   notes: text("notes"),
@@ -535,6 +535,12 @@ export const insertClientSchema = createInsertSchema(clients).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  postalCode: z.string().optional(),
+  postalAddress: z.string().optional(),
+  city: z.string().optional(),
+  accountingSystem: z.string().optional(),
+  responsiblePersonId: z.string().uuid().optional(),
 });
 
 export const insertClientTaskSchema = createInsertSchema(clientTasks).omit({

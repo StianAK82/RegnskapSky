@@ -319,6 +319,20 @@ export class DatabaseStorage implements IStorage {
     await db.delete(clientTasks).where(eq(clientTasks.id, id));
   }
 
+  // Client Responsible methods
+  async getClientResponsiblesByClient(clientId: string): Promise<any[]> {
+    return await db.select().from(clientResponsibles).where(eq(clientResponsibles.clientId, clientId));
+  }
+
+  async createClientResponsible(data: any): Promise<any> {
+    const [created] = await db.insert(clientResponsibles).values(data).returning();
+    return created;
+  }
+
+  async getClientResponsibles(tenantId: string): Promise<any[]> {
+    return await db.select().from(clientResponsibles).where(eq(clientResponsibles.tenantId, tenantId));
+  }
+
   async deleteClientResponsible(id: string): Promise<void> {
     await db.delete(clientResponsibles).where(eq(clientResponsibles.id, id));
   }
