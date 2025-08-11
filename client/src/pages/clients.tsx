@@ -63,7 +63,7 @@ const clientSchema = z.object({
   kycStatus: z.enum(['pending', 'approved', 'rejected']).default('pending'),
   amlDocuments: z.any().optional(),
   tasks: z.array(z.string()).optional(),
-  responsiblePersonId: z.string().optional(),
+  responsiblePersonId: z.string().transform(val => val === "" ? undefined : val).pipe(z.string().uuid().optional()),
   recurringTasks: z.any().optional(),
   hourlyReportNotes: z.string().optional(),
   checklistStatus: z.string().optional(),
@@ -230,7 +230,7 @@ export default function Clients() {
       kycStatus: 'pending',
       amlDocuments: undefined,
       tasks: [],
-      responsiblePersonId: '',
+      responsiblePersonId: undefined,
       recurringTasks: undefined,
       hourlyReportNotes: '',
       checklistStatus: '',
@@ -239,10 +239,16 @@ export default function Clients() {
   });
 
   const onSubmit = (data: ClientFormData) => {
+    // Transform empty string to undefined for responsiblePersonId
+    const cleanedData = {
+      ...data,
+      responsiblePersonId: data.responsiblePersonId === '' ? undefined : data.responsiblePersonId
+    };
+    
     if (editingClient) {
-      updateMutation.mutate({ id: editingClient.id, data });
+      updateMutation.mutate({ id: editingClient.id, data: cleanedData });
     } else {
-      createMutation.mutate(data);
+      createMutation.mutate(cleanedData);
     }
   };
 
@@ -264,7 +270,7 @@ export default function Clients() {
       kycStatus: client.kycStatus || 'pending',
       amlDocuments: client.amlDocuments,
       tasks: client.tasks || [],
-      responsiblePersonId: client.responsiblePersonId || '',
+      responsiblePersonId: client.responsiblePersonId || undefined,
       recurringTasks: client.recurringTasks,
       hourlyReportNotes: client.hourlyReportNotes || '',
       checklistStatus: client.checklistStatus || '',
@@ -297,7 +303,7 @@ export default function Clients() {
       kycStatus: 'pending',
       amlDocuments: undefined,
       tasks: [],
-      responsiblePersonId: '',
+      responsiblePersonId: undefined,
       recurringTasks: undefined,
       hourlyReportNotes: '',
       checklistStatus: '',
@@ -666,31 +672,48 @@ export default function Clients() {
                         {/* Responsible Person Selection */}
                         <div className="space-y-4">
                           <h4 className="font-medium text-gray-900">Ansvarlig person</h4>
-                          <FormField
-                            control={form.control}
-                            name="responsiblePersonId"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Velg ansvarlig ansatt</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}>
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Velg ansvarlig ansatt" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    {employees.map((employee: any) => (
-                                      <SelectItem key={employee.id} value={employee.id}>
-                                        {employee.firstName} {employee.lastName}
-                                        {employee.position && ` - ${employee.position}`}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
+                          {employees.length === 0 ? (
+                            <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
+                              <div className="flex">
+                                <div className="ml-3">
+                                  <h3 className="text-sm font-medium text-yellow-800">
+                                    Ingen ansatte registrert
+                                  </h3>
+                                  <div className="mt-2 text-sm text-yellow-700">
+                                    <p>Du må opprette minst en ansatt før du kan registrere en klient.</p>
+                                    <p className="mt-1">Gå til Ansatte-siden for å registrere en ansatt først.</p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            <FormField
+                              control={form.control}
+                              name="responsiblePersonId"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Velg ansvarlig ansatt</FormLabel>
+                                  <Select onValueChange={field.onChange} value={field.value || ''}>
+                                    <FormControl>
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Velg ansvarlig ansatt" />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                      <SelectItem value="">Ingen ansvarlig valgt</SelectItem>
+                                      {employees.map((employee: any) => (
+                                        <SelectItem key={employee.id} value={employee.id}>
+                                          {employee.firstName} {employee.lastName}
+                                          {employee.position && ` - ${employee.position}`}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          )}
                         </div>
 
                         {/* Basic Info (readonly in step 2) */}

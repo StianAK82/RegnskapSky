@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,8 +17,11 @@ import {
 interface DashboardMetrics {
   totalClients: number;
   activeTasks: number;
-  completedThisWeek: number;
-  pendingApprovals: number;
+  overdueTasks: number;
+  weeklyHours: number;
+  documentsProcessed: number;
+  completedThisWeek?: number;
+  pendingApprovals?: number;
 }
 
 export default function Dashboard() {
@@ -97,26 +100,26 @@ export default function Dashboard() {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Fullført denne uken</CardTitle>
-                  <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium">Forsinkede Oppgaver</CardTitle>
+                  <AlertTriangle className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{metrics?.completedThisWeek || 0}</div>
+                  <div className="text-2xl font-bold">{metrics?.overdueTasks || 0}</div>
                   <p className="text-xs text-muted-foreground">
-                    Oppgaver fullført
+                    Krever oppmerksomhet
                   </p>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Venter godkjenning</CardTitle>
-                  <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium">Timer denne uken</CardTitle>
+                  <Clock className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{metrics?.pendingApprovals || 0}</div>
+                  <div className="text-2xl font-bold">{metrics?.weeklyHours || 0}</div>
                   <p className="text-xs text-muted-foreground">
-                    Krever oppmerksomhet
+                    Registrerte timer
                   </p>
                 </CardContent>
               </Card>
