@@ -64,6 +64,7 @@ export async function authenticateToken(req: AuthRequest, res: Response, next: N
   }
 }
 
+// Enhanced RBAC: Admin can see everything, Ansatt only assigned clients
 export function requireRole(allowedRoles: string[]) {
   return (req: AuthRequest, res: Response, next: NextFunction) => {
     if (!req.user) {

@@ -41,7 +41,7 @@ function AuthenticatedRoutes() {
       <Route 
         path="/clients" 
         component={() => (
-          <ProtectedRoute allowedRoles={['admin', 'oppdragsansvarlig', 'regnskapsfører', 'intern']}>
+          <ProtectedRoute allowedRoles={['admin', 'ansatt']}>
             <Clients />
           </ProtectedRoute>
         )} 
@@ -50,7 +50,7 @@ function AuthenticatedRoutes() {
       <Route 
         path="/clients/:id" 
         component={() => (
-          <ProtectedRoute allowedRoles={['admin', 'oppdragsansvarlig', 'regnskapsfører', 'intern']}>
+          <ProtectedRoute allowedRoles={['admin', 'ansatt']}>
             <ClientDetail />
           </ProtectedRoute>
         )} 

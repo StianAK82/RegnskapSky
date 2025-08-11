@@ -1,0 +1,57 @@
+Gå gjennom hele prosjektet og implementer følgende oppdateringer uten å fjerne eksisterende funksjonalitet, kun utvide:
+
+1. **Roller og tilgangsnivåer**
+   - Legg til full rollebasert tilgangskontroll (RBAC) med to nivåer: Admin og Ansatt.
+   - Admin skal kunne se alle klienter, fordele og omfordele oppgaver, se total oversikt over timebruk på alle klienter, og administrere API-integrasjoner, AML/KYC-status og rapporter.
+   - Ansatt skal kun se sine tildelte klienter, oppgaver og timeføring.
+
+2. **Klientkort-utvidelser**
+   - På klientkortet, legg til:
+     - Valg av regnskapssystem (Fiken, Tripletex, Unimicro, PowerOffice, Conta, med mulighet til å legge til flere senere).
+     - KYC-status og AML-dokumenter med opplastingsfunksjon.
+     - Liste over oppgaver som skal utføres for klienten, med mulighet for å velge fra predefinert liste (Bokføring, MVA, Lønn, Bankavstemming, Kontoavstemming) eller fri tekst.
+     - Mulighet til å legge til en eller flere oppdragsansvarlige.
+     - Automatisk innhenting av data fra Brønnøysundregistrene basert på organisasjonsnummer (bruk dokumentasjonen i `openapi.json` for å hente navn, adresse, status m.m.).
+
+3. **Oppgave- og tidsstyring**
+   - Opprett et system for oppgaver per klient med fristdato og mulighet for repeterende oppgaver (daglig, ukentlig, månedlig, kvartalsvis).
+   - Timeføringsmodul som automatisk ber bruker registrere timer og beskrivelse av hva som er gjort hver gang man bytter klient eller logger ut fra klient.
+   - Samlerapport som viser antall timer ført per ansatt, oppgaver utført og tidsbruk per klient.
+
+4. **Varslinger**
+   - Legg inn varslingssystem som sender notifikasjoner (i app og via e-post) ved kommende frister, manglende KYC-dokumentasjon eller AML-status som krever handling.
+   - Mulighet for push-varsler (for fremtidig mobilversjon).
+
+5. **Dokumenthåndtering**
+   - Full dokumentopplasting per klient.
+   - Versjonshåndtering og audit trail som logger hvem som lastet opp, endret eller slettet dokumenter.
+
+6. **Dashbord og KPIer for Admin**
+   - Legg til KPI-oversikt for Admin med grafer/tabeller:
+     - Timer per klient
+     - Oppgaver med status
+     - AML/KYC-statusoversikt
+     - Arbeidsfordeling mellom ansatte
+
+7. **Kalender- og e-postintegrasjon**
+   - Integrer oppgaver og frister med Google Calendar og Outlook.
+   - Send automatiske e-postpåminnelser til oppdragsansvarlige.
+
+8. **Mobilvennlighet**
+   - Sørg for at UI er responsivt slik at alle funksjoner fungerer fra mobil og nettbrett.
+
+9. **Backup og eksport**
+   - Implementer daglig backup av klientdata.
+   - Mulighet for Admin til å eksportere klient-, oppgave- og timedata til CSV/Excel.
+
+10. **Feilretting**
+    - Rett feil som gjør at integrasjonsknappen ikke fungerer.
+    - Rett AI-assistenten slik at den fungerer.
+    - Sørg for at feltet `accounting_system` faktisk eksisterer i databasen (oppdater schema og migrasjoner).
+    - Legg til tokenhåndtering slik at 401-feilen “Access token required” unngås ved API-kall.
+    - Gå gjennom hele systemet for å sikre at alle skjemaer og API-endepunkter samsvarer med det som er definert i databasen.
+
+Viktig:
+- Bruk eksisterende kode- og designsystem, men legg til nye komponenter der nødvendig.
+- Sørg for at koden er modulær og at alle nye tabeller, API-endepunkter og UI-komponenter følger prosjektets nåværende struktur.
+- Test alle nye funksjoner før du avslutter.

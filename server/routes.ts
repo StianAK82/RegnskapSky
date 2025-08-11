@@ -832,7 +832,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Adapter not found" });
       }
 
-      const isConnected = await adapter.testConnection(JSON.parse(integration.settings || '{}'));
+      const isConnected = await adapter.testConnection(JSON.parse(integration.config || '{}'));
       res.json({ connected: isConnected });
     } catch (error) {
       console.error("Test accounting integration error:", error);
@@ -858,7 +858,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Adapter not found" });
       }
 
-      const syncResult = await adapter.syncData(JSON.parse(integration.settings || '{}'), syncSettings);
+      const syncResult = await adapter.syncData(JSON.parse(integration.config || '{}'), syncSettings);
       res.json(syncResult);
     } catch (error) {
       console.error("Sync accounting integration error:", error);
@@ -1143,7 +1143,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           req.user!.email,
           `${req.user!.firstName} ${req.user!.lastName}`,
           "Timeføring registrert",
-          `${timeEntry.timeSpent} timer registrert for oppgave`
+          `${timeEntry.timeSpent} timer registrert for oppgave`,
+          new Date()
         );
       }
       
@@ -1207,6 +1208,106 @@ export async function registerRoutes(app: Express): Promise<Server> {
     };
     
     res.json(accountingSystemUrls);
+  });
+
+  // Enhanced RBAC endpoints for Admin/Ansatt
+  app.get("/api/clients/assigned", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const clients = await storage.getAssignedClients(req.user!.id, req.user!.role);
+      res.json(clients);
+    } catch (error: any) {
+      res.status(500).json({ message: "Feil ved henting av tildelte klienter: " + error.message });
+    }
+  });
+
+  // Enhanced dashboard with role-based KPIs
+  app.get("/api/dashboard/enhanced-metrics", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const metrics = await storage.getEnhancedDashboardMetrics(req.user!.tenantId, req.user!.id, req.user!.role);
+      res.json(metrics);
+    } catch (error: any) {
+      res.status(500).json({ message: "Feil ved henting av utvidede metrics: " + error.message });
+    }
+  });
+
+  // Backup and export endpoints (Admin only)
+  app.post("/api/admin/backup", authenticateToken, requireRole(["admin"]), async (req: AuthRequest, res) => {
+    try {
+      const { backupType, dataTypes } = req.body;
+      const result = await storage.createBackup(req.user!.tenantId, backupType, dataTypes);
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ message: "Backup feilet: " + error.message });
+    }
+  });
+
+  app.get("/api/admin/export/clients", authenticateToken, requireRole(["admin"]), async (req: AuthRequest, res) => {
+    try {
+      const { clientIds, format } = req.query;
+      const exportData = await storage.exportClientData(
+        req.user!.tenantId, 
+        clientIds ? (clientIds as string).split(',') : undefined,
+        (format as 'csv' | 'excel') || 'excel'
+      );
+      
+      const filename = `clients_export_${new Date().toISOString().split('T')[0]}.${format === 'csv' ? 'csv' : 'xlsx'}`;
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Type', format === 'csv' ? 'text/csv' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.send(exportData);
+    } catch (error: any) {
+      res.status(500).json({ message: "Export feilet: " + error.message });
+    }
+  });
+
+  // Calendar integration endpoints
+  app.post("/api/calendar/sync", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const { provider } = req.body;
+      const result = await storage.syncCalendarEvents(req.user!.id, provider);
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ message: "Kalender sync feilet: " + error.message });
+    }
+  });
+
+  // Enhanced notifications with email support
+  app.post("/api/notifications/advanced", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const notification = {
+        ...req.body,
+        tenantId: req.user!.tenantId
+      };
+      const created = await storage.createAdvancedNotification(notification);
+      res.status(201).json(created);
+    } catch (error: any) {
+      res.status(400).json({ message: "Feil ved opprettelse av varsel: " + error.message });
+    }
+  });
+
+  // Document audit logging endpoint
+  app.post("/api/documents/:documentId/audit", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const { action, details } = req.body;
+      await storage.logDocumentAction(req.params.documentId, req.user!.tenantId, action, req.user!.id, details);
+      res.status(201).json({ message: "Audit log opprettet" });
+    } catch (error: any) {
+      res.status(400).json({ message: "Audit logging feilet: " + error.message });
+    }
+  });
+
+  // Mobile responsive check endpoint
+  app.get("/api/system/mobile-support", (req: Request, res: Response) => {
+    res.json({
+      responsive: true,
+      supportedFeatures: [
+        "time_tracking", "client_management", "document_upload", 
+        "notifications", "task_management", "dashboard"
+      ],
+      mobileApp: {
+        available: false,
+        plannedFeatures: ["push_notifications", "offline_mode", "biometric_auth"]
+      }
+    });
   });
 
   return httpServer;

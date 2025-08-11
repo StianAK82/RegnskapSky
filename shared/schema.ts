@@ -4,8 +4,8 @@ import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// User roles enum
-export const userRoles = ["admin", "oppdragsansvarlig", "regnskapsfører", "intern", "lisensadmin"] as const;
+// User roles enum - simplified to Admin and Ansatt
+export const userRoles = ["admin", "ansatt"] as const;
 export type UserRole = typeof userRoles[number];
 
 // Users table
@@ -53,6 +53,10 @@ export const clients = pgTable("clients", {
   accountingSystem: text("accounting_system"), // Fiken, Tripletex, Unimicro, PowerOffice, Conta, Annet
   accountingSystemUrl: text("accounting_system_url"), // Custom URL for "Annet"
   notes: text("notes"),
+  kycStatus: text("kyc_status").default("pending"), // pending, verified, rejected, expired
+  lastBackupDate: timestamp("last_backup_date"),
+  calendarIntegration: jsonb("calendar_integration"), // Google Calendar, Outlook
+  emailIntegration: jsonb("email_integration"), // Email reminder settings
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -129,7 +133,12 @@ export const documents = pgTable("documents", {
   date: timestamp("date"),
   processed: boolean("processed").default(false),
   aiSuggestions: jsonb("ai_suggestions"),
+  version: integer("version").default(1),
+  parentDocumentId: uuid("parent_document_id"), // For versioning
+  uploadedBy: uuid("uploaded_by").notNull(),
+  isArchived: boolean("is_archived").default(false),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Notifications
@@ -141,7 +150,11 @@ export const notifications = pgTable("notifications", {
   title: text("title").notNull(),
   message: text("message").notNull(),
   isRead: boolean("is_read").default(false),
-  priority: text("priority").default("medium"),
+  priority: text("priority").default("medium"), // low, medium, high, critical
+  emailSent: boolean("email_sent").default(false),
+  pushSent: boolean("push_sent").default(false), // For future mobile app
+  actionUrl: text("action_url"), // Direct link to relevant page
+  expiresAt: timestamp("expires_at"), // Auto-expire old notifications
   createdAt: timestamp("created_at").defaultNow(),
 });
 
