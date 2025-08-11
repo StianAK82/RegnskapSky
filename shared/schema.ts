@@ -517,6 +517,8 @@ export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  role: z.enum(userRoles)
 });
 
 export const insertTenantSchema = createInsertSchema(tenants).omit({

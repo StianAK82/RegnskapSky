@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,7 +31,7 @@ export default function Dashboard() {
   });
 
   // Recent clients
-  const { data: recentClients = [], isLoading: clientsLoading } = useQuery({
+  const { data: recentClients = [], isLoading: clientsLoading } = useQuery<any[]>({
     queryKey: ["/api/clients"],
     enabled: !!user,
   });
@@ -40,7 +41,7 @@ export default function Dashboard() {
       <div className="flex h-screen bg-gray-50">
         <Sidebar />
         <div className="flex-1 flex flex-col overflow-hidden">
-          <TopBar />
+          <TopBar title="Dashboard" />
           <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-6">
             <div className="flex items-center justify-center h-64">
               <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
@@ -55,7 +56,7 @@ export default function Dashboard() {
     <div className="flex h-screen bg-gray-50">
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <TopBar />
+        <TopBar title="Dashboard" />
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-6">
           <div className="space-y-6">
             {/* Header */}

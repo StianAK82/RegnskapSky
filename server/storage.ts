@@ -665,7 +665,6 @@ export class DatabaseStorage implements IStorage {
   async getTimeEntriesWithFilters(filters: any): Promise<any[]> {
     const { tenantId, clientId, userId, taskId, startDate, endDate } = filters;
     
-    let baseQuery = db.select().from(timeEntries);
     const conditions = [];
     
     if (tenantId) conditions.push(eq(timeEntries.tenantId, tenantId));
@@ -676,10 +675,10 @@ export class DatabaseStorage implements IStorage {
     if (endDate) conditions.push(lte(timeEntries.date, endDate));
     
     if (conditions.length > 0) {
-      baseQuery = baseQuery.where(and(...conditions));
+      return await db.select().from(timeEntries).where(and(...conditions)).orderBy(desc(timeEntries.date));
     }
     
-    return await baseQuery.orderBy(desc(timeEntries.date));
+    return await db.select().from(timeEntries).orderBy(desc(timeEntries.date));
   }
 
   // Enhanced RBAC methods for Admin/Ansatt roles
@@ -747,13 +746,13 @@ export class DatabaseStorage implements IStorage {
 
   // Export client data to CSV/Excel
   async exportClientData(tenantId: string, clientIds?: string[], format: 'csv' | 'excel' = 'excel'): Promise<Buffer> {
-    let query = db.select().from(clients).where(eq(clients.tenantId, tenantId));
+    let clientData;
     
     if (clientIds && clientIds.length > 0) {
-      query = query.where(and(eq(clients.tenantId, tenantId), sql`${clients.id} = ANY(${JSON.stringify(clientIds)})`));
+      clientData = await db.select().from(clients).where(and(eq(clients.tenantId, tenantId), sql`${clients.id} = ANY(${JSON.stringify(clientIds)})`));
+    } else {
+      clientData = await db.select().from(clients).where(eq(clients.tenantId, tenantId));
     }
-
-    const clientData = await query;
     
     // For now, return a simple buffer with JSON data
     // In a real implementation, use libraries like xlsx or csv-writer
