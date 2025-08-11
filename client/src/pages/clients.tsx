@@ -890,19 +890,22 @@ export default function Clients() {
                           <FormLabel>Oppgaver</FormLabel>
                           <div className="flex flex-col space-y-2">
                             {TASK_OPTIONS.map((task) => (
-                              <div key={task} className="flex items-center space-x-2">
+                              <div key={task.value} className="flex items-center space-x-2">
                                 <Checkbox
-                                  id={task}
-                                  checked={field.value?.includes(task) || false}
+                                  id={task.value}
+                                  checked={field.value?.includes(task.value) || false}
                                   onCheckedChange={(checked) => {
                                     if (checked) {
-                                      field.onChange([...(field.value || []), task]);
+                                      field.onChange([...(field.value || []), task.value]);
                                     } else {
-                                      field.onChange(field.value?.filter((t: string) => t !== task) || []);
+                                      field.onChange(field.value?.filter((t: string) => t !== task.value) || []);
                                     }
                                   }}
                                 />
-                                <Label htmlFor={task}>{task}</Label>
+                                <Label htmlFor={task.value}>{task.label}</Label>
+                                <span className="text-xs text-gray-500">
+                                  ({task.frequency.join(', ')})
+                                </span>
                               </div>
                             ))}
                           </div>
