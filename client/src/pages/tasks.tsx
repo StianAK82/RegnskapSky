@@ -1,0 +1,511 @@
+import { useState } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { Sidebar } from '@/components/layout/sidebar';
+import { TopBar } from '@/components/layout/top-bar';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { apiRequest, queryClient } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/use-auth';
+
+interface Task {
+  id: string;
+  title: string;
+  description?: string;
+  priority: 'low' | 'medium' | 'high';
+  status: 'pending' | 'in_progress' | 'completed' | 'overdue';
+  dueDate?: string;
+  assignedTo?: string;
+  clientId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface Client {
+  id: string;
+  name: string;
+}
+
+const taskSchema = z.object({
+  title: z.string().min(1, 'Tittel er påkrevd'),
+  description: z.string().optional(),
+  priority: z.enum(['low', 'medium', 'high']).default('medium'),
+  status: z.enum(['pending', 'in_progress', 'completed']).default('pending'),
+  dueDate: z.string().optional(),
+  assignedTo: z.string().optional(),
+  clientId: z.string().optional(),
+});
+
+type TaskFormData = z.infer<typeof taskSchema>;
+
+export default function Tasks() {
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterPriority, setFilterPriority] = useState<string>('all');
+  const { toast } = useToast();
+  const { user } = useAuth();
+
+  const { data: tasks, isLoading } = useQuery<Task[]>({
+    queryKey: ['/api/tasks'],
+  });
+
+  const { data: clients } = useQuery<Client[]>({
+    queryKey: ['/api/clients'],
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: TaskFormData) => {
+      const response = await apiRequest('POST', '/api/tasks', {
+        ...data,
+        dueDate: data.dueDate ? new Date(data.dueDate).toISOString() : undefined,
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+      setIsCreateOpen(false);
+      toast({
+        title: 'Oppgave opprettet',
+        description: 'Ny oppgave ble opprettet successfully',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Feil',
+        description: error.message || 'Kunne ikke opprette oppgave',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<TaskFormData> }) => {
+      const response = await apiRequest('PUT', `/api/tasks/${id}`, {
+        ...data,
+        dueDate: data.dueDate ? new Date(data.dueDate).toISOString() : undefined,
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+      setEditingTask(null);
+      toast({
+        title: 'Oppgave oppdatert',
+        description: 'Oppgaveinformasjon ble oppdatert',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Feil',
+        description: error.message || 'Kunne ikke oppdatere oppgave',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const form = useForm<TaskFormData>({
+    resolver: zodResolver(taskSchema),
+    defaultValues: {
+      title: '',
+      description: '',
+      priority: 'medium',
+      status: 'pending',
+      dueDate: '',
+      assignedTo: '',
+      clientId: '',
+    },
+  });
+
+  const onSubmit = (data: TaskFormData) => {
+    if (editingTask) {
+      updateMutation.mutate({ id: editingTask.id, data });
+    } else {
+      createMutation.mutate(data);
+    }
+  };
+
+  const handleEdit = (task: Task) => {
+    setEditingTask(task);
+    form.reset({
+      title: task.title,
+      description: task.description || '',
+      priority: task.priority,
+      status: task.status === 'overdue' ? 'pending' : task.status,
+      dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '',
+      assignedTo: task.assignedTo || '',
+      clientId: task.clientId || '',
+    });
+  };
+
+  const handleCreateNew = () => {
+    setEditingTask(null);
+    form.reset({
+      title: '',
+      description: '',
+      priority: 'medium',
+      status: 'pending',
+      dueDate: '',
+      assignedTo: user?.id || '',
+      clientId: '',
+    });
+    setIsCreateOpen(true);
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return <Badge className="bg-green-100 text-green-800">Fullført</Badge>;
+      case 'in_progress':
+        return <Badge className="bg-blue-100 text-blue-800">Pågår</Badge>;
+      case 'overdue':
+        return <Badge className="bg-red-100 text-red-800">Forfalt</Badge>;
+      default:
+        return <Badge className="bg-yellow-100 text-yellow-800">Venter</Badge>;
+    }
+  };
+
+  const getPriorityBadge = (priority: string) => {
+    switch (priority) {
+      case 'high':
+        return <Badge variant="destructive">Høy</Badge>;
+      case 'medium':
+        return <Badge className="bg-yellow-100 text-yellow-800">Medium</Badge>;
+      case 'low':
+        return <Badge className="bg-green-100 text-green-800">Lav</Badge>;
+      default:
+        return <Badge variant="secondary">Normal</Badge>;
+    }
+  };
+
+  const isOverdue = (task: Task) => {
+    if (!task.dueDate || task.status === 'completed') return false;
+    return new Date(task.dueDate) < new Date() && task.status === 'pending';
+  };
+
+  const filteredTasks = tasks?.filter(task => {
+    const statusMatch = filterStatus === 'all' || 
+      (filterStatus === 'overdue' && isOverdue(task)) ||
+      (filterStatus !== 'overdue' && task.status === filterStatus);
+    
+    const priorityMatch = filterPriority === 'all' || task.priority === filterPriority;
+    
+    return statusMatch && priorityMatch;
+  }) || [];
+
+  const canCreateEdit = user?.role && ['admin', 'oppdragsansvarlig'].includes(user.role);
+
+  return (
+    <div className="flex h-screen bg-gray-50">
+      <Sidebar />
+      <div className="flex-1 ml-64 overflow-hidden">
+        <TopBar 
+          title="Oppgaver" 
+          subtitle="Administrer oppgaver og fremdrift" 
+        />
+        
+        <main className="flex-1 overflow-y-auto p-6">
+          {/* Filters and Actions */}
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex space-x-4">
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Alle statuser</SelectItem>
+                  <SelectItem value="pending">Venter</SelectItem>
+                  <SelectItem value="in_progress">Pågår</SelectItem>
+                  <SelectItem value="completed">Fullført</SelectItem>
+                  <SelectItem value="overdue">Forfalt</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={filterPriority} onValueChange={setFilterPriority}>
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Alle prioriteter</SelectItem>
+                  <SelectItem value="high">Høy</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="low">Lav</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {canCreateEdit && (
+              <Dialog open={isCreateOpen || !!editingTask} onOpenChange={(open) => {
+                if (!open) {
+                  setIsCreateOpen(false);
+                  setEditingTask(null);
+                }
+              }}>
+                <DialogTrigger asChild>
+                  <Button onClick={handleCreateNew} className="bg-primary hover:bg-blue-700">
+                    <i className="fas fa-plus mr-2"></i>
+                    Ny oppgave
+                  </Button>
+                </DialogTrigger>
+                
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>
+                      {editingTask ? 'Rediger oppgave' : 'Opprett ny oppgave'}
+                    </DialogTitle>
+                  </DialogHeader>
+                  
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="title"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Tittel *</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="description"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Beskrivelse</FormLabel>
+                            <FormControl>
+                              <Textarea {...field} rows={3} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="priority"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Prioritet</FormLabel>
+                              <Select value={field.value} onValueChange={field.onChange}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="low">Lav</SelectItem>
+                                  <SelectItem value="medium">Medium</SelectItem>
+                                  <SelectItem value="high">Høy</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="status"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Status</FormLabel>
+                              <Select value={field.value} onValueChange={field.onChange}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="pending">Venter</SelectItem>
+                                  <SelectItem value="in_progress">Pågår</SelectItem>
+                                  <SelectItem value="completed">Fullført</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="dueDate"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Frist</FormLabel>
+                              <FormControl>
+                                <Input type="date" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="clientId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Klient</FormLabel>
+                              <Select value={field.value} onValueChange={field.onChange}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Velg klient" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {clients?.map((client) => (
+                                    <SelectItem key={client.id} value={client.id}>
+                                      {client.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <div className="flex justify-end space-x-2 pt-4">
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          onClick={() => {
+                            setIsCreateOpen(false);
+                            setEditingTask(null);
+                          }}
+                        >
+                          Avbryt
+                        </Button>
+                        <Button 
+                          type="submit" 
+                          disabled={createMutation.isPending || updateMutation.isPending}
+                          className="bg-primary hover:bg-blue-700"
+                        >
+                          {createMutation.isPending || updateMutation.isPending ? (
+                            <i className="fas fa-spinner fa-spin mr-2"></i>
+                          ) : null}
+                          {editingTask ? 'Oppdater' : 'Opprett'}
+                        </Button>
+                      </div>
+                    </form>
+                  </Form>
+                </DialogContent>
+              </Dialog>
+            )}
+          </div>
+
+          {/* Tasks List */}
+          {isLoading ? (
+            <div className="space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <Card key={i} className="animate-pulse">
+                  <CardContent className="p-6">
+                    <div className="h-20 bg-gray-200 rounded"></div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : filteredTasks.length === 0 ? (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <i className="fas fa-tasks text-4xl text-gray-400 mb-4"></i>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Ingen oppgaver</h3>
+                <p className="text-gray-500 mb-4">
+                  {filterStatus !== 'all' || filterPriority !== 'all' 
+                    ? 'Ingen oppgaver samsvarer med de valgte filtrene'
+                    : 'Opprett din første oppgave for å komme i gang'
+                  }
+                </p>
+                {canCreateEdit && filterStatus === 'all' && filterPriority === 'all' && (
+                  <Button onClick={handleCreateNew} className="bg-primary hover:bg-blue-700">
+                    <i className="fas fa-plus mr-2"></i>
+                    Opprett oppgave
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {filteredTasks.map((task) => {
+                const taskIsOverdue = isOverdue(task);
+                const client = clients?.find(c => c.id === task.clientId);
+                
+                return (
+                  <Card key={task.id} className={`hover:shadow-md transition-shadow ${taskIsOverdue ? 'border-l-4 border-red-400' : ''}`}>
+                    <CardContent className="p-6">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3 mb-2">
+                            <h3 className="text-lg font-semibold text-gray-900">{task.title}</h3>
+                            {getStatusBadge(taskIsOverdue ? 'overdue' : task.status)}
+                            {getPriorityBadge(task.priority)}
+                          </div>
+                          
+                          {task.description && (
+                            <p className="text-gray-600 mb-3">{task.description}</p>
+                          )}
+                          
+                          <div className="flex items-center space-x-4 text-sm text-gray-500">
+                            {task.dueDate && (
+                              <span className={taskIsOverdue ? 'text-red-600 font-medium' : ''}>
+                                <i className="fas fa-calendar mr-1"></i>
+                                Frist: {new Date(task.dueDate).toLocaleDateString('nb-NO')}
+                              </span>
+                            )}
+                            
+                            {client && (
+                              <span>
+                                <i className="fas fa-building mr-1"></i>
+                                {client.name}
+                              </span>
+                            )}
+                            
+                            <span>
+                              <i className="fas fa-user mr-1"></i>
+                              {task.assignedTo === user?.id ? 'Meg' : task.assignedTo || 'Ikke tildelt'}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        {canCreateEdit && (
+                          <div className="flex space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEdit(task)}
+                            >
+                              <i className="fas fa-edit mr-1"></i>
+                              Rediger
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </main>
+      </div>
+    </div>
+  );
+}
