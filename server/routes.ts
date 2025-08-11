@@ -143,12 +143,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Firmanavn er påkrevd" });
       }
 
-      // Validate responsible person ID if provided
-      if (clientData.responsiblePersonId) {
+      // Validate responsible person ID if provided and not empty string
+      if (clientData.responsiblePersonId && clientData.responsiblePersonId !== "") {
         const employee = await storage.getEmployee(clientData.responsiblePersonId);
         if (!employee || employee.tenantId !== req.user!.tenantId) {
           return res.status(400).json({ message: "Ugyldig ansvarlig person ID" });
         }
+      }
+      
+      // Convert empty string to undefined for database
+      if (clientData.responsiblePersonId === "") {
+        clientData.responsiblePersonId = undefined;
       }
       
       const client = await storage.createClient(clientData);
@@ -1075,7 +1080,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Adapter not found" });
       }
 
-      const isConnected = await adapter.testConnection(JSON.parse(integration.config || '{}'));
+      const isConnected = await adapter.testConnection(integration.syncSettings ? JSON.parse(integration.syncSettings.toString()) : {});
       res.json({ connected: isConnected });
     } catch (error) {
       console.error("Test accounting integration error:", error);
@@ -1101,7 +1106,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Adapter not found" });
       }
 
-      const syncResult = await adapter.syncData(JSON.parse(integration.config || '{}'), syncSettings);
+      const syncResult = await adapter.syncData(integration.syncSettings ? JSON.parse(integration.syncSettings.toString()) : {}, syncSettings);
       res.json(syncResult);
     } catch (error) {
       console.error("Sync accounting integration error:", error);
@@ -1384,10 +1389,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (timeEntry.taskId) {
         await sendTaskNotification(
           req.user!.email,
-          `${req.user!.firstName} ${req.user!.lastName}`,
           "Timeføring registrert",
-          `${timeEntry.timeSpent} timer registrert for oppgave`,
-          new Date()
+          new Date(),
+          false
         );
       }
       
@@ -1539,7 +1543,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Mobile responsive check endpoint
-  app.get("/api/system/mobile-support", (req: Request, res: Response) => {
+  app.get("/api/system/mobile-support", (req, res) => {
     res.json({
       responsive: true,
       supportedFeatures: [

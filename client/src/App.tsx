@@ -61,7 +61,7 @@ function AuthenticatedRoutes() {
       <Route 
         path="/employees" 
         component={() => (
-          <ProtectedRoute allowedRoles={['admin', 'oppdragsansvarlig']}>
+          <ProtectedRoute allowedRoles={['admin', 'ansatt']}>
             <Employees />
           </ProtectedRoute>
         )} 
@@ -70,7 +70,7 @@ function AuthenticatedRoutes() {
       <Route 
         path="/tasks" 
         component={() => (
-          <ProtectedRoute allowedRoles={['admin', 'oppdragsansvarlig', 'regnskapsfører', 'intern']}>
+          <ProtectedRoute allowedRoles={['admin', 'ansatt']}>
             <Tasks />
           </ProtectedRoute>
         )} 
@@ -79,7 +79,7 @@ function AuthenticatedRoutes() {
       <Route 
         path="/ai-assistant" 
         component={() => (
-          <ProtectedRoute allowedRoles={['admin', 'oppdragsansvarlig', 'regnskapsfører', 'intern']}>
+          <ProtectedRoute allowedRoles={['admin', 'ansatt']}>
             <AIAssistant />
           </ProtectedRoute>
         )} 
@@ -88,7 +88,7 @@ function AuthenticatedRoutes() {
       <Route 
         path="/reports" 
         component={() => (
-          <ProtectedRoute allowedRoles={['admin', 'oppdragsansvarlig', 'regnskapsfører']}>
+          <ProtectedRoute allowedRoles={['admin', 'ansatt']}>
             <Reports />
           </ProtectedRoute>
         )} 

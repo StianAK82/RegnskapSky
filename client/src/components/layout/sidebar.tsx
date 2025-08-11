@@ -7,18 +7,17 @@ export function Sidebar() {
   const [location] = useLocation();
 
   const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: 'fas fa-tachometer-alt', roles: ['admin', 'oppdragsansvarlig', 'regnskapsfører', 'intern', 'lisensadmin'] },
-    { name: 'Klienter', href: '/clients', icon: 'fas fa-users', roles: ['admin', 'oppdragsansvarlig', 'regnskapsfører', 'intern'] },
-    { name: 'Ansatte', href: '/employees', icon: 'fas fa-user-tie', roles: ['admin', 'oppdragsansvarlig'] },
-    { name: 'Oppgaver', href: '/tasks', icon: 'fas fa-tasks', roles: ['admin', 'oppdragsansvarlig', 'regnskapsfører', 'intern'] },
-    { name: 'Rapporter', href: '/reports', icon: 'fas fa-chart-bar', roles: ['admin', 'oppdragsansvarlig', 'regnskapsfører'] },
-    { name: 'Timeføring', href: '/timetracking', icon: 'fas fa-clock', roles: ['admin', 'oppdragsansvarlig', 'regnskapsfører', 'intern'] },
-    { name: 'Dokumenter', href: '/documents', icon: 'fas fa-file-invoice', roles: ['admin', 'oppdragsansvarlig', 'regnskapsfører'] },
-    { name: 'AI-Assistent', href: '/ai-assistant', icon: 'fas fa-robot', roles: ['admin', 'oppdragsansvarlig', 'regnskapsfører', 'intern'] },
+    { name: 'Dashboard', href: '/dashboard', icon: 'fas fa-tachometer-alt', roles: ['admin', 'ansatt'] },
+    { name: 'Klienter', href: '/clients', icon: 'fas fa-users', roles: ['admin', 'ansatt'] },
+    { name: 'Ansatte', href: '/employees', icon: 'fas fa-user-tie', roles: ['admin', 'ansatt'] },
+    { name: 'Oppgaver', href: '/tasks', icon: 'fas fa-tasks', roles: ['admin', 'ansatt'] },
+    { name: 'Rapporter', href: '/reports', icon: 'fas fa-chart-bar', roles: ['admin', 'ansatt'] },
+    { name: 'Timeføring', href: '/timetracking', icon: 'fas fa-clock', roles: ['admin', 'ansatt'] },
+    { name: 'Dokumenter', href: '/documents', icon: 'fas fa-file-invoice', roles: ['admin', 'ansatt'] },
+    { name: 'AI-Assistent', href: '/ai-assistant', icon: 'fas fa-robot', roles: ['admin', 'ansatt'] },
   ];
 
   const adminNavigation = [
-    { name: 'Lisensadmin', href: '/license-admin', icon: 'fas fa-shield-alt', roles: ['admin', 'lisensadmin'] },
     { name: 'Abonnement', href: '/subscriptions', icon: 'fas fa-credit-card', roles: ['admin'] },
     { name: 'Integrasjoner', href: '/integrations', icon: 'fas fa-plug', roles: ['admin'] },
   ];

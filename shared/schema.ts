@@ -4,8 +4,8 @@ import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// User roles enum - simplified to Admin and Ansatt
-export const userRoles = ["admin", "ansatt"] as const;
+// User roles enum - comprehensive role system
+export const userRoles = ["admin", "ansatt", "oppdragsansvarlig", "regnskapsfører", "intern", "lisensadmin"] as const;
 export type UserRole = typeof userRoles[number];
 
 // Users table
@@ -540,7 +540,7 @@ export const insertClientSchema = createInsertSchema(clients).omit({
   postalAddress: z.string().optional(),
   city: z.string().optional(),
   accountingSystem: z.string().optional(),
-  responsiblePersonId: z.string().uuid().optional(),
+  responsiblePersonId: z.string().uuid().optional().nullable(),
 });
 
 export const insertClientTaskSchema = createInsertSchema(clientTasks).omit({
