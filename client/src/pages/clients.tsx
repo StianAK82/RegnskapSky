@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Separator } from '@/components/ui/separator';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -85,6 +86,9 @@ export default function Clients() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [registrationStep, setRegistrationStep] = useState(1); // Two-step registration
+  const [companyData, setCompanyData] = useState<any>(null);
+  const [isLoadingOrgData, setIsLoadingOrgData] = useState(false);
   const { toast } = useToast();
 
   const { data: clients, isLoading } = useQuery<Client[]>({
@@ -95,6 +99,55 @@ export default function Clients() {
     queryKey: ['/api/users'],
     queryFn: () => apiRequest('GET', '/api/users').then(res => res.json())
   });
+
+  const { data: employees = [] } = useQuery({
+    queryKey: ['/api/employees'],
+    queryFn: () => apiRequest('GET', '/api/employees').then(res => res.json())
+  });
+
+  // Function to fetch company data from Brønnøysund
+  const fetchCompanyData = async (orgNumber: string) => {
+    if (!orgNumber || orgNumber.length !== 9) {
+      toast({
+        title: 'Ugyldig organisasjonsnummer',
+        description: 'Organisasjonsnummer må være 9 siffer',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsLoadingOrgData(true);
+    try {
+      const response = await apiRequest('GET', `/api/bronnoyund/company/${orgNumber}`);
+      const data = await response.json();
+      
+      if (response.ok) {
+        setCompanyData(data);
+        // Auto-fill form fields
+        form.setValue('name', data.name || '');
+        form.setValue('address', data.businessAddress || '');
+        
+        toast({
+          title: 'Selskapsdata hentet',
+          description: 'Informasjon fra Brønnøysundregistrene er fylt inn automatisk',
+        });
+      } else {
+        toast({
+          title: 'Feil ved henting',
+          description: data.message || 'Kunne ikke hente selskapsdata',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Feil ved henting',
+        description: 'Kunne ikke koble til Brønnøysundregistrene',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoadingOrgData(false);
+    }
+  };
 
   const createMutation = useMutation({
     mutationFn: async (data: ClientFormData) => {
@@ -172,6 +225,7 @@ export default function Clients() {
 
   const handleEdit = (client: Client) => {
     setEditingClient(client);
+    setRegistrationStep(2); // Go directly to step 2 for editing
     form.reset({
       name: client.name,
       orgNumber: client.orgNumber || '',
@@ -190,6 +244,14 @@ export default function Clients() {
       checklistStatus: client.checklistStatus || '',
       notes: client.notes || '',
     });
+  };
+
+  const handleDialogClose = () => {
+    setIsCreateOpen(false);
+    setEditingClient(null);
+    setRegistrationStep(1);
+    setCompanyData(null);
+    form.reset();
   };
 
   const handleCreateNew = () => {
@@ -253,59 +315,191 @@ export default function Clients() {
               />
             </div>
             
-            <Dialog open={isCreateOpen || !!editingClient} onOpenChange={(open) => {
-              if (!open) {
-                setIsCreateOpen(false);
-                setEditingClient(null);
-              }
-            }}>
+            <Dialog open={isCreateOpen || !!editingClient} onOpenChange={handleDialogClose}>
               <DialogTrigger asChild>
-                <Button onClick={handleCreateNew} className="bg-primary hover:bg-blue-700">
+                <Button onClick={() => {
+                  setEditingClient(null);
+                  setRegistrationStep(1);
+                  setCompanyData(null);
+                  form.reset();
+                  setIsCreateOpen(true);
+                }} className="bg-primary hover:bg-blue-700">
                   <i className="fas fa-plus mr-2"></i>
                   Ny klient
                 </Button>
               </DialogTrigger>
               
-              <DialogContent className="max-w-2xl">
+              <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>
-                    {editingClient ? 'Rediger klient' : 'Opprett ny klient'}
+                  <DialogTitle className="flex items-center justify-between">
+                    {editingClient ? 'Rediger klient' : `Opprett ny klient - Steg ${registrationStep} av 2`}
+                    {!editingClient && (
+                      <div className="flex space-x-2">
+                        <div className={`w-3 h-3 rounded-full ${registrationStep === 1 ? 'bg-blue-500' : 'bg-gray-300'}`}></div>
+                        <div className={`w-3 h-3 rounded-full ${registrationStep === 2 ? 'bg-blue-500' : 'bg-gray-300'}`}></div>
+                      </div>
+                    )}
                   </DialogTitle>
                 </DialogHeader>
                 
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Firmanavn *</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="orgNumber"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Organisasjonsnummer</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+                    {/* Step 1: Basic Information + Organization Lookup */}
+                    {(registrationStep === 1 && !editingClient) && (
+                      <div className="space-y-4">
+                        <div className="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-400">
+                          <h4 className="font-medium text-blue-800 mb-2">Steg 1: Grunnleggende informasjon</h4>
+                          <p className="text-sm text-blue-600">Skriv inn organisasjonsnummer for å hente automatisk selskapsdata fra Brønnøysundregistrene.</p>
+                        </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField
+                            control={form.control}
+                            name="orgNumber"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Organisasjonsnummer (9 siffer)</FormLabel>
+                                <div className="flex space-x-2">
+                                  <FormControl>
+                                    <Input 
+                                      {...field} 
+                                      placeholder="123456789"
+                                      maxLength={9}
+                                    />
+                                  </FormControl>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => fetchCompanyData(field.value || '')}
+                                    disabled={isLoadingOrgData || !field.value || field.value.length !== 9}
+                                  >
+                                    {isLoadingOrgData ? (
+                                      <i className="fas fa-spinner fa-spin"></i>
+                                    ) : (
+                                      <i className="fas fa-search"></i>
+                                    )}
+                                  </Button>
+                                </div>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={form.control}
+                            name="name"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Firmanavn *</FormLabel>
+                                <FormControl>
+                                  <Input {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        <FormField
+                          control={form.control}
+                          name="address"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Adresse</FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        {companyData && (
+                          <div className="bg-green-50 p-4 rounded-lg border-l-4 border-green-400">
+                            <h4 className="font-medium text-green-800 mb-2">Selskapsdata hentet</h4>
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                              <div>
+                                <span className="font-medium">Organisasjonsform:</span> {companyData.organizationalForm}
+                              </div>
+                              <div>
+                                <span className="font-medium">Registreringsdato:</span> {companyData.registrationDate}
+                              </div>
+                              {companyData.businessDescription && (
+                                <div className="col-span-2">
+                                  <span className="font-medium">Virksomhet:</span> {companyData.businessDescription}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="flex justify-end space-x-2 pt-4">
+                          <Button type="button" variant="outline" onClick={handleDialogClose}>
+                            Avbryt
+                          </Button>
+                          <Button 
+                            type="button" 
+                            onClick={() => {
+                              if (form.getValues('name')) {
+                                setRegistrationStep(2);
+                              } else {
+                                toast({
+                                  title: 'Manglende informasjon',
+                                  description: 'Vennligst fyll inn firmanavn før du fortsetter',
+                                  variant: 'destructive',
+                                });
+                              }
+                            }}
+                            className="bg-primary hover:bg-blue-700"
+                          >
+                            Neste <i className="fas fa-arrow-right ml-2"></i>
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Step 2: Detailed Configuration */}
+                    {(registrationStep === 2 || editingClient) && (
+                      <div className="space-y-4">
+                        {!editingClient && (
+                          <div className="bg-green-50 p-4 rounded-lg border-l-4 border-green-400">
+                            <h4 className="font-medium text-green-800 mb-2">Steg 2: Detaljert konfigurasjon</h4>
+                            <p className="text-sm text-green-600">Konfigurer regnskapssystem, oppgaver og ansvarlige personer.</p>
+                          </div>
+                        )}
+
+                        {/* Basic Info (readonly in step 2) */}
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField
+                            control={form.control}
+                            name="name"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Firmanavn *</FormLabel>
+                                <FormControl>
+                                  <Input {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={form.control}
+                            name="orgNumber"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Organisasjonsnummer</FormLabel>
+                                <FormControl>
+                                  <Input {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
                         name="email"
@@ -534,28 +728,36 @@ export default function Clients() {
                       )}
                     />
 
-                    <div className="flex justify-end space-x-2 pt-4">
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        onClick={() => {
-                          setIsCreateOpen(false);
-                          setEditingClient(null);
-                        }}
-                      >
-                        Avbryt
-                      </Button>
-                      <Button 
-                        type="submit" 
-                        disabled={createMutation.isPending || updateMutation.isPending}
-                        className="bg-primary hover:bg-blue-700"
-                      >
-                        {createMutation.isPending || updateMutation.isPending ? (
-                          <i className="fas fa-spinner fa-spin mr-2"></i>
-                        ) : null}
-                        {editingClient ? 'Oppdater' : 'Opprett'}
-                      </Button>
-                    </div>
+                        <div className="flex justify-end space-x-2 pt-4">
+                          {!editingClient && (
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              onClick={() => setRegistrationStep(1)}
+                            >
+                              <i className="fas fa-arrow-left mr-2"></i> Tilbake
+                            </Button>
+                          )}
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            onClick={handleDialogClose}
+                          >
+                            Avbryt
+                          </Button>
+                          <Button 
+                            type="submit" 
+                            disabled={createMutation.isPending || updateMutation.isPending}
+                            className="bg-primary hover:bg-blue-700"
+                          >
+                            {createMutation.isPending || updateMutation.isPending ? (
+                              <i className="fas fa-spinner fa-spin mr-2"></i>
+                            ) : null}
+                            {editingClient ? 'Oppdater' : 'Opprett'}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </form>
                 </Form>
               </DialogContent>

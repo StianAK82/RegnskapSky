@@ -5,9 +5,10 @@ import { storage } from "./storage";
 import { authenticateToken, requireRole, requireSameTenant, hashPassword, comparePassword, generateToken, type AuthRequest } from "./auth";
 import { categorizeDocument, generateAccountingSuggestions, askAccountingQuestion, analyzeDocumentImage } from "./services/openai";
 import { sendTaskNotification, sendWelcomeEmail, sendSubscriptionNotification } from "./services/sendgrid";
+import { bronnoyundService } from "./services/bronnoyund";
 import { 
   insertUserSchema, insertTenantSchema, insertClientSchema, insertTaskSchema, 
-  insertClientTaskSchema, insertClientResponsibleSchema,
+  insertClientTaskSchema, insertClientResponsibleSchema, insertEmployeeSchema,
   insertTimeEntrySchema, insertDocumentSchema, insertNotificationSchema, insertIntegrationSchema,
   insertCompanyRegistryDataSchema, insertAmlProviderSchema, insertAmlDocumentSchema,
   insertAccountingIntegrationSchema, insertClientChecklistSchema,
@@ -21,6 +22,8 @@ if (!process.env.STRIPE_SECRET_KEY) {
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2025-07-30.basil",
 });
+
+// bronnoyundService is imported as default export
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
@@ -141,12 +144,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/clients/:id", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const client = await storage.getClient(req.params.id);
+      if (!client) {
+        return res.status(404).json({ message: "Klient ikke funnet" });
+      }
+      res.json(client);
+    } catch (error: any) {
+      res.status(500).json({ message: "Feil ved henting av klient: " + error.message });
+    }
+  });
+
   app.put("/api/clients/:id", authenticateToken, requireRole(["admin", "oppdragsansvarlig"]), async (req: AuthRequest, res) => {
     try {
       const client = await storage.updateClient(req.params.id, req.body);
       res.json(client);
     } catch (error: any) {
       res.status(400).json({ message: "Feil ved oppdatering av klient: " + error.message });
+    }
+  });
+
+  // Employee management
+  app.get("/api/employees", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const employees = await storage.getEmployeesByTenant(req.user!.tenantId);
+      res.json(employees);
+    } catch (error: any) {
+      res.status(500).json({ message: "Feil ved henting av ansatte: " + error.message });
+    }
+  });
+
+  app.post("/api/employees", authenticateToken, requireRole(["admin", "oppdragsansvarlig"]), async (req: AuthRequest, res) => {
+    try {
+      const employeeData = insertEmployeeSchema.parse({
+        ...req.body,
+        tenantId: req.user!.tenantId,
+      });
+      
+      const employee = await storage.createEmployee(employeeData);
+      res.status(201).json(employee);
+    } catch (error: any) {
+      res.status(400).json({ message: "Feil ved opprettelse av ansatt: " + error.message });
+    }
+  });
+
+  app.put("/api/employees/:id", authenticateToken, requireRole(["admin", "oppdragsansvarlig"]), async (req: AuthRequest, res) => {
+    try {
+      const employee = await storage.updateEmployee(req.params.id, req.body);
+      res.json(employee);
+    } catch (error: any) {
+      res.status(400).json({ message: "Feil ved oppdatering av ansatt: " + error.message });
+    }
+  });
+
+  app.delete("/api/employees/:id", authenticateToken, requireRole(["admin", "oppdragsansvarlig"]), async (req: AuthRequest, res) => {
+    try {
+      await storage.deleteEmployee(req.params.id);
+      res.sendStatus(204);
+    } catch (error: any) {
+      res.status(400).json({ message: "Feil ved sletting av ansatt: " + error.message });
+    }
+  });
+
+  // Brønnøysund integration
+  app.get("/api/bronnoyund/company/:orgNumber", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const { orgNumber } = req.params;
+      
+      if (!bronnoyundService.validateOrgNumber(orgNumber)) {
+        return res.status(400).json({ message: "Ugyldig organisasjonsnummer" });
+      }
+      
+      const companyData = await bronnoyundService.getCompanyData(orgNumber);
+      
+      if (!companyData) {
+        return res.status(404).json({ message: "Selskap ikke funnet" });
+      }
+      
+      const transformedData = bronnoyundService.transformCompanyData(companyData);
+      res.json(transformedData);
+    } catch (error: any) {
+      res.status(500).json({ message: "Feil ved henting av selskapsdata: " + error.message });
     }
   });
 

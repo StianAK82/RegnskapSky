@@ -1,0 +1,77 @@
+I want you to update my project to implement and fully migrate the following features into the system:
+
+1. **Split client registration into two steps**:
+
+   **Step 1 – Basic company info**:
+   - Fields: `company_name`, `org_number`.
+   - When org number is entered, automatically fetch from Brønnøysundregisteret (using the existing API integration) and pre-fill:
+     - Company name
+     - Address
+     - Postcode
+     - City
+     - Municipality
+     - Phone
+     - Email
+   - Allow manual editing if needed.
+   - "Next" button goes to Step 2.
+
+   **Step 2 – Engagement & settings**:
+   - Show AML/KYC status (dropdown: Pending, Approved, Rejected).
+   - Multi-select checklist of tasks to perform (default: Bokføring, MVA, Lønn, Bankavstemming, Kontoavstemming + free-text).
+   - Dropdown to choose accounting system (Fiken, Tripletex, Unimicro, PowerOffice, Conta, Other).
+   - Dropdown or search to choose `responsible_person_id` from employees list.
+   - Ability to attach Regnskap Norge checklists (multi-select or file upload).
+   - "Save Client" button stores all data.
+
+2. **Client details view**:
+   - Show all information from both steps:
+     - Company info
+     - AML/KYC status
+     - Tasks
+     - Accounting system
+     - Responsible person
+     - Attached checklists
+
+3. **Employee management**:
+   - New "Employees" page for admins to register employees who can be responsible for clients.
+   - Employee fields: `name`, `title`, `email`.
+   - These employees appear in "Responsible Person" dropdown in Step 2.
+
+4. **Database migration**:
+   - Update `clients` table with new fields:
+     - `company_name` (TEXT)
+     - `org_number` (TEXT)
+     - `address` (TEXT)
+     - `postcode` (TEXT)
+     - `city` (TEXT)
+     - `municipality` (TEXT)
+     - `phone` (TEXT)
+     - `email` (TEXT)
+     - `kyc_status` (TEXT)
+     - `tasks` (JSONB)
+     - `accounting_system` (TEXT)
+     - `responsible_person_id` (UUID)
+     - `checklists` (JSONB)
+   - Create new `employees` table:
+     - `id` (UUID, PK)
+     - `name` (TEXT)
+     - `title` (TEXT)
+     - `email` (TEXT)
+
+5. **Automatic migration**:
+   - Generate and apply database migrations for the above changes using our ORM/migration system.
+   - Ensure all existing data is preserved.
+   - Update backend API routes to support the new fields.
+   - Update frontend forms and views to use the new fields.
+
+6. **Navigation**:
+   - Add "Employees" link in admin menu.
+   - Ensure client list shows company name and responsible person.
+
+7. **Testing**:
+   - Step 1 correctly fetches Brønnøysund data.
+   - Step 2 saves engagement settings.
+   - Client detail view displays all information.
+   - Employees can be added and selected as responsible person.
+
+Do not remove any existing features — only add and migrate as described.

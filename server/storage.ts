@@ -1,9 +1,9 @@
 import { 
-  users, tenants, clients, tasks, timeEntries, documents, notifications, integrations,
+  users, tenants, clients, employees, tasks, timeEntries, documents, notifications, integrations,
   clientTasks, clientResponsibles, companyRegistryData, amlDocuments, amlProviders, amlChecks, accountingIntegrations,
   checklistTemplates, clientChecklists, plugins, pluginConfigurations,
   type User, type InsertUser, type Tenant, type InsertTenant, type Client, type InsertClient,
-  type Task, type InsertTask, 
+  type Employee, type InsertEmployee, type Task, type InsertTask, 
   type TimeEntry, type InsertTimeEntry, type Document, type InsertDocument,
   type Notification, type InsertNotification, type Integration, type InsertIntegration,
   type CompanyRegistryData, type InsertCompanyRegistryData, type AmlDocument, type InsertAmlDocument,
@@ -26,6 +26,13 @@ export interface IStorage {
   // Tenant management
   getTenant(id: string): Promise<Tenant | undefined>;
   createTenant(tenant: InsertTenant): Promise<Tenant>;
+
+  // Employee management
+  getEmployeesByTenant(tenantId: string): Promise<Employee[]>;
+  getEmployee(id: string): Promise<Employee | undefined>;
+  createEmployee(employee: InsertEmployee): Promise<Employee>;
+  updateEmployee(id: string, updates: Partial<Employee>): Promise<Employee>;
+  deleteEmployee(id: string): Promise<void>;
 
   // Client management
   getClientsByTenant(tenantId: string): Promise<Client[]>;
@@ -172,6 +179,37 @@ export class DatabaseStorage implements IStorage {
   async createTenant(insertTenant: InsertTenant): Promise<Tenant> {
     const [tenant] = await db.insert(tenants).values(insertTenant).returning();
     return tenant;
+  }
+
+  // Employee management
+  async getEmployeesByTenant(tenantId: string): Promise<Employee[]> {
+    return db.select().from(employees).where(and(eq(employees.tenantId, tenantId), eq(employees.isActive, true)));
+  }
+
+  async getEmployee(id: string): Promise<Employee | undefined> {
+    const [employee] = await db.select().from(employees).where(eq(employees.id, id));
+    return employee || undefined;
+  }
+
+  async createEmployee(insertEmployee: InsertEmployee): Promise<Employee> {
+    const [employee] = await db.insert(employees).values(insertEmployee).returning();
+    return employee;
+  }
+
+  async updateEmployee(id: string, updates: Partial<Employee>): Promise<Employee> {
+    const [employee] = await db
+      .update(employees)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(employees.id, id))
+      .returning();
+    return employee;
+  }
+
+  async deleteEmployee(id: string): Promise<void> {
+    await db
+      .update(employees)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(employees.id, id));
   }
 
   async getClientsByTenant(tenantId: string): Promise<Client[]> {

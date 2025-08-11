@@ -39,24 +39,44 @@ export const tenants = pgTable("tenants", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Employees
+export const employees = pgTable("employees", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull(),
+  name: text("name").notNull(),
+  title: text("title"),
+  email: text("email"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Clients
 export const clients = pgTable("clients", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").notNull(),
-  name: text("name").notNull(),
+  // Step 1 - Company Information
+  companyName: text("company_name").notNull(), // From Brønnøysund or manual
+  name: text("name").notNull(), // Legacy field, same as companyName
   orgNumber: text("org_number"),
-  email: text("email"),
-  phone: text("phone"),
   address: text("address"),
+  postcode: text("postcode"),
+  city: text("city"),
+  municipality: text("municipality"),
+  phone: text("phone"),
+  email: text("email"),
   contactPerson: text("contact_person"),
+  // Step 2 - Engagement & Settings
   amlStatus: text("aml_status").default("pending"), // pending, approved, rejected
-  accountingSystem: text("accounting_system"), // Fiken, Tripletex, Unimicro, PowerOffice, Conta, Annet
-  accountingSystemUrl: text("accounting_system_url"), // Custom URL for "Annet"
+  kycStatus: text("kyc_status").default("pending"), // pending, approved, rejected
+  tasks: jsonb("tasks"), // Multi-select task list
+  accountingSystem: text("accounting_system"), // Fiken, Tripletex, Unimicro, PowerOffice, Conta, Other
+  accountingSystemUrl: text("accounting_system_url"), // Custom URL for "Other"
+  responsiblePersonId: uuid("responsible_person_id"), // From employees table
+  checklists: jsonb("checklists"), // Regnskap Norge checklists
+  // Legacy/Additional fields
   notes: text("notes"),
-  kycStatus: text("kyc_status").default("pending"), // pending, verified, rejected, expired
   amlDocuments: jsonb("aml_documents"), // AML document uploads
-  tasks: jsonb("tasks"), // Client task assignments
-  responsiblePersonId: uuid("responsible_person_id"), // Assigned responsible person
   recurringTasks: jsonb("recurring_tasks"), // Recurring task templates
   hourlyReportNotes: text("hourly_report_notes"), // Notes for hourly reports
   checklistStatus: text("checklist_status"), // Status of client checklist
@@ -373,10 +393,21 @@ export const tenantsRelations = relations(tenants, ({ many }) => ({
   integrations: many(integrations),
 }));
 
+export const employeesRelations = relations(employees, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [employees.tenantId],
+    references: [tenants.id],
+  }),
+}));
+
 export const clientsRelations = relations(clients, ({ one, many }) => ({
   tenant: one(tenants, {
     fields: [clients.tenantId],
     references: [tenants.id],
+  }),
+  responsiblePerson: one(employees, {
+    fields: [clients.responsiblePersonId],
+    references: [employees.id],
   }),
   tasks: many(tasks),
   clientTasks: many(clientTasks),
@@ -522,6 +553,12 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
   createdAt: true,
 });
 
+export const insertEmployeeSchema = createInsertSchema(employees).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertIntegrationSchema = createInsertSchema(integrations).omit({
   id: true,
   createdAt: true,
@@ -588,6 +625,8 @@ export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type Tenant = typeof tenants.$inferSelect;
 export type InsertTenant = z.infer<typeof insertTenantSchema>;
+export type Employee = typeof employees.$inferSelect;
+export type InsertEmployee = z.infer<typeof insertEmployeeSchema>;
 export type Client = typeof clients.$inferSelect;
 export type InsertClient = z.infer<typeof insertClientSchema>;
 export type Task = typeof tasks.$inferSelect;

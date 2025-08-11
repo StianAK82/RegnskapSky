@@ -12,6 +12,7 @@ import Login from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
 import Clients from "@/pages/clients";
 import ClientDetail from "@/pages/client-detail";
+import Employees from "@/pages/employees";
 import Tasks from "@/pages/tasks";
 import AIAssistant from "@/pages/ai-assistant";
 import Subscriptions from "@/pages/subscriptions";
@@ -52,6 +53,15 @@ function AuthenticatedRoutes() {
         component={() => (
           <ProtectedRoute allowedRoles={['admin', 'ansatt']}>
             <ClientDetail />
+          </ProtectedRoute>
+        )} 
+      />
+
+      <Route 
+        path="/employees" 
+        component={() => (
+          <ProtectedRoute allowedRoles={['admin', 'oppdragsansvarlig']}>
+            <Employees />
           </ProtectedRoute>
         )} 
       />
