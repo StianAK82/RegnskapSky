@@ -1,0 +1,57 @@
+Du er en ekspert fullstack-utvikler. Du skal forbedre klienthåndtering og dashboard i et regnskapssystem. Følg strukturen under, og bruk React + Tailwind på frontend og Node.js + Express på backend. Bruk PostgreSQL. Fokusér på token-effektiv kode og modularitet.
+
+---
+
+🎯 Forbedre og implementer:
+
+1. **Klientkort**
+   - Felter: navn, org.nr, kontaktperson, regnskapssystem
+   - KYC-status (boolean), AML-status (boolean)
+   - Fritekst notatfelt
+   - Vis antall bilag via dummy API `/api/bilag-count/:klientId`
+   - Redirect-knapp til valgt regnskapssystem
+
+2. **Oppgaver per klient**
+   - Oppgave: tittel, beskrivelse, frist, gjentas (intervall), status, ferdigstilt
+   - Hver oppgave tilhører en klient og har en oppdragsansvarlig
+   - Mulighet for å legge til nye oppgaver
+
+3. **Ansatt/rolle-modell**
+   - Tabell: ansattId, navn, rolle (admin, oppdragsansvarlig, regnskapsfører)
+   - Ansatt kan knyttes til klient (som ansvarlig)
+   - Admin skal kunne:
+     - Se hvor mange oppgaver hver ansatt har
+     - Fordele oppgaver manuelt
+
+4. **Timeføring**
+   - Felt for å registrere antall timer før man bytter klient
+   - Timer vises på dashboard per ansatt
+
+5. **Dashboard** (bruk designet fra bildet du lastet opp)
+   - Totalt antall klienter
+   - Aktive oppgaver (med rød/gul indikator for frist)
+   - Timer ført denne uken
+   - Bilag behandlet (fra bilags-API)
+   - Gjenstående timer per ansatt
+   - Hurtighandlinger: opprett klient, last opp bilag, generer rapport, spør AI
+   - API-integrasjoner med status
+
+---
+
+🧱 Teknologi:
+- Frontend: React, Tailwind CSS
+- Backend: Node.js + Express
+- DB: PostgreSQL (bruk Prisma eller Sequelize)
+- Autentisering: JWT
+- Ingen AI-implementasjon i denne prompten
+
+🧠 Viktig:
+- Bruk komponentbasert struktur i React
+- Skriv gjenbrukbare API-endepunkter
+- Optimaliser for lav token-bruk og høy lesbarhet
+- Start med datamodeller, så API, så frontend-visning
+
+---
+
+🎯 Mål:
+Gi systemet funksjonell og visuell støtte for bedre klienthåndtering og fordeling av arbeid blant ansatte.

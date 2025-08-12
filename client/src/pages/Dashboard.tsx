@@ -72,118 +72,204 @@ export default function Dashboard() {
 
             {/* Metrics Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card>
+              {/* Total Clients Card */}
+              <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Totale Klienter</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium">Totalt klienter</CardTitle>
+                  <Users className="h-4 w-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{metrics?.totalClients || 0}</div>
-                  <p className="text-xs text-muted-foreground">
-                    Registrerte klienter
-                  </p>
+                  <p className="text-xs opacity-80">Aktive klientkontoer</p>
                 </CardContent>
               </Card>
 
-              <Card>
+              {/* Active Tasks Card */}
+              <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Aktive Oppgaver</CardTitle>
-                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium">Aktive oppgaver</CardTitle>
+                  <CheckCircle className="h-4 w-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{metrics?.activeTasks || 0}</div>
-                  <p className="text-xs text-muted-foreground">
-                    Pågående arbeidsoppgaver
-                  </p>
+                  <p className="text-xs opacity-80">Pågående arbeidsoppgaver</p>
                 </CardContent>
               </Card>
 
-              <Card>
+              {/* Overdue Tasks Card */}
+              <Card className="bg-gradient-to-r from-red-500 to-red-600 text-white">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Forsinkede Oppgaver</CardTitle>
-                  <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium">Forsinkede oppgaver</CardTitle>
+                  <AlertTriangle className="h-4 w-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{metrics?.overdueTasks || 0}</div>
-                  <p className="text-xs text-muted-foreground">
-                    Krever oppmerksomhet
-                  </p>
+                  <p className="text-xs opacity-80">Krever umiddelbar oppmerksomhet</p>
                 </CardContent>
               </Card>
 
-              <Card>
+              {/* Weekly Hours Card */}
+              <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Timer denne uken</CardTitle>
-                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  <Clock className="h-4 w-4" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{metrics?.weeklyHours || 0}</div>
-                  <p className="text-xs text-muted-foreground">
-                    Registrerte timer
-                  </p>
+                  <div className="text-2xl font-bold">{metrics?.weeklyHours || 0}t</div>
+                  <p className="text-xs opacity-80">Registrerte arbeidstimer</p>
+                </CardContent>
+              </Card>
+
+              {/* Documents Processed Card */}
+              <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Bilag behandlet</CardTitle>
+                  <FileText className="h-4 w-4" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{metrics?.documentsProcessed || 0}</div>
+                  <p className="text-xs opacity-80">Dokumenter AI-kategorisert</p>
+                </CardContent>
+              </Card>
+
+              {/* Completed This Week Card */}
+              <Card className="bg-gradient-to-r from-teal-500 to-teal-600 text-white">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Ferdigstilt i uken</CardTitle>
+                  <TrendingUp className="h-4 w-4" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{metrics?.completedThisWeek || 0}</div>
+                  <p className="text-xs opacity-80">Oppgaver avsluttet</p>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Recent Clients */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Quick Actions Panel */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+              <Card className="lg:col-span-2">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5" />
+                    Hurtighandlinger
+                  </CardTitle>
+                  <CardDescription>Vanlige oppgaver og handlinger</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <button className="flex flex-col items-center p-4 rounded-lg border-2 border-dashed border-gray-300 hover:border-blue-500 hover:bg-blue-50 transition-all">
+                      <Users className="h-8 w-8 text-gray-400 mb-2" />
+                      <span className="text-sm font-medium text-gray-700">Opprett klient</span>
+                    </button>
+                    
+                    <button className="flex flex-col items-center p-4 rounded-lg border-2 border-dashed border-gray-300 hover:border-green-500 hover:bg-green-50 transition-all">
+                      <FileText className="h-8 w-8 text-gray-400 mb-2" />
+                      <span className="text-sm font-medium text-gray-700">Last opp bilag</span>
+                    </button>
+                    
+                    <button className="flex flex-col items-center p-4 rounded-lg border-2 border-dashed border-gray-300 hover:border-purple-500 hover:bg-purple-50 transition-all">
+                      <TrendingUp className="h-8 w-8 text-gray-400 mb-2" />
+                      <span className="text-sm font-medium text-gray-700">Generer rapport</span>
+                    </button>
+                    
+                    <button className="flex flex-col items-center p-4 rounded-lg border-2 border-dashed border-gray-300 hover:border-orange-500 hover:bg-orange-50 transition-all">
+                      <AlertTriangle className="h-8 w-8 text-gray-400 mb-2" />
+                      <span className="text-sm font-medium text-gray-700">Spør AI</span>
+                    </button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* API Status Panel */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
-                    Nylige Klienter
+                    <CheckCircle className="h-5 w-5" />
+                    API Status
                   </CardTitle>
-                  <CardDescription>
-                    Sist registrerte klienter
-                  </CardDescription>
+                  <CardDescription>Integrasjoner og tjenester</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Fiken</span>
+                    <Badge className="bg-green-100 text-green-800 text-xs">Tilkoblet</Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Tripletex</span>
+                    <Badge className="bg-green-100 text-green-800 text-xs">Tilkoblet</Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Brønnøysund</span>
+                    <Badge className="bg-green-100 text-green-800 text-xs">Aktiv</Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">OpenAI</span>
+                    <Badge className="bg-yellow-100 text-yellow-800 text-xs">Begrenset</Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Recent Activity and Workload */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Clock className="h-5 w-5" />
+                    Siste aktivitet
+                  </CardTitle>
+                  <CardDescription>Nylige handlinger og endringer</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {recentClients.slice(0, 5).map((client: any) => (
-                      <div key={client.id} className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium">{client.name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {client.orgNumber || 'Ingen org.nr'}
-                          </p>
+                    {recentClients.slice(0, 5).map((client: any, index: number) => (
+                      <div key={index} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                            <Users className="h-4 w-4 text-blue-600" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium">{client.name}</p>
+                            <p className="text-xs text-gray-500">Klient opprettet</p>
+                          </div>
                         </div>
-                        <Badge variant={client.amlStatus === 'approved' ? 'default' : 'secondary'}>
-                          {client.amlStatus === 'approved' ? 'Godkjent' : 'Venter'}
-                        </Badge>
+                        <Badge className="bg-gray-100 text-gray-700 text-xs">Ny</Badge>
                       </div>
                     ))}
                     {recentClients.length === 0 && (
-                      <p className="text-muted-foreground text-center py-4">
-                        Ingen klienter registrert ennå
-                      </p>
+                      <div className="text-center py-8 text-gray-500">
+                        <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                        <p className="text-sm">Ingen nylig aktivitet</p>
+                      </div>
                     )}
                   </div>
                 </CardContent>
               </Card>
 
+              {/* Employee Workload Summary */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <TrendingUp className="h-5 w-5" />
-                    Rask tilgang
+                    Ansatt-arbeidsbelastning
                   </CardTitle>
-                  <CardDescription>
-                    Hurtige handlinger
-                  </CardDescription>
+                  <CardDescription>Oppgavefordeling og timer</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                      <span className="font-medium">Ny klient</span>
-                      <span className="text-sm text-muted-foreground">Registrer ny</span>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between py-2">
+                      <span className="text-sm text-gray-600">Gjennomsnittlig timer/uke</span>
+                      <span className="font-medium">{Math.round((metrics?.weeklyHours || 0) / Math.max(1, recentClients.length))}t</span>
                     </div>
-                    <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                      <span className="font-medium">Timeregistrering</span>
-                      <span className="text-sm text-muted-foreground">Logg timer</span>
+                    <div className="flex items-center justify-between py-2">
+                      <span className="text-sm text-gray-600">Aktive oppgaver</span>
+                      <span className="font-medium">{metrics?.activeTasks || 0}</span>
                     </div>
-                    <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                      <span className="font-medium">Rapporter</span>
-                      <span className="text-sm text-muted-foreground">Se oversikt</span>
+                    <div className="flex items-center justify-between py-2">
+                      <span className="text-sm text-gray-600">Forsinkede oppgaver</span>
+                      <Badge className={`text-xs ${(metrics?.overdueTasks || 0) > 0 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
+                        {metrics?.overdueTasks || 0}
+                      </Badge>
                     </div>
                   </div>
                 </CardContent>

@@ -1061,78 +1061,179 @@ export default function Clients() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredClients.map((client) => (
-                <Card key={client.id} className="hover:shadow-md transition-shadow">
-                  <CardHeader className="pb-3">
-                    <div className="flex justify-between items-start">
-                      <CardTitle className="text-lg">{client.name}</CardTitle>
-                      {getAMLStatusBadge(client.amlStatus)}
-                    </div>
-                    {client.orgNumber && (
-                      <p className="text-sm text-gray-500">Org.nr: {client.orgNumber}</p>
-                    )}
-                  </CardHeader>
-                  
-                  <CardContent className="pt-0">
-                    <div className="space-y-2">
-                      {client.contactPerson && (
-                        <p className="text-sm">
-                          <i className="fas fa-user text-gray-400 mr-2"></i>
-                          {client.contactPerson}
-                        </p>
-                      )}
-                      
-                      {client.email && (
-                        <p className="text-sm">
-                          <i className="fas fa-envelope text-gray-400 mr-2"></i>
-                          {client.email}
-                        </p>
-                      )}
-                      
-                      {client.phone && (
-                        <p className="text-sm">
-                          <i className="fas fa-phone text-gray-400 mr-2"></i>
-                          {client.phone}
-                        </p>
-                      )}
-                      
-                      {client.notes && (
-                        <p className="text-sm text-gray-600 mt-2 line-clamp-2">
-                          {client.notes}
-                        </p>
-                      )}
-                    </div>
-                    
-                    <div className="flex justify-between items-center mt-4 pt-4 border-t">
-                      <span className="text-xs text-gray-500">
-                        Opprettet {new Date(client.createdAt).toLocaleDateString('nb-NO')}
-                      </span>
-                      
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setLocation(`/clients/${client.id}`)}
-                        >
-                          <i className="fas fa-eye mr-1"></i>
-                          Vis detaljer
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEdit(client)}
-                        >
-                          <i className="fas fa-edit mr-1"></i>
-                          Rediger
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <ClientCard key={client.id} client={client} onEdit={handleEdit} />
               ))}
             </div>
           )}
         </main>
       </div>
     </div>
+  );
+}
+
+// Enhanced Client Card Component with all requested features
+function ClientCard({ client, onEdit }: { client: any; onEdit: (client: any) => void }) {
+  const [bilagCount, setBilagCount] = useState<{ count: number; processed: number } | null>(null);
+  const { toast } = useToast();
+  
+  // Fetch bilag count when component mounts
+  useEffect(() => {
+    const fetchBilagCount = async () => {
+      try {
+        const response = await apiRequest('GET', `/api/bilag-count/${client.id}`);
+        if (response.ok) {
+          const data = await response.json();
+          setBilagCount(data);
+        }
+      } catch (error) {
+        // Silently handle - not critical for display
+      }
+    };
+    
+    fetchBilagCount();
+  }, [client.id]);
+
+  // Accounting system URLs mapping
+  const accountingSystemUrls = {
+    fiken: "https://fiken.no",
+    tripletex: "https://tripletex.no", 
+    unimicro: "https://unimicro.no",
+    poweroffice: "https://poweroffice.no",
+    conta: "https://conta.no"
+  };
+
+  const handleAccountingSystemRedirect = () => {
+    if (client.accountingSystem && accountingSystemUrls[client.accountingSystem as keyof typeof accountingSystemUrls]) {
+      window.open(accountingSystemUrls[client.accountingSystem as keyof typeof accountingSystemUrls], '_blank');
+    } else {
+      toast({
+        title: "Ingen URL",
+        description: "Ingen URL er satt opp for dette regnskapssystemet",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const getKYCStatusBadge = (status: string) => {
+    switch (status) {
+      case 'approved':
+        return <Badge className="bg-green-100 text-green-800 text-xs">✓ KYC OK</Badge>;
+      case 'rejected':
+        return <Badge className="bg-red-100 text-red-800 text-xs">✗ KYC Avvist</Badge>;
+      default:
+        return <Badge className="bg-yellow-100 text-yellow-800 text-xs">⏳ KYC Venter</Badge>;
+    }
+  };
+
+  const getAMLStatusBadge = (status: string) => {
+    switch (status) {
+      case 'approved':
+        return <Badge className="bg-green-100 text-green-800 text-xs">✓ AML OK</Badge>;
+      case 'rejected':
+        return <Badge className="bg-red-100 text-red-800 text-xs">✗ AML Avvist</Badge>;
+      default:
+        return <Badge className="bg-yellow-100 text-yellow-800 text-xs">⏳ AML Venter</Badge>;
+    }
+  };
+
+  return (
+    <Card className="hover:shadow-lg transition-all duration-200 border-l-4 border-l-blue-500">
+      <CardHeader className="pb-3">
+        <div className="flex justify-between items-start">
+          <div>
+            <CardTitle className="text-lg font-semibold text-gray-900">{client.name}</CardTitle>
+            {client.orgNumber && (
+              <p className="text-sm text-gray-500 mt-1">Org.nr: {client.orgNumber}</p>
+            )}
+          </div>
+          <div className="flex flex-col gap-1">
+            {getAMLStatusBadge(client.amlStatus)}
+            {getKYCStatusBadge(client.kycStatus)}
+          </div>
+        </div>
+      </CardHeader>
+      
+      <CardContent className="pt-0">
+        {/* Basic Client Info */}
+        <div className="space-y-2 mb-4">
+          {client.contactPerson && (
+            <div className="flex items-center text-sm text-gray-600">
+              <Users className="h-4 w-4 text-gray-400 mr-2" />
+              {client.contactPerson}
+            </div>
+          )}
+          
+          {client.accountingSystem && (
+            <div className="flex items-center text-sm text-gray-600">
+              <FileText className="h-4 w-4 text-gray-400 mr-2" />
+              <span className="capitalize">{client.accountingSystem}</span>
+              <button
+                onClick={handleAccountingSystemRedirect}
+                className="ml-2 text-blue-600 hover:text-blue-800 text-xs"
+                title="Gå til regnskapssystem"
+              >
+                <i className="fas fa-external-link-alt"></i>
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Bilag Count Display */}
+        <div className="bg-gray-50 rounded-lg p-3 mb-4">
+          <div className="flex justify-between items-center">
+            <span className="text-sm font-medium text-gray-700">Bilag</span>
+            <div className="text-right">
+              {bilagCount ? (
+                <>
+                  <div className="text-lg font-semibold text-gray-900">{bilagCount.count}</div>
+                  <div className="text-xs text-gray-500">
+                    {bilagCount.processed} behandlet
+                  </div>
+                </>
+              ) : (
+                <div className="text-sm text-gray-500">Laster...</div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Notes Section */}
+        {client.notes && (
+          <div className="mb-4">
+            <p className="text-sm text-gray-600 bg-blue-50 p-2 rounded border-l-2 border-blue-200">
+              <strong>Notater:</strong> {client.notes}
+            </p>
+          </div>
+        )}
+        
+        {/* Action Buttons */}
+        <div className="flex justify-between items-center pt-4 border-t">
+          <span className="text-xs text-gray-500">
+            {new Date(client.createdAt).toLocaleDateString('nb-NO')}
+          </span>
+          
+          <div className="flex space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onEdit(client)}
+              className="text-blue-600 border-blue-300 hover:bg-blue-50"
+            >
+              <i className="fas fa-edit mr-1"></i>
+              Rediger
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.location.href = `/client-detail/${client.id}`}
+              className="text-green-600 border-green-300 hover:bg-green-50"
+            >
+              <i className="fas fa-tasks mr-1"></i>
+              Oppgaver
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

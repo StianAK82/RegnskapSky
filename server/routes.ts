@@ -626,6 +626,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Bilag count for client cards  
+  app.get("/api/bilag-count/:klientId", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const count = await storage.getDocumentCountByClient(req.params.klientId);
+      res.json({ count, processed: count > 0 ? Math.floor(count * 0.8) : 0 }); // 80% processed mock
+    } catch (error: any) {
+      res.status(500).json({ message: "Feil ved telling av bilag: " + error.message });
+    }
+  });
+
   app.post("/api/documents", authenticateToken, async (req: AuthRequest, res) => {
     try {
       const documentData = insertDocumentSchema.parse({
