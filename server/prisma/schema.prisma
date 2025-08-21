@@ -1,0 +1,284 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  Vendor
+  LicenseAdmin
+  Employee
+}
+
+enum TaskStatus {
+  Open
+  InProgress
+  Blocked
+  Done
+}
+
+enum TaskType {
+  Standard
+  Custom
+  Special
+}
+
+enum Priority {
+  Low
+  Medium
+  High
+  Critical
+}
+
+enum AmlStatus {
+  NotStarted
+  InProgress
+  Verified
+  Expired
+}
+
+enum LicenseStatus {
+  Active
+  Inactive
+  Expired
+  Suspended
+}
+
+enum NotificationType {
+  TaskReminder
+  AmlReminder
+  SystemAlert
+  LicenseExpiry
+}
+
+model License {
+  id             String        @id @default(cuid())
+  companyName    String        @map("company_name")
+  orgNumber      String        @unique @map("org_number")
+  adminUserId    String?       @map("admin_user_id")
+  employeeLimit  Int           @map("employee_limit")
+  startsAt       DateTime      @map("starts_at")
+  endsAt         DateTime      @map("ends_at")
+  status         LicenseStatus @default(Active)
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  users        User[]
+  clients      Client[]
+  tasks        Task[]
+  timeEntries  TimeEntry[]   @relation("LicenseTimeEntries")
+  notifications Notification[]
+  auditLogs    AuditLog[]
+  featureFlags FeatureFlag[]
+
+  @@map("licenses")
+  @@index([status])
+}
+
+model User {
+  id           String   @id @default(cuid())
+  licenseId    String   @map("license_id")
+  name         String
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         UserRole
+  authProvider String?  @map("auth_provider")
+  mfaEnabled   Boolean  @default(false) @map("mfa_enabled")
+  mfaSecret    String?  @map("mfa_secret")
+  lastLoginAt  DateTime? @map("last_login_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  license       License        @relation(fields: [licenseId], references: [id], onDelete: Cascade)
+  assignedTasks Task[]         @relation("TaskAssignee")
+  timeEntries   TimeEntry[]
+  notifications Notification[]
+  auditLogs     AuditLog[]
+  checkedItems  TaskChecklistItem[] @relation("CheckedBy")
+
+  @@map("users")
+  @@index([licenseId])
+  @@index([email])
+}
+
+model Client {
+  id                  String   @id @default(cuid())
+  licenseId           String   @map("license_id")
+  orgNumber           String?  @map("org_number")
+  name                String
+  orgForm             String?  @map("org_form")
+  email               String?
+  phone               String?
+  address             String?
+  postalCode          String?  @map("postal_code")
+  city                String?
+  naceCode            String?  @map("nace_code")
+  naceText            String?  @map("nace_text")
+  accountingSystem    String?  @map("accounting_system")
+  accountingSystemUrl String?  @map("accounting_system_url")
+  notes               String?
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  license             License              @relation(fields: [licenseId], references: [id], onDelete: Cascade)
+  responsibles        ClientResponsible[]
+  amlStatuses         AmlStatus[]
+  tasks               Task[]
+  timeEntries         TimeEntry[]
+
+  @@map("clients")
+  @@index([licenseId])
+  @@index([licenseId, orgNumber])
+}
+
+model ClientResponsible {
+  id       String @id @default(cuid())
+  clientId String @map("client_id")
+  name     String
+  title    String?
+  email    String
+
+  // Relations
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@map("client_responsibles")
+}
+
+model AmlStatus {
+  id              String     @id @default(cuid())
+  clientId        String     @map("client_id")
+  status          AmlStatus  @default(NotStarted)
+  lastVerifiedAt  DateTime?  @map("last_verified_at")
+  verifiedRef     String?    @map("verified_ref")
+  nextDueAt       DateTime?  @map("next_due_at")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+
+  // Relations
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@map("aml_statuses")
+}
+
+model Task {
+  id           String     @id @default(cuid())
+  licenseId    String     @map("license_id")
+  clientId     String?    @map("client_id")
+  title        String
+  description  String?
+  type         TaskType   @default(Standard)
+  scheduleJson Json?      @map("schedule_json")
+  dueDate      DateTime?  @map("due_date")
+  status       TaskStatus @default(Open)
+  priority     Priority   @default(Medium)
+  assigneeUserId String?  @map("assignee_user_id")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  // Relations
+  license       License             @relation(fields: [licenseId], references: [id], onDelete: Cascade)
+  client        Client?             @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  assignee      User?               @relation("TaskAssignee", fields: [assigneeUserId], references: [id])
+  checklistItems TaskChecklistItem[]
+  timeEntries   TimeEntry[]
+
+  @@map("tasks")
+  @@index([clientId, status, dueDate])
+}
+
+model TaskChecklistItem {
+  id        String    @id @default(cuid())
+  taskId    String    @map("task_id")
+  label     String
+  isChecked Boolean   @default(false) @map("is_checked")
+  checkedAt DateTime? @map("checked_at")
+  checkedBy String?   @map("checked_by")
+
+  // Relations
+  task    Task  @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  checker User? @relation("CheckedBy", fields: [checkedBy], references: [id])
+
+  @@map("task_checklist_items")
+}
+
+model TimeEntry {
+  id          String    @id @default(cuid())
+  licenseId   String    @map("license_id")
+  clientId    String    @map("client_id")
+  taskId      String?   @map("task_id")
+  userId      String    @map("user_id")
+  hours       Decimal   @db.Decimal(5, 2)
+  workDate    DateTime  @map("work_date") @db.Date
+  notes       String
+  lockedAt    DateTime? @map("locked_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  license License @relation("LicenseTimeEntries", fields: [licenseId], references: [id], onDelete: Cascade)
+  client  Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  task    Task?   @relation(fields: [taskId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@map("time_entries")
+  @@index([clientId, userId, workDate])
+}
+
+model Notification {
+  id         String           @id @default(cuid())
+  licenseId  String           @map("license_id")
+  userId     String?          @map("user_id")
+  type       NotificationType
+  payloadJson Json            @map("payload_json")
+  isRead     Boolean          @default(false) @map("is_read")
+  createdAt  DateTime         @default(now()) @map("created_at")
+
+  // Relations
+  license License @relation(fields: [licenseId], references: [id], onDelete: Cascade)
+  user    User?   @relation(fields: [userId], references: [id])
+
+  @@map("notifications")
+}
+
+model AuditLog {
+  id           String    @id @default(cuid())
+  licenseId    String?   @map("license_id")
+  actorUserId  String    @map("actor_user_id")
+  action       String
+  targetType   String    @map("target_type")
+  targetId     String    @map("target_id")
+  metaJson     Json      @map("meta_json")
+  ip           String?
+  userAgent    String?   @map("user_agent")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  license License? @relation(fields: [licenseId], references: [id])
+  actor   User     @relation(fields: [actorUserId], references: [id])
+
+  @@map("audit_logs")
+  @@index([licenseId, createdAt])
+}
+
+model FeatureFlag {
+  id            String   @id @default(cuid())
+  licenseId     String   @map("license_id")
+  flagKey       String   @map("flag_key")
+  flagValueJson Json     @map("flag_value_json")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  license License @relation(fields: [licenseId], references: [id], onDelete: Cascade)
+
+  @@map("feature_flags")
+  @@unique([licenseId, flagKey])
+}

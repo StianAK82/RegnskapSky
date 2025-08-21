@@ -1,0 +1,115 @@
+Velg alternativ 1. Bygg et helt nytt prosjekt etter spesifikasjonen vår – ikke transformer eksisterende repo.
+
+Arkitektur & stack (faste krav)
+
+Frontend: Next.js 14 (App Router), TypeScript, Tailwind, shadcn/ui, TanStack Query, Zod
+
+Backend: NestJS (TypeScript) i /server med REST API
+
+DB: PostgreSQL + Prisma (migrasjoner + seed)
+
+Jobs/queues: BullMQ + Redis
+
+Auth: E‑post+passord med MFA (TOTP), JWT access/refresh (rotasjon), SSO‑stub (AzureAD/Google), BankID‑stub
+
+Sikkerhet: Helmet/CSP, rate‑limit, bcrypt, HIBP‑stub, obligatorisk tenant‑guard på alle queries
+
+Tester: Jest (BE unit/integration) + Playwright (FE E2E)
+
+CI: GitHub Actions (install → migrate → jest → playwright)
+
+Forretningskrav (full implementasjon – ikke bare skjelett)
+
+Roller & isolasjon: Vendor, LicenseAdmin, Employee. Ingen client/customer‑rolle/innlogging. Streng isolasjon med license_id i alle data‑operasjoner.
+
+Lisensmodul (Vendor): Opprette/oppdatere lisenser (company, orgnr, admin‑email, employee_limit, start/utløp, status). Auto‑opprett LicenseAdmin. Vendor ser kun lisens‑metadata – aldri tenantdata.
+
+Brukere (LicenseAdmin): Administrere ansatte i egen tenant; håndhev employee_limit.
+
+Klient (CRM): To‑stegs opprettelse: (1) Brønnøysund‑lookup (stub) fyller felter; (2) Sett AML‑status + årlig re‑kontroll. Lagre accounting_system (+ URL), responsibles, noter. Hurtigknapper: Altinn, Verified, Accounting‑system (redirects).
+
+Oppgaver: Auto‑generer standardoppgaver ved klientopprettelse (Bokføring, MVA, Lønn, Bank‑ og Kontoavstemming). Egendefinerte oppgaver. Gjentakelse (weekly/monthly/bi‑monthly/yearly/specific date via schedule_json). Spesialfrister: Aksjonærregister (des), Skattemelding (31.05), Årsoppgjør (31.07). Status, assignee, prioritet, sjekklister (krav før “Done”). Varsler 7/1 dager før frist.
+
+Timer: Tving modal ved klientbytte/logout hvis timer ikke registrert. Felter: hours, user, task, notes, work_date. Rapporter: per ansatt, per klient, per periode + CSV.
+
+AML/KYC: Statushistorikk (NotStarted/InProgress/Verified/Expired). “Go to Verified” (stub) → ved fullført: last_verified_at, verified_ref, next_due_at = +12 mnd. Varsler 30/7/1 dager før forfall. Full audit‑spor.
+
+Dashboards:
+
+Vendor: kort + tabell over lisenser, status, brukt/limit, utløp (ingen tenantdata).
+
+LicenseAdmin: klientantall, åpne/forfalte oppgaver, AML‑varsler, kapasitet (timer), MFA‑dekning.
+
+Employee: mine klienter/oppgaver, frister, mine timer (denne/forrige uke).
+
+Widgets: Oppgaveliste, fristkalender, klientstatus (grønn/gul/rød), tid/arbeidsbelastning, AML‑dokumentstatus, AI‑forslag (lokal stub – ingen PII ut).
+
+Audit & feature‑flags: Append‑only audit log for auth, lisens, bruker‑CRUD, klient/oppgave/tid/AML; feature‑flagg per tenant.
+
+Prisma‑schema (entiteter – implementer med indekser)
+
+licenses, users, clients, client_responsibles, aml_statuses, tasks, task_checklist_items, time_entries, notifications, audit_logs, feature_flags
+
+Indekser: users(license_id), clients(license_id, org_number), tasks(client_id, status, due_date), time_entries(client_id, user_id, work_date), audit_logs(license_id, created_at)
+
+Repo‑struktur (opprett alle filer/mapper)
+
+/server (NestJS): modules for auth, licensing, users, clients, tasks, time, aml, dashboard, notifications, audit, flags; guards JwtAuthGuard, RolesGuard, TenantGuard
+
+/server/prisma: schema.prisma, migrasjoner, seed.ts
+
+/server/tests (Jest): rbac.spec.ts, tenant.spec.ts, licensing.spec.ts, tasks.spec.ts, aml.spec.ts, time.spec.ts
+
+/web (Next.js): app/(auth)/login, mfa, logout; app/(vendor)/dashboard, licenses; app/(tenant)/dashboard, clients, clients/[id], tasks, time, reports, settings/users, audit; felles komponenter (widgets, tables, forms, modals – inkl. force‑time modal), lib/api.ts, Zod skjema
+
+/web/e2e (Playwright): login_mfa.spec.ts, create_license_tenant.spec.ts, client_create_tasks.spec.ts, aml_flow.spec.ts, time_flow.spec.ts, dashboards.spec.ts
+
+/.github/workflows/ci.yml (install → migrate → jest → playwright headless)
+
+docker-compose.yml (postgres, redis, server, web)
+
+README.md (setup, env, kommandoer, testmatrise)
+
+Seed‑data (må følge med)
+
+1 Vendor‑bruker
+
+1 Lisens for “Demo Byrå AS” (1 LicenseAdmin + 2 Employees)
+
+2–3 demo‑klienter med genererte standardoppgaver, noen sjekklister, timer og AML‑poster
+
+Kommandoer (skal fungere)
+
+npm run db:migrate && npm run db:seed
+
+npm run dev (starter server + web)
+
+npm test (Jest)
+
+npm run e2e (Playwright – start appen headless først)
+
+Tester – må være grønne (fiks kode til de passerer)
+
+RBAC‑matrise: rolle × endepunkt → allow/deny iht. spesifikasjon
+
+Tenant‑isolasjon: kryss‑tenant IDOR gir 403; alle repo‑kall krever license_id
+
+Lisenslimit: kan ikke opprette flere ansatte enn employee_limit (422)
+
+Oppgavegenerator: standardoppgaver + spesialfrister (Des 1, 31.05, 31.07)
+
+AML: verifisering setter last_verified_at og next_due_at = +12 mnd; varsler planlegges 30/7/1
+
+Timer: modal tvinger registrering ved klientbytte/logout; rapporter summerer riktig
+
+Dashboards: korrekt widget‑innhold per rolle; Vendor ser aldri tenantdata
+
+Leveringskontrakt
+
+Ikke stopp etter scaffolding. Implementer fungerende UI‑skjemaer/tabeller/flows.
+
+Håndhev MFA og tenant‑guard i middleware/guards.
+
+Legg ved README med nøyaktige steg for lokal kjøring.
+
+Dersom en test feiler: rett koden, kjør på nytt og lever først når alt er grønt.
