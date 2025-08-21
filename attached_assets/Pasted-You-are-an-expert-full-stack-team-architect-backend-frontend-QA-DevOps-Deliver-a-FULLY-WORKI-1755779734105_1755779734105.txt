@@ -1,0 +1,153 @@
+You are an expert full‑stack team (architect, backend, frontend, QA, DevOps).
+Deliver a FULLY WORKING production‑grade SaaS app in one run. Do not stop after scaffolding.
+Keep iterating until all tests pass green. If any step fails, FIX IT and rerun.
+
+## Product
+Name: Zaldo CRM / RegnskapsAI
+Goal: Multi‑tenant CRM for accounting firms with strict license isolation. 
+NO client/customer login/portal. Only Vendor, LicenseAdmin, Employee roles.
+
+## Tech choices (do not change)
+- Frontend: Next.js 14 (App Router), TypeScript, Tailwind, shadcn/ui, TanStack Query, Zod.
+- Backend: NestJS (TypeScript) in a `/server` folder, REST API.
+- DB: PostgreSQL + Prisma. Migrations included.
+- Jobs/Queues: BullMQ + Redis (for reminders).
+- Tests: 
+  - Backend: Jest (unit/integration).
+  - Frontend: Playwright (E2E).
+  - Security tests: basic IDOR/tenant guards.
+- CI: GitHub Actions workflow to install, migrate, run tests.
+- Auth: Email+password (+MFA TOTP), SSO stubs (AzureAD/Google), BankID stub. JWT access+refresh with rotation.
+- Security: Helmet/CSP, rate‑limit, bcrypt, HIBP stub, MFA required. Tenant guard on EVERY query.
+
+## Roles & isolation
+- Vendor (system owner): create/manage Licenses, see license metadata only (company/orgnr/contact/limits/status). NEVER see tenant internal data (clients/tasks/time).
+- LicenseAdmin (per tenant/byrå): full control INSIDE own tenant.
+- Employee: only own/assigned clients, tasks, time. 
+- No client/customer role exists; no login/portal for end customers.
+
+## Features to DELIVER (not stubs)
+1) Licensing & Auth
+   - Vendor can create License (company_name, org_number, admin_email, employee_limit, starts/ends, status).
+   - Auto‑create LicenseAdmin user on license creation (activation mail stub + MFA setup).
+   - Enforce employee_limit on user creation inside tenant.
+   - JWTs include license_id and role; backend guards reject cross‑tenant.
+   - Audit log for auth, license CRUD, user CRUD.
+
+2) CRM/Clients
+   - Create/edit/delete clients for a tenant.
+   - Two‑step create:
+       Step 1: Enter orgnr → fetch “Brønnøysund” via stub service that returns name, form, addresses, email, phone, NACE code/text.
+       Step 2: Set AML status seed + yearly re‑check.
+   - Store per‑client: accounting_system (enum Fiken/Tripletex/PowerOffice/Visma/UniMicro/Other) + accounting_system_url.
+   - Responsibles (name/title/email), notes.
+   - Quick actions: “Open Altinn”, “Open Verified”, “Open Accounting System” (external redirects).
+
+3) Tasks
+   - On client create: generate default tasks (Bookkeeping, VAT, Payroll, Bank Reconciliation, Account Reconciliation).
+   - Custom tasks allowed.
+   - Recurrence: weekly, monthly, bi‑monthly, yearly, specific date (store RRULE‑like schedule_json).
+   - Special deadlines auto‑created:
+       - Shareholder register task (December 1 due).
+       - Tax return task (May 31 due).
+       - Annual report task (July 31 due).
+   - Status: Open/InProgress/Blocked/Done; assignee; priority.
+   - Checklists per task; cannot mark Done until required items checked.
+   - Notifications: reminders 7/1 days before due; dashboard indicators.
+
+4) Time Tracking
+   - Require hour logging when switching client or logging out if pending work (modal flow).
+   - Fields: hours, user, task, notes, work_date.
+   - Reports pages: by employee, by client, by period. Export CSV.
+
+5) AML/KYC
+   - AML status on client with history: NotStarted/InProgress/Verified/Expired.
+   - “Go to Verified” button (redirect stub). On complete, record last_verified_at, verified_ref, and set next_due_at = +12 months.
+   - Scheduler sends warnings 30/7/1 days before next_due_at.
+   - Full audit trail of AML actions.
+
+6) Dashboards
+   - Vendor: Cards + table of sold licenses, status, used/limit, expiry; never show tenant data.
+   - LicenseAdmin: Clients count, open/late tasks, AML warnings, capacity (hours by employee), MFA coverage.
+   - Employee: My clients, my tasks, upcoming deadlines, my hours this/last week.
+   - Widgets: Task list, deadlines calendar, client status (green/yellow/red), time & workload, AML document status, “AI suggestions” (stubbed list, no PII).
+
+7) System Admin
+   - Manage employees (create/role change/deactivate) inside tenant; limit enforced.
+   - Feature flags per tenant.
+   - Audit log viewer (own tenant only; vendor sees only license‑level changes).
+
+8) AI assistant (v1 stub)
+   - Deterministic suggestions based on metadata: “You have 3 tasks due in 2 days”, “Run AML re‑check on X”.
+   - Must render inside dashboard panel, no external API call with PII.
+
+## Database schema (Prisma)
+- licenses(id, company_name, org_number, admin_user_id, employee_limit, starts_at, ends_at, status, created_at, updated_at)
+- users(id, license_id, name, email UNIQUE, password_hash, role ENUM('Vendor','LicenseAdmin','Employee'), auth_provider, mfa_enabled, last_login_at, created_at, updated_at)
+- clients(id, license_id, org_number, name, org_form, email, phone, address, postal_code, city, nace_code, nace_text, accounting_system, accounting_system_url, notes, created_at, updated_at)
+- client_responsibles(id, client_id, name, title, email)
+- aml_statuses(id, client_id, status ENUM('NotStarted','InProgress','Verified','Expired'), last_verified_at, verified_ref, next_due_at, created_at, updated_at)
+- tasks(id, license_id, client_id, title, description, type ENUM('Standard','Custom','Special'), schedule_json JSON, due_date, status ENUM('Open','InProgress','Blocked','Done'), priority, assignee_user_id, created_at, updated_at)
+- task_checklist_items(id, task_id, label, is_checked, checked_at, checked_by)
+- time_entries(id, license_id, client_id, task_id, user_id, hours DECIMAL(5,2), work_date, notes, locked_at, created_at)
+- notifications(id, license_id, user_id, type, payload_json, is_read, created_at)
+- audit_logs(id, license_id NULLABLE, actor_user_id, action, target_type, target_id, meta_json, ip, user_agent, created_at)
+- feature_flags(id, license_id, flag_key, flag_value_json, created_at, updated_at)
+
+Add indexes: users(license_id), clients(license_id, org_number), tasks(client_id, status, due_date), time_entries(client_id, user_id, work_date), audit_logs(license_id, created_at)
+
+## File structure (create all)
+- /server (NestJS app)
+  - src/main.ts, app.module.ts
+  - modules: auth, licensing, users, clients, tasks, time, aml, dashboard, notifications, audit, flags
+  - common/guards: JwtAuthGuard, RolesGuard, TenantGuard (enforce license_id on every request), RateLimit
+  - prisma/ schema.prisma + migrations + seed.ts
+  - tests/ (Jest): rbac.spec.ts, tenant.spec.ts, licensing.spec.ts, tasks.spec.ts, aml.spec.ts, time.spec.ts
+- /web (Next.js app)
+  - app/(auth)/login, mfa, logout
+  - app/(vendor)/dashboard, /licenses
+  - app/(tenant)/dashboard, /clients, /clients/[id], /tasks, /time, /reports, /settings/users, /audit
+  - components: widgets, tables, forms, modals (force‑time modal), checklists, charts
+  - lib/api.ts (TanStack Query), auth client, zod schemas
+  - e2e/ (Playwright): login_mfa.spec.ts, create_license_tenant.spec.ts, client_create_tasks.spec.ts, aml_flow.spec.ts, time_flow.spec.ts, dashboards.spec.ts
+- /.github/workflows/ci.yml (install, prisma migrate, run jest + playwright headless)
+- docker-compose.yml (postgres, redis, server, web)
+
+## Non‑functional requirements
+- ENV handling with .env.example for DB_URL/REDIS_URL/JWT secrets.
+- Seed script creating: 
+  - 1 Vendor user
+  - 1 License for “Demo Byrå AS” with 1 LicenseAdmin + 2 Employees
+  - A few demo clients with tasks, time, AML entries
+- Rate limiting on auth endpoints; Helmet, CORS, CSRF where relevant.
+- Error handling with problem+json, consistent DTOs, Zod validation on FE.
+
+## Tests (must pass; keep fixing until green)
+### Unit/integration (Jest, server):
+- RBAC matrix: role × endpoint → allow/deny as spec.
+- Tenant isolation: cross‑tenant access denied (403) even when IDs are guessed (IDOR).
+- Licensing: cannot create more employees than employee_limit (expects 422).
+- Tasks: generator creates defaults + special deadlines (Dec 1, May 31, July 31).
+- AML: verifying sets last_verified_at and next_due_at = +12 months; reminders scheduled.
+- Time: forcing modal flow posts time entry before navigating away/logout.
+
+### E2E (Playwright, web):
+- Login + MFA setup and verification.
+- Vendor creates new license; LicenseAdmin logs in; creates employees until limit hit.
+- Create client via two‑step flow (Brønnøysund stub) → default tasks appear → checklist gates Done.
+- AML redirect flow → mark verified → dashboard shows green; simulate time passage to see reminder banners.
+- Time tracking when switching clients → modal enforced → reports show totals.
+- Dashboards show correct widgets per role; Vendor never sees tenant data.
+
+## Run commands (make these work)
+- `npm run dev` (server & web concurrently) 
+- `npm run db:migrate && npm run db:seed`
+- `npm test` (Jest) 
+- `npm run e2e` (Playwright headless with web+server started)
+- CI must run: install → migrate → test → e2e.
+
+## Delivery contract
+- Do not stop at scaffolding. Implement UI pages with forms/tables.
+- Implement guards/middleware to enforce MFA and tenant isolation.
+- Provide README with setup instructions and test matrix.
+- If a test fails, FIX CODE and rerun until all green. Then output a short summary of what was built and how to run it locally.
