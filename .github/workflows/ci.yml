@@ -1,0 +1,105 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: zaldo_crm_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: |
+        npm ci
+        cd server && npm ci
+        cd ../web && npm ci
+
+    - name: Setup database
+      run: |
+        cd server
+        npx prisma migrate deploy
+        npx prisma db seed
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/zaldo_crm_test
+
+    - name: Run backend tests
+      run: |
+        cd server
+        npm test
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/zaldo_crm_test
+        JWT_SECRET: test-secret
+        REDIS_URL: redis://localhost:6379
+
+    - name: Build frontend
+      run: |
+        cd web
+        npm run build
+      env:
+        NEXT_PUBLIC_API_URL: http://localhost:5000/api
+
+    - name: Start backend for E2E tests
+      run: |
+        cd server
+        npm run start:prod &
+        sleep 10
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/zaldo_crm_test
+        JWT_SECRET: test-secret
+        REDIS_URL: redis://localhost:6379
+        PORT: 5000
+
+    - name: Install Playwright
+      run: |
+        cd web
+        npx playwright install
+
+    - name: Run E2E tests
+      run: |
+        cd web
+        npm run e2e
+      env:
+        NEXT_PUBLIC_API_URL: http://localhost:5000/api
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: playwright-report
+        path: web/playwright-report/
+        retention-days: 30

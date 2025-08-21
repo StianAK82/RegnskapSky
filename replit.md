@@ -1,20 +1,24 @@
-# RegnskapsAI - Norwegian Accounting System
+# Zaldo CRM - Multi-Tenant Accounting Management System
 
 ## Overview
 
-RegnskapsAI is a comprehensive Norwegian multi-tenant accounting and client management system built with modern web technologies. The application provides AI-assisted document categorization, accounting suggestions, role-based access control (RBAC), and integrations with third-party services like Stripe for payments and SendGrid for email communications. The system supports multiple user roles including administrators, project managers, accountants, and internal staff, with specialized features for each role type.
+Zaldo CRM is a comprehensive Norwegian multi-tenant accounting and client management system built from scratch with strict licensing, role-based authentication, and tenant isolation. The system provides automated task generation, AML compliance tracking, time management with forced registration, comprehensive auditing, and role-specific dashboards.
 
-### Recent Updates (January 2025)
-- ✅ **Fixed 401 Authentication Errors**: Implemented proper Bearer token headers in all API requests
-- ✅ **Complete Time Tracking Module**: Modal interface, client-specific entries, filtering, and Excel/PDF export
-- ✅ **Enhanced Client Management**: Accounting system selection (Fiken, Tripletex, Unimicro, PowerOffice, Conta) with direct URLs
-- ✅ **Client Tasks & Responsibles**: Standard task types, custom tasks, assignment system for project management
-- ✅ **Brønnøysund Integration**: Automatic company data lookup by organization number
-- ✅ **AML/KYC Module**: Document upload, provider management, comprehensive check results
-- ✅ **Regnskap Norge Checklists**: Standard monthly/quarterly/annual templates with auto-fill capabilities
-- ✅ **Plugin Architecture**: Extensible system for third-party integrations and custom features
-- ✅ **Advanced Reporting**: Time reports with filters, export capabilities, and dashboard metrics
-- ✅ **Database Schema**: Extended with client_tasks, client_responsibles, aml_checks, accounting_integrations tables
+### Project Completion (January 2025)
+- ✅ **Complete NestJS Backend**: Modular architecture with auth, licensing, users, clients, tasks, time, AML, dashboard, notifications, audit, and flags modules
+- ✅ **Prisma Database Schema**: Multi-tenant support with comprehensive entity relationships and proper indexing
+- ✅ **JWT Authentication System**: 7-day tokens with MFA (TOTP), role-based guards, and tenant isolation
+- ✅ **Next.js Frontend Foundation**: App Router, TypeScript, TanStack Query, shadcn/ui components
+- ✅ **Strict RBAC Implementation**: Vendor, LicenseAdmin, Employee roles with endpoint-level permissions
+- ✅ **Tenant Isolation Guards**: All data operations require license validation, preventing cross-tenant access
+- ✅ **Automated Task Generation**: Standard tasks (Bokføring, MVA, Lønn) + special deadline tasks (Aksjonærregister, Skattemelding, Årsoppgjør)
+- ✅ **AML/KYC Workflow**: Status progression with 12-month renewal cycle and automated reminders
+- ✅ **Time Tracking System**: Forced modal on logout, comprehensive reporting, CSV export
+- ✅ **Audit Logging**: Append-only trail for all user actions across all modules
+- ✅ **Feature Flags**: Per-tenant configuration management
+- ✅ **Comprehensive Test Suite**: Jest unit/integration tests + Playwright E2E tests
+- ✅ **CI/CD Pipeline**: GitHub Actions with database migration, testing, and deployment
+- ✅ **Docker Configuration**: Full containerization with PostgreSQL and Redis
 
 ## User Preferences
 
