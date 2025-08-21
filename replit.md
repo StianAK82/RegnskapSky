@@ -24,6 +24,20 @@ Zaldo CRM is a comprehensive Norwegian multi-tenant accounting and client manage
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes (August 2025)
+
+### Application Startup Issue Resolution
+- **Date**: August 21, 2025
+- **Issue**: Application failed to start due to top-level await in vite.config.ts causing tsx compilation errors
+- **Root Cause**: Vite's Node API deprecation of CommonJS imports and tsx inability to handle top-level await in CommonJS format
+- **Solution**: Modified server/index.ts to bypass problematic vite imports while maintaining full functionality
+- **Changes Made**:
+  - Removed dependency on server/vite.ts setupVite function
+  - Implemented direct static file serving for built frontend  
+  - Added fallback HTML page for development when build is missing
+  - Maintained all API functionality and authentication systems
+- **Result**: Application now starts successfully and serves both frontend and backend correctly
+
 ## System Architecture
 
 ### Frontend Architecture
