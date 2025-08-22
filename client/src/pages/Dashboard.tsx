@@ -71,76 +71,76 @@ export default function Dashboard() {
             </div>
 
             {/* Metrics Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
               {/* Total Clients Card */}
               <Card className="bg-white border border-gray-200 hover:shadow-md transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-700">Totalt klienter</CardTitle>
-                  <Users className="h-4 w-4 text-gray-500" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium text-gray-700">Totalt klienter</CardTitle>
+                  <Users className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-gray-900">{metrics?.totalClients || 0}</div>
-                  <p className="text-xs text-gray-500">Aktive klientkontoer</p>
+                <CardContent className="pt-1 sm:pt-2">
+                  <div className="text-lg sm:text-2xl font-bold text-gray-900">{metrics?.totalClients || 0}</div>
+                  <p className="text-xs text-gray-500 mt-1">Aktive klienter</p>
                 </CardContent>
               </Card>
 
               {/* Active Tasks Card */}
               <Card className="bg-white border border-gray-200 hover:shadow-md transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-700">Aktive oppgaver</CardTitle>
-                  <CheckCircle className="h-4 w-4 text-gray-500" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium text-gray-700">Aktive oppgaver</CardTitle>
+                  <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-gray-900">{metrics?.activeTasks || 0}</div>
-                  <p className="text-xs text-gray-500">Pågående arbeidsoppgaver</p>
+                <CardContent className="pt-1 sm:pt-2">
+                  <div className="text-lg sm:text-2xl font-bold text-gray-900">{metrics?.activeTasks || 0}</div>
+                  <p className="text-xs text-gray-500 mt-1">Pågående</p>
                 </CardContent>
               </Card>
 
               {/* Overdue Tasks Card */}
               <Card className="bg-white border border-gray-200 hover:shadow-md transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-700">Forsinkede oppgaver</CardTitle>
-                  <AlertTriangle className="h-4 w-4 text-amber-500" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium text-gray-700">Forsinkede</CardTitle>
+                  <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4 text-amber-500" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-amber-600">{metrics?.overdueTasks || 0}</div>
-                  <p className="text-xs text-gray-500">Krever oppmerksomhet</p>
+                <CardContent className="pt-1 sm:pt-2">
+                  <div className="text-lg sm:text-2xl font-bold text-amber-600">{metrics?.overdueTasks || 0}</div>
+                  <p className="text-xs text-gray-500 mt-1">Krever handling</p>
                 </CardContent>
               </Card>
 
               {/* Weekly Hours Card */}
               <Card className="bg-white border border-gray-200 hover:shadow-md transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-700">Timer denne uken</CardTitle>
-                  <Clock className="h-4 w-4 text-gray-500" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium text-gray-700">Timer/uke</CardTitle>
+                  <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-gray-900">{metrics?.weeklyHours || 0}t</div>
-                  <p className="text-xs text-gray-500">Registrerte timer</p>
+                <CardContent className="pt-1 sm:pt-2">
+                  <div className="text-lg sm:text-2xl font-bold text-gray-900">{metrics?.weeklyHours || 0}t</div>
+                  <p className="text-xs text-gray-500 mt-1">Registrert</p>
                 </CardContent>
               </Card>
 
               {/* Documents Processed Card */}
               <Card className="bg-white border border-gray-200 hover:shadow-md transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-700">Bilag behandlet</CardTitle>
-                  <FileText className="h-4 w-4 text-gray-500" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium text-gray-700">Bilag</CardTitle>
+                  <FileText className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-gray-900">{metrics?.documentsProcessed || 0}</div>
-                  <p className="text-xs text-gray-500">AI-kategorisert</p>
+                <CardContent className="pt-1 sm:pt-2">
+                  <div className="text-lg sm:text-2xl font-bold text-gray-900">{metrics?.documentsProcessed || 0}</div>
+                  <p className="text-xs text-gray-500 mt-1">AI-behandlet</p>
                 </CardContent>
               </Card>
 
               {/* Completed This Week Card */}
               <Card className="bg-white border border-gray-200 hover:shadow-md transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-700">Ferdigstilt i uken</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-green-500" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium text-gray-700">Ferdigstilt</CardTitle>
+                  <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-green-500" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-green-600">{metrics?.completedThisWeek || 0}</div>
-                  <p className="text-xs text-gray-500">Oppgaver avsluttet</p>
+                <CardContent className="pt-1 sm:pt-2">
+                  <div className="text-lg sm:text-2xl font-bold text-green-600">{metrics?.completedThisWeek || 0}</div>
+                  <p className="text-xs text-gray-500 mt-1">Denne uke</p>
                 </CardContent>
               </Card>
             </div>
@@ -156,25 +156,25 @@ export default function Dashboard() {
                   <CardDescription className="text-gray-600">Vanlige oppgaver og handlinger</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <button className="flex flex-col items-center p-6 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 group">
-                      <Users className="h-8 w-8 text-gray-400 mb-3 group-hover:text-gray-600" />
-                      <span className="text-sm font-medium text-gray-700 text-center">Opprett klient</span>
+                  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                    <button className="flex flex-col items-center p-4 sm:p-6 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 group min-h-[100px] sm:min-h-[120px]">
+                      <Users className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400 mb-2 sm:mb-3 group-hover:text-gray-600" />
+                      <span className="text-xs sm:text-sm font-medium text-gray-700 text-center leading-tight">Opprett klient</span>
                     </button>
                     
-                    <button className="flex flex-col items-center p-6 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 group">
-                      <FileText className="h-8 w-8 text-gray-400 mb-3 group-hover:text-gray-600" />
-                      <span className="text-sm font-medium text-gray-700 text-center">Last opp bilag</span>
+                    <button className="flex flex-col items-center p-4 sm:p-6 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 group min-h-[100px] sm:min-h-[120px]">
+                      <FileText className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400 mb-2 sm:mb-3 group-hover:text-gray-600" />
+                      <span className="text-xs sm:text-sm font-medium text-gray-700 text-center leading-tight">Last opp bilag</span>
                     </button>
                     
-                    <button className="flex flex-col items-center p-6 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 group">
-                      <TrendingUp className="h-8 w-8 text-gray-400 mb-3 group-hover:text-gray-600" />
-                      <span className="text-sm font-medium text-gray-700 text-center">Generer rapport</span>
+                    <button className="flex flex-col items-center p-4 sm:p-6 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 group min-h-[100px] sm:min-h-[120px]">
+                      <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400 mb-2 sm:mb-3 group-hover:text-gray-600" />
+                      <span className="text-xs sm:text-sm font-medium text-gray-700 text-center leading-tight">Generer rapport</span>
                     </button>
                     
-                    <button className="flex flex-col items-center p-6 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 group">
-                      <AlertTriangle className="h-8 w-8 text-gray-400 mb-3 group-hover:text-gray-600" />
-                      <span className="text-sm font-medium text-gray-700 text-center">Spør AI</span>
+                    <button className="flex flex-col items-center p-4 sm:p-6 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 group min-h-[100px] sm:min-h-[120px]">
+                      <AlertTriangle className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400 mb-2 sm:mb-3 group-hover:text-gray-600" />
+                      <span className="text-xs sm:text-sm font-medium text-gray-700 text-center leading-tight">Spør AI</span>
                     </button>
                   </div>
                 </CardContent>
@@ -211,7 +211,7 @@ export default function Dashboard() {
             </div>
 
             {/* Recent Activity and Workload */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-8">
               <Card className="bg-white border border-gray-200">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-gray-900">
