@@ -176,9 +176,6 @@ export default function Dashboard() {
                       <AlertTriangle className="h-8 w-8 text-gray-400 mb-3 group-hover:text-gray-600" />
                       <span className="text-sm font-medium text-gray-700 text-center">Spør AI</span>
                     </button>
-                      <AlertTriangle className="h-8 w-8 text-gray-400 mb-2" />
-                      <span className="text-sm font-medium text-gray-700">Spør AI</span>
-                    </button>
                   </div>
                 </CardContent>
               </Card>
