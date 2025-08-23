@@ -14,10 +14,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const storedToken = localStorage.getItem('token');
       const storedUser = localStorage.getItem('user');
       
+      console.log('Auth check - Token exists:', !!storedToken, 'User exists:', !!storedUser);
+      
       if (storedToken && storedUser && storedToken !== 'null' && storedUser !== 'null') {
         setToken(storedToken);
         const parsedUser = JSON.parse(storedUser);
         setUser(parsedUser);
+        console.log('Auth loaded:', parsedUser.firstName, parsedUser.lastName);
+      } else {
+        console.log('No valid auth data found');
       }
     } catch (error) {
       console.error('Error loading stored auth data:', error);
