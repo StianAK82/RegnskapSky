@@ -87,7 +87,7 @@ export function TasksToday() {
         </div>
       </CardHeader>
       <CardContent>
-        {allTasks.length === 0 ? (
+        {(allTasks || []).length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <i className="fas fa-check-circle text-4xl mb-4 text-green-500"></i>
             <p>Ingen oppgaver for i dag!</p>

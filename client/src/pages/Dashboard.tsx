@@ -222,7 +222,7 @@ export default function Dashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {(recentClients || []).slice(0, 5).map((client: any, index: number) => (
+                    {Array.isArray(recentClients) && recentClients.length > 0 ? recentClients.slice(0, 5).map((client: any, index: number) => (
                       <div key={index} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
@@ -235,11 +235,9 @@ export default function Dashboard() {
                         </div>
                         <Badge className="bg-gray-100 text-gray-700 border border-gray-200 text-xs">Ny</Badge>
                       </div>
-                    ))}
-                    {recentClients.length === 0 && (
-                      <div className="text-center py-8 text-gray-500">
-                        <Users className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                        <p className="text-sm">Ingen nylig aktivitet</p>
+                    )) : (
+                      <div className="text-center py-4 text-gray-500">
+                        <p>Ingen nylige aktiviteter</p>
                       </div>
                     )}
                   </div>
@@ -259,7 +257,7 @@ export default function Dashboard() {
                   <div className="space-y-4">
                     <div className="flex items-center justify-between py-3 border-b border-gray-100">
                       <span className="text-sm text-gray-700">Gjennomsnittlig timer/uke</span>
-                      <span className="font-medium text-gray-900">{Math.round((metrics?.weeklyHours || 0) / Math.max(1, recentClients.length))}t</span>
+                      <span className="font-medium text-gray-900">{Math.round((metrics?.weeklyHours || 0) / Math.max(1, (recentClients || []).length))}t</span>
                     </div>
                     <div className="flex items-center justify-between py-3 border-b border-gray-100">
                       <span className="text-sm text-gray-700">Aktive oppgaver</span>

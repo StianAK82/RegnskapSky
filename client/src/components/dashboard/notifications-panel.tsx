@@ -65,7 +65,7 @@ export function NotificationsPanel() {
         <h3 className="text-lg font-semibold text-gray-900">Aktive varsler</h3>
       </CardHeader>
       <CardContent>
-        {notifications?.length === 0 ? (
+        {(notifications || []).length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <i className="fas fa-bell-slash text-4xl mb-4"></i>
             <p>Ingen nye varsler</p>
