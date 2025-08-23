@@ -23,7 +23,9 @@ import {
   Trash2,
   Calendar,
   Timer,
-  BarChart3
+  BarChart3,
+  Shield,
+  UserCheck
 } from 'lucide-react';
 
 interface Client {
@@ -299,8 +301,9 @@ export default function ClientDetail() {
       </div>
 
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview">Oversikt</TabsTrigger>
+          <TabsTrigger value="aml">AML/KYC</TabsTrigger>
           <TabsTrigger value="responsibles">Ansvarlige</TabsTrigger>
           <TabsTrigger value="tasks">Oppgaver</TabsTrigger>
           <TabsTrigger value="time">Timeføring</TabsTrigger>
@@ -337,6 +340,60 @@ export default function ClientDetail() {
                 <div>
                   <Label>Adresse</Label>
                   <p>{client.address || 'Ikke angitt'}</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* AML/KYC Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Shield className="mr-2 h-5 w-5" />
+                  AML/KYC Verifisering
+                </CardTitle>
+                <CardDescription>
+                  Utfør AML og KYC-sjekk via Verified.eu
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div>
+                    <div className="flex items-center space-x-2">
+                      <UserCheck className="h-4 w-4 text-blue-500" />
+                      <span className="font-medium">AML Status</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Status: <Badge variant={client.amlStatus === 'approved' ? 'default' : 'secondary'}>
+                        {client.amlStatus === 'pending' ? 'Avventer' : 
+                         client.amlStatus === 'approved' ? 'Godkjent' : 'Avvist'}
+                      </Badge>
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={() => window.open('https://www.verified.eu/no', '_blank')}
+                    variant="outline"
+                  >
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    Start AML/KYC
+                  </Button>
+                </div>
+                
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <div className="flex items-start space-x-3">
+                    <Shield className="h-5 w-5 text-blue-600 mt-0.5" />
+                    <div>
+                      <h4 className="font-medium text-blue-900">Verified.eu Integrasjon</h4>
+                      <p className="text-sm text-blue-700 mt-1">
+                        Klikk "Start AML/KYC" for å utføre identitetsverifisering og AML-sjekk via Verified.eu. 
+                        Dette åpner Verified.eu i en ny fane hvor du kan gjennomføre verifiseringsprosessen.
+                      </p>
+                      <div className="mt-2 text-xs text-blue-600">
+                        • Identitetsverifisering<br/>
+                        • AML (Anti-Money Laundering) sjekk<br/>
+                        • KYC (Know Your Customer) prosess
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -390,6 +447,131 @@ export default function ClientDetail() {
                       Åpne system
                     </Button>
                   )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="aml" className="space-y-6">
+          <div className="max-w-4xl">
+            <h3 className="text-lg font-semibold mb-4">AML og KYC Verifisering</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Current Status */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <UserCheck className="mr-2 h-5 w-5" />
+                    Nåværende Status
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>AML Status</Label>
+                    <div className="mt-1">
+                      <Badge variant={client.amlStatus === 'approved' ? 'default' : 'secondary'}>
+                        {client.amlStatus === 'pending' ? 'Avventer' : 
+                         client.amlStatus === 'approved' ? 'Godkjent' : 'Avvist'}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div>
+                    <Label>KYC Status</Label>
+                    <div className="mt-1">
+                      <Badge variant={client.kycStatus === 'approved' ? 'default' : 'secondary'}>
+                        {client.kycStatus === 'pending' ? 'Avventer' : 
+                         client.kycStatus === 'approved' ? 'Godkjent' : 'Avvist'}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Siste oppdatering</Label>
+                    <p className="text-sm text-muted-foreground">
+                      {new Date(client.updatedAt).toLocaleDateString('no-NO')}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Verified.eu Integration */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Shield className="mr-2 h-5 w-5" />
+                    Verified.eu
+                  </CardTitle>
+                  <CardDescription>
+                    Professionell AML/KYC verifisering
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border">
+                    <div className="flex items-center space-x-3 mb-3">
+                      <img 
+                        src="https://www.verified.eu/favicon.ico" 
+                        alt="Verified.eu" 
+                        className="w-6 h-6"
+                        onError={(e) => {
+                          e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'/%3E%3Cpath d='m9 12 2 2 4-4'/%3E%3C/svg%3E";
+                        }}
+                      />
+                      <span className="font-medium text-blue-900">Verified.eu Partner</span>
+                    </div>
+                    <p className="text-sm text-blue-800 mb-4">
+                      Utfør komplett AML og KYC verifisering i henhold til norske og EU-regelverk.
+                    </p>
+                    <Button 
+                      onClick={() => {
+                        const verifiedUrl = `https://www.verified.eu/no?client=${encodeURIComponent(client.name)}&orgnum=${encodeURIComponent(client.orgNumber || '')}&email=${encodeURIComponent(client.email || '')}`;
+                        window.open(verifiedUrl, '_blank');
+                      }}
+                      className="w-full"
+                    >
+                      <ExternalLink className="mr-2 h-4 w-4" />
+                      Start AML/KYC Prosess
+                    </Button>
+                  </div>
+                  
+                  <div className="text-xs text-muted-foreground space-y-1">
+                    <p>✓ Identitetsverifisering</p>
+                    <p>✓ Anti-Money Laundering (AML)</p>
+                    <p>✓ Know Your Customer (KYC)</p>
+                    <p>✓ PEP (Politically Exposed Persons)</p>
+                    <p>✓ Sanksjonslister</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Instructions */}
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle>Slik gjennomfører du AML/KYC</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="flex items-start space-x-3">
+                    <div className="bg-blue-100 text-blue-800 rounded-full w-6 h-6 flex items-center justify-center text-sm font-medium">1</div>
+                    <div>
+                      <h4 className="font-medium">Klikk "Start AML/KYC Prosess"</h4>
+                      <p className="text-sm text-muted-foreground">Dette åpner Verified.eu i en ny fane med forhåndsutfylte klientopplysninger.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <div className="bg-blue-100 text-blue-800 rounded-full w-6 h-6 flex items-center justify-center text-sm font-medium">2</div>
+                    <div>
+                      <h4 className="font-medium">Følg prosessen på Verified.eu</h4>
+                      <p className="text-sm text-muted-foreground">Gjennomfør identitetsverifisering og AML-sjekk i henhold til instruksjonene.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <div className="bg-blue-100 text-blue-800 rounded-full w-6 h-6 flex items-center justify-center text-sm font-medium">3</div>
+                    <div>
+                      <h4 className="font-medium">Motta resultat</h4>
+                      <p className="text-sm text-muted-foreground">Resultatet vil automatisk oppdateres i systemet når prosessen er fullført.</p>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>

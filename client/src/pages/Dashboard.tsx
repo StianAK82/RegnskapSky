@@ -11,7 +11,8 @@ import {
   FileText, 
   AlertTriangle, 
   CheckCircle,
-  TrendingUp
+  TrendingUp,
+  Shield
 } from "lucide-react";
 
 interface DashboardMetrics {
@@ -172,9 +173,12 @@ export default function Dashboard() {
                       <span className="text-xs sm:text-sm font-medium text-gray-700 text-center leading-tight">Generer rapport</span>
                     </button>
                     
-                    <button className="flex flex-col items-center p-4 sm:p-6 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 group min-h-[100px] sm:min-h-[120px]">
-                      <AlertTriangle className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400 mb-2 sm:mb-3 group-hover:text-gray-600" />
-                      <span className="text-xs sm:text-sm font-medium text-gray-700 text-center leading-tight">Spør AI</span>
+                    <button 
+                      onClick={() => window.open('https://www.verified.eu/no', '_blank')}
+                      className="flex flex-col items-center p-4 sm:p-6 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 group min-h-[100px] sm:min-h-[120px]"
+                    >
+                      <Shield className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400 mb-2 sm:mb-3 group-hover:text-gray-600" />
+                      <span className="text-xs sm:text-sm font-medium text-gray-700 text-center leading-tight">AML/KYC</span>
                     </button>
                   </div>
                 </CardContent>

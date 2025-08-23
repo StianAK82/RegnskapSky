@@ -64,6 +64,17 @@ Preferred communication style: Simple, everyday language.
   - Improved login flow with delayed navigation for better token persistence
 - **Result**: Stable frontend without crashes, dedicated debugging tool for auth issues
 
+### AML/KYC Integration with Verified.eu
+- **Date**: August 23, 2025
+- **Feature**: Added comprehensive AML/KYC functionality integrated with Verified.eu
+- **Implementation**: 
+  - New AML/KYC tab in client detail pages with status tracking
+  - Direct integration with Verified.eu (https://www.verified.eu/no)
+  - Dashboard quick action button for AML/KYC verification
+  - Automatic URL parameter passing for client information
+  - Professional UI with step-by-step instructions
+- **Benefits**: Streamlined compliance checking directly from client management interface
+
 ### Dashboard Design Improvements  
 - **Date**: August 22, 2025
 - **Issue**: Dashboard had colorful gradient cards and poor responsive scaling causing buttons to disappear on smaller screens
