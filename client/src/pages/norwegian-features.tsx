@@ -14,6 +14,7 @@ import {
   Building2, Search, Shield, FileText, PlugIcon, 
   CheckCircle, AlertTriangle, Clock, Upload 
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 export default function NorwegianFeatures() {
   const [searchQuery, setSearchQuery] = useState("");
