@@ -37,7 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(data.user);
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
-        console.log('Login successful, token saved:', data.token.substring(0, 20) + '...');
+        console.log('Login successful, token saved:', data.token ? data.token.substring(0, 20) + '...' : 'no token');
       } else {
         throw new Error('Invalid login response');
       }

@@ -94,7 +94,7 @@ export function TasksToday() {
           </div>
         ) : (
           <div className="space-y-4">
-            {allTasks.slice(0, 5).map((task) => {
+            {(allTasks || []).slice(0, 5).map((task) => {
               const taskIsOverdue = isOverdue(task);
               const dueDate = new Date(task.dueDate);
               const now = new Date();

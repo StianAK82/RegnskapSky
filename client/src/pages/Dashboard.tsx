@@ -222,7 +222,7 @@ export default function Dashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {recentClients.slice(0, 5).map((client: any, index: number) => (
+                    {(recentClients || []).slice(0, 5).map((client: any, index: number) => (
                       <div key={index} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">

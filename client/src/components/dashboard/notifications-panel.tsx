@@ -14,7 +14,7 @@ interface Notification {
 export function NotificationsPanel() {
   const { data: notifications, isLoading } = useQuery<Notification[]>({
     queryKey: ['/api/notifications'],
-    select: (data) => data?.slice(0, 5) || [] // Show only latest 5
+    select: (data) => (data || []).slice(0, 5) // Show only latest 5
   });
 
   if (isLoading) {
