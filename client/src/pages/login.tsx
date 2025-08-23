@@ -32,7 +32,10 @@ export default function Login() {
       } else {
         await register(formData);
       }
-      window.location.href = '/dashboard';
+      // Force a full page reload to ensure token is properly loaded
+      setTimeout(() => {
+        window.location.href = '/dashboard';
+      }, 100);
       toast({
         title: isLogin ? 'Pålogget' : 'Konto opprettet',
         description: isLogin ? 'Du er nå pålogget' : 'Din konto er opprettet og du er pålogget',
