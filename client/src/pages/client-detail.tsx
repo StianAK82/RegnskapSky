@@ -143,11 +143,19 @@ export default function ClientDetail() {
     enabled: !!clientId
   });
 
-  const { data: clientTasks = [] } = useQuery({
+  const { data: clientTasks = [], isLoading: isTasksLoading, error: tasksError } = useQuery({
     queryKey: ['/api/clients', clientId, 'tasks'],
     queryFn: () => apiRequest('GET', `/api/clients/${clientId}/tasks`).then(res => res.json()),
     enabled: !!clientId
   });
+
+  // Debug logging
+  useEffect(() => {
+    console.log('Client tasks data:', clientTasks);
+    console.log('Client ID:', clientId);
+    console.log('Tasks loading:', isTasksLoading);
+    console.log('Tasks error:', tasksError);
+  }, [clientTasks, clientId, isTasksLoading, tasksError]);
 
   const { data: timeEntries = [] } = useQuery({
     queryKey: ['/api/reports/time'],
@@ -419,39 +427,55 @@ export default function ClientDetail() {
             </div>
           </div>
 
-          <div className="grid gap-4">
-            {clientTasks.length === 0 ? (
-              <Card>
-                <CardContent className="p-6 text-center">
-                  <CheckSquare className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium mb-2">Ingen oppgaver</h3>
-                  <p className="text-muted-foreground">
-                    Denne klienten har ingen oppgaver ennå. Klikk "Ny oppgave" for å legge til en oppgave.
-                  </p>
-                </CardContent>
-              </Card>
-            ) : (
-              clientTasks.map((task: ClientTask) => (
-                <Card key={task.id}>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">{task.taskName}</h4>
-                      <p className="text-sm text-muted-foreground">{task.description}</p>
-                      {task.dueDate && (
-                        <p className="text-sm text-muted-foreground">
-                          Frist: {new Date(task.dueDate).toLocaleDateString('no-NO')}
-                        </p>
-                      )}
+          {isTasksLoading ? (
+            <div className="flex justify-center p-8">
+              <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+            </div>
+          ) : tasksError ? (
+            <Card>
+              <CardContent className="p-6 text-center">
+                <h3 className="text-lg font-medium mb-2 text-red-600">Feil ved lasting av oppgaver</h3>
+                <p className="text-muted-foreground">
+                  {tasksError.message || 'Kunne ikke laste oppgaver'}
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-4">
+              {clientTasks.length === 0 ? (
+                <Card>
+                  <CardContent className="p-6 text-center">
+                    <CheckSquare className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-medium mb-2">Ingen oppgaver</h3>
+                    <p className="text-muted-foreground">
+                      Denne klienten har ingen oppgaver ennå. Klikk "Ny oppgave" for å legge til en oppgave.
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                clientTasks.map((task: ClientTask) => (
+                  <Card key={task.id}>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium">{task.taskName}</h4>
+                        <p className="text-sm text-muted-foreground">{task.description}</p>
+                        {task.dueDate && (
+                          <p className="text-sm text-muted-foreground">
+                            Frist: {new Date(task.dueDate).toLocaleDateString('no-NO')}
+                          </p>
+                        )}
+                      </div>
+                      <Badge variant={task.status === 'ferdig' ? 'default' : 'secondary'}>
+                        {task.status}
+                      </Badge>
                     </div>
-                    <Badge variant={task.status === 'ferdig' ? 'default' : 'secondary'}>
-                      {task.status}
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
-            )))}
-          </div>
+                  </CardContent>
+                </Card>
+                ))
+              )}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="time" className="space-y-6">
