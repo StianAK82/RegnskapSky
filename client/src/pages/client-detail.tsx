@@ -149,13 +149,6 @@ export default function ClientDetail() {
     enabled: !!clientId
   });
 
-  // Debug logging
-  useEffect(() => {
-    console.log('Client tasks data:', clientTasks);
-    console.log('Client ID:', clientId);
-    console.log('Tasks loading:', isTasksLoading);
-    console.log('Tasks error:', tasksError);
-  }, [clientTasks, clientId, isTasksLoading, tasksError]);
 
   const { data: timeEntries = [] } = useQuery({
     queryKey: ['/api/reports/time'],
@@ -425,6 +418,11 @@ export default function ClientDetail() {
                 Ny oppgave
               </Button>
             </div>
+          </div>
+          
+          {/* Debug info */}
+          <div className="text-xs text-gray-500 p-2 bg-gray-100 rounded">
+            Debug: clientId={clientId}, isTasksLoading={String(isTasksLoading)}, tasksLength={clientTasks.length}
           </div>
 
           {isTasksLoading ? (
