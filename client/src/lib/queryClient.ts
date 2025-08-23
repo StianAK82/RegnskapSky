@@ -19,7 +19,7 @@ export async function apiRequest(
     headers["Content-Type"] = "application/json";
   }
   
-  if (token) {
+  if (token && token !== 'null') {
     headers["Authorization"] = `Bearer ${token}`;
   }
 
@@ -29,6 +29,18 @@ export async function apiRequest(
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
+
+  // Handle expired token
+  if (res.status === 403 || res.status === 401) {
+    const errorText = await res.text();
+    if (errorText.includes('Invalid token') || errorText.includes('expired')) {
+      console.log('Token expired, clearing auth data');
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+      throw new Error('Token expired - redirecting to login');
+    }
+  }
 
   await throwIfResNotOk(res);
   return res;
@@ -43,7 +55,7 @@ export const getQueryFn: <T>(options: {
     const token = localStorage.getItem('token');
     const headers: Record<string, string> = {};
     
-    if (token) {
+    if (token && token !== 'null') {
       headers["Authorization"] = `Bearer ${token}`;
     }
 
@@ -52,6 +64,18 @@ export const getQueryFn: <T>(options: {
       headers,
       credentials: "include",
     });
+
+    // Handle expired token
+    if (res.status === 403 || res.status === 401) {
+      const errorText = await res.text();
+      if (errorText.includes('Invalid token') || errorText.includes('expired')) {
+        console.log('Token expired, clearing auth data');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+        return null;
+      }
+    }
 
     if (unauthorizedBehavior === "returnNull" && (res.status === 401 || res.status === 403)) {
       return null;
