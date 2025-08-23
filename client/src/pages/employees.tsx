@@ -211,34 +211,31 @@ export default function Employees() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gray-50 md:flex">
       <Sidebar />
       
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden md:ml-64">
         <TopBar title="Ansatte" />
         
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-6">
-          <div className="max-w-7xl mx-auto space-y-6">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-3 sm:p-6">
+          <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
             {/* Header */}
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
               <div>
-                <h1 className="text-2xl font-semibold text-gray-900">Ansatte</h1>
+                <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Ansatte</h1>
                 <p className="mt-1 text-sm text-gray-600">
                   Administrer ansatte i organisasjonen din
                 </p>
               </div>
-              <Dialog open={isCreateOpen} onOpenChange={handleDialogClose}>
+              <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
                 <DialogTrigger asChild>
                   <Button 
-                    onClick={() => {
-                      setEditingEmployee(null);
-                      form.reset();
-                      setIsCreateOpen(true);
-                    }}
-                    className="bg-primary hover:bg-blue-700"
+                    className="bg-primary hover:bg-blue-700 w-full sm:w-auto" 
+                    data-testid="button-create-employee"
                   >
                     <i className="fas fa-plus mr-2"></i>
-                    Ny ansatt
+                    <span className="hidden sm:inline">Ny ansatt</span>
+                    <span className="sm:hidden">Ny</span>
                   </Button>
                 </DialogTrigger>
                 

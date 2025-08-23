@@ -32,7 +32,7 @@ export default function Login() {
       } else {
         await register(formData);
       }
-      navigate('/dashboard');
+      window.location.href = '/dashboard';
       toast({
         title: isLogin ? 'Pålogget' : 'Konto opprettet',
         description: isLogin ? 'Du er nå pålogget' : 'Din konto er opprettet og du er pålogget',

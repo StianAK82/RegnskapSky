@@ -26,7 +26,7 @@ export function Sidebar() {
   const canAccess = (roles: string[]) => user && roles.includes(user.role);
 
   return (
-    <div className="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg border-r border-gray-200">
+    <div className="hidden md:fixed md:inset-y-0 md:left-0 md:z-50 md:w-64 md:bg-white md:shadow-lg md:border-r md:border-gray-200 md:block">
       {/* Logo/Brand Section */}
       <div className="flex items-center h-16 px-6 border-b border-gray-200">
         <div className="flex items-center space-x-3">
