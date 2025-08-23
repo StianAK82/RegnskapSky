@@ -21,13 +21,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    const response = await apiRequest('POST', '/api/auth/login', { email, password });
-    const data: LoginResponse = await response.json();
-    
-    setToken(data.token);
-    setUser(data.user);
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('user', JSON.stringify(data.user));
+    try {
+      const response = await apiRequest('POST', '/api/auth/login', { email, password });
+      const data: LoginResponse = await response.json();
+      
+      if (data.token && data.user) {
+        setToken(data.token);
+        setUser(data.user);
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        console.log('Login successful, token saved:', data.token.substring(0, 20) + '...');
+      } else {
+        throw new Error('Invalid login response');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
+    }
   };
 
   const register = async (registerData: RegisterData) => {
