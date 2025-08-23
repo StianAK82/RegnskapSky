@@ -36,7 +36,7 @@ export function useTimeTracking() {
             clientId: session.clientId,
             description: session.description || 'Automatisk registrering',
             timeSpent: Math.round(timeSpent * 100) / 100,
-            date: new Date().toISOString(),
+            date: new Date().toISOString().split('T')[0],
             billable: true
           }));
         }
@@ -89,7 +89,7 @@ export function useTimeTracking() {
         clientId: currentSession.clientId,
         description: description || currentSession.description || 'Klientarbeid',
         timeSpent: Math.round(timeSpent * 100) / 100,
-        date: new Date().toISOString(),
+        date: new Date().toISOString().split('T')[0],
         billable: true
       });
 

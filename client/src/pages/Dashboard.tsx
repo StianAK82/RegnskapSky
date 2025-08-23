@@ -40,6 +40,28 @@ export default function Dashboard() {
     enabled: !!user,
   });
 
+  // Get tasks for client overview
+  const { data: allTasks = [] } = useQuery<any[]>({
+    queryKey: ["/api/tasks"],
+    enabled: !!user,
+  });
+
+  // Group tasks by client
+  const clientTaskSummary = recentClients.map(client => {
+    const clientTasks = allTasks.filter(task => task.clientId === client.id);
+    const pendingTasks = clientTasks.filter(task => task.status !== 'ferdig').length;
+    const overdueTasks = clientTasks.filter(task => 
+      task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'ferdig'
+    ).length;
+    
+    return {
+      ...client,
+      totalTasks: clientTasks.length,
+      pendingTasks,
+      overdueTasks
+    };
+  });
+
   if (metricsLoading) {
     return (
       <div className="flex h-screen bg-gray-50">
@@ -72,7 +94,7 @@ export default function Dashboard() {
             </div>
 
             {/* Metrics Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 sm:gap-4">
               {/* Total Clients Card */}
               <Card className="bg-white border border-gray-200 hover:shadow-md transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2">
@@ -157,7 +179,7 @@ export default function Dashboard() {
                   <CardDescription className="text-gray-600">Vanlige oppgaver og handlinger</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                     <button className="flex flex-col items-center p-4 sm:p-6 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 group min-h-[100px] sm:min-h-[120px]">
                       <Users className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400 mb-2 sm:mb-3 group-hover:text-gray-600" />
                       <span className="text-xs sm:text-sm font-medium text-gray-700 text-center leading-tight">Opprett klient</span>
@@ -214,8 +236,8 @@ export default function Dashboard() {
               </Card>
             </div>
 
-            {/* Recent Activity and Workload */}
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-8">
+            {/* Recent Activity and Client Overview */}
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-8">
               <Card className="bg-white border border-gray-200">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-gray-900">
@@ -248,30 +270,74 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
 
-              {/* Employee Workload Summary */}
+              {/* Client Overview */}
               <Card className="bg-white border border-gray-200">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-gray-900">
-                    <TrendingUp className="h-5 w-5 text-gray-600" />
-                    Ansatt-arbeidsbelastning
+                    <Users className="h-5 w-5 text-gray-600" />
+                    Klienter
                   </CardTitle>
-                  <CardDescription className="text-gray-600">Oppgavefordeling og timer</CardDescription>
+                  <CardDescription className="text-gray-600">Oversikt over klienter og status</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {Array.isArray(clientTaskSummary) && clientTaskSummary.length > 0 ? clientTaskSummary.slice(0, 4).map((client: any, index: number) => (
+                      <div key={index} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
+                            <Users className="h-3 w-3 text-blue-600" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <span className="text-sm font-medium text-gray-900 truncate block">{client.name}</span>
+                            <span className="text-xs text-gray-500">
+                              {client.pendingTasks} ventende{client.overdueTasks > 0 ? `, ${client.overdueTasks} forsinkede` : ''}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex gap-1">
+                          {client.overdueTasks > 0 && (
+                            <Badge className="bg-amber-50 text-amber-700 border border-amber-200 text-xs">
+                              {client.overdueTasks}
+                            </Badge>
+                          )}
+                          <Badge className="bg-blue-50 text-blue-700 border border-blue-200 text-xs">
+                            {client.pendingTasks}
+                          </Badge>
+                        </div>
+                      </div>
+                    )) : (
+                      <div className="text-center py-4 text-gray-500">
+                        <p className="text-sm">Ingen klienter ennå</p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Tasks Overview */}
+              <Card className="bg-white border border-gray-200">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-gray-900">
+                    <CheckCircle className="h-5 w-5 text-gray-600" />
+                    Oppgaver
+                  </CardTitle>
+                  <CardDescription className="text-gray-600">Ventende og aktive oppgaver</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                      <span className="text-sm text-gray-700">Gjennomsnittlig timer/uke</span>
-                      <span className="font-medium text-gray-900">{Math.round((metrics?.weeklyHours || 0) / Math.max(1, (recentClients || []).length))}t</span>
-                    </div>
-                    <div className="flex items-center justify-between py-3 border-b border-gray-100">
                       <span className="text-sm text-gray-700">Aktive oppgaver</span>
                       <span className="font-medium text-gray-900">{metrics?.activeTasks || 0}</span>
                     </div>
-                    <div className="flex items-center justify-between py-3">
+                    <div className="flex items-center justify-between py-3 border-b border-gray-100">
                       <span className="text-sm text-gray-700">Forsinkede oppgaver</span>
                       <Badge className={`text-xs border ${(metrics?.overdueTasks || 0) > 0 ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-green-50 text-green-700 border-green-200'}`}>
                         {metrics?.overdueTasks || 0}
                       </Badge>
+                    </div>
+                    <div className="flex items-center justify-between py-3">
+                      <span className="text-sm text-gray-700">Timer denna uke</span>
+                      <span className="font-medium text-gray-900">{metrics?.weeklyHours || 0}t</span>
                     </div>
                   </div>
                 </CardContent>
