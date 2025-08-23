@@ -701,7 +701,7 @@ export default function Clients() {
                                       </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                      <SelectItem value="">Ingen ansvarlig valgt</SelectItem>
+                                      <SelectItem value="none">Ingen ansvarlig valgt</SelectItem>
                                       {employees.map((employee: any) => (
                                         <SelectItem key={employee.id} value={employee.id}>
                                           {employee.firstName} {employee.lastName}
@@ -894,14 +894,14 @@ export default function Clients() {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="">Ingen ansvarlig</SelectItem>
+                              <SelectItem value="none">Ingen ansvarlig</SelectItem>
                               {employees.map((employee: any) => (
                                 <SelectItem key={employee.id} value={employee.id}>
                                   {employee.firstName} {employee.lastName} - {employee.position}
                                 </SelectItem>
                               ))}
                               {employees.length === 0 && (
-                                <SelectItem value="" disabled>
+                                <SelectItem value="disabled" disabled>
                                   Ingen ansatte registrert - opprett en ansatt først
                                 </SelectItem>
                               )}
