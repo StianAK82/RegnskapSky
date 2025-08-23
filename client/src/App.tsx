@@ -35,6 +35,7 @@ function AuthenticatedRoutes() {
       <Switch>
         <Route path="/login" component={Login} />
         <Route path="/" component={Login} />
+        <Route path="/dashboard" component={Login} />
         <Route path="/:rest*" component={Login} />
       </Switch>
     );

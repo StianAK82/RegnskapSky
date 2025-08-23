@@ -12,8 +12,12 @@ export default function NotFound() {
           </div>
 
           <p className="mt-4 text-sm text-gray-600">
-            Did you forget to add the page to the router?
+            Siden finnes ikke. Prøv å gå til <a href="/dashboard" className="text-blue-500 underline">Dashboard</a> eller <a href="/login" className="text-blue-500 underline">Logg inn</a>.
           </p>
+          
+          <div className="mt-4 text-xs text-gray-500">
+            Current URL: {window.location.pathname}
+          </div>
         </CardContent>
       </Card>
     </div>
