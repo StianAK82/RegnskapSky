@@ -340,16 +340,6 @@ export default function ClientDetail() {
                   <Label>Adresse</Label>
                   <p>{client.address || 'Ikke angitt'}</p>
                 </div>
-                <div className="pt-4 border-t">
-                  <Button 
-                    onClick={() => window.open('https://www.verified.eu/no', '_blank')}
-                    className="w-full"
-                    data-testid="button-aml-kyc"
-                  >
-                    <ExternalLink className="mr-2 h-4 w-4" />
-                    Utfør AML/KYC
-                  </Button>
-                </div>
               </CardContent>
             </Card>
 
@@ -413,15 +403,36 @@ export default function ClientDetail() {
         <TabsContent value="tasks" className="space-y-6">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-semibold">Klientoppgaver</h3>
-            <Button onClick={() => setIsTaskModalOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Ny oppgave
-            </Button>
+            <div className="flex space-x-2">
+              <Button 
+                onClick={() => window.open('https://www.verified.eu/no', '_blank')}
+                variant="outline"
+                data-testid="button-aml-kyc"
+              >
+                <ExternalLink className="mr-2 h-4 w-4" />
+                Utfør AML/KYC
+              </Button>
+              <Button onClick={() => setIsTaskModalOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Ny oppgave
+              </Button>
+            </div>
           </div>
 
           <div className="grid gap-4">
-            {clientTasks.map((task: ClientTask) => (
-              <Card key={task.id}>
+            {clientTasks.length === 0 ? (
+              <Card>
+                <CardContent className="p-6 text-center">
+                  <CheckSquare className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium mb-2">Ingen oppgaver</h3>
+                  <p className="text-muted-foreground">
+                    Denne klienten har ingen oppgaver ennå. Klikk "Ny oppgave" for å legge til en oppgave.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              clientTasks.map((task: ClientTask) => (
+                <Card key={task.id}>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
@@ -439,7 +450,7 @@ export default function ClientDetail() {
                   </div>
                 </CardContent>
               </Card>
-            ))}
+            )))}
           </div>
         </TabsContent>
 
