@@ -145,8 +145,15 @@ export default function ClientDetail() {
 
   const { data: clientTasks = [], isLoading: isTasksLoading, error: tasksError } = useQuery({
     queryKey: ['/api/clients', clientId, 'tasks'],
-    queryFn: () => apiRequest('GET', `/api/clients/${clientId}/tasks`).then(res => res.json()),
-    enabled: !!clientId
+    queryFn: async () => {
+      const response = await apiRequest('GET', `/api/clients/${clientId}/tasks`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch client tasks');
+      }
+      return response.json();
+    },
+    enabled: !!clientId,
+    retry: 1
   });
 
 
@@ -420,10 +427,6 @@ export default function ClientDetail() {
             </div>
           </div>
           
-          {/* Debug info */}
-          <div className="text-xs text-gray-500 p-2 bg-gray-100 rounded">
-            Debug: clientId={clientId}, isTasksLoading={String(isTasksLoading)}, tasksLength={clientTasks.length}
-          </div>
 
           {isTasksLoading ? (
             <div className="flex justify-center p-8">

@@ -1,0 +1,43 @@
+Funksjonell Test-sjekkliste
+Autentisering
+☐ Logg inn med gyldig bruker → får tilgang til systemet.
+☐ Bekreft at token lagres i localStorage eller sessionStorage.
+☐ Logg ut → token slettes.
+☐ Prøv å opprette klient uten å være logget inn → får korrekt feilmelding om manglende tilgang.
+Opprette ny klient
+☐ Fyll inn organisasjonsnummer → systemet henter automatisk data fra Brønnøysund (navn, adresse, m.m.).
+☐ Velg regnskapssystem (Fiken, Tripletex, Unimicro, PowerOffice, Conta, Annet).
+☐ Klikk lagre → klient opprettes uten feil.
+☐ På klientkortet vises knapp/lenke som åpner riktig nettside for valgt system.
+Oppdragsansvarlige
+☐ Legg til én eller flere ansatte som oppdragsansvarlig for klienten.
+☐ Lagre og åpne klientkortet igjen → bekreft at oppdragsansvarlige vises korrekt.
+Oppgaver per klient
+☐ Opprett oppgave fra standardlisten: Bokføring, MVA, Lønn, Bankavstemming, Kontoavstemming.
+☐ Opprett oppgave med 'Annet' + fritekst.
+☐ Sett fristdato, gjentakelse (daglig, ukentlig, månedlig, årlig) og status.
+☐ Tildel oppgaven til en ansatt.
+☐ Bekreft at gjentakende oppgaver genereres automatisk.
+Timeføringsmodul
+☐ Gå inn på en klient, gjør en handling, bytt klient → modal for timeføring vises.
+☐ Registrer timer med beskrivelse og kobling til oppgave.
+☐ Lagre → timen vises i timeoversikten.
+☐ Rediger en eksisterende timeføring og bekreft at endringen lagres.
+Rapportering
+☐ Gå til rapportsiden.
+☐ Filtrer på spesifikk klient → vis kun timer for den klienten.
+☐ Filtrer på spesifikk ansatt → vis kun timer for den ansatte.
+☐ Filtrer på oppgave → vis kun timer for den oppgaven.
+☐ Eksporter rapport til Excel og PDF → filer lastes ned uten feil.
+AML/KYC
+☐ Last opp AML/KYC-dokument for en klient → bekreft at filen lagres.
+☐ Endre AML-status (venter, godkjent, avvist) → status oppdateres.
+Regnskap Norge sjekklister
+☐ Åpne sjekkliste for en klient → felter som kan fylles automatisk er forhåndsutfylt.
+☐ Fyll ut resterende punkter manuelt og lagre.
+☐ Åpne igjen → bekreft at alt er lagret korrekt.
+Generell funksjonalitet
+☐ Ingen feil i konsollen (F12 i nettleseren).
+☐ Ingen 'lazy is not defined'-feil.
+☐ Preview i Replit viser hele appen uten hvit skjerm.
+☐ Alle lenker og knapper fungerer.
