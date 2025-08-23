@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Auth Flow</title>
+</head>
+<body>
+    <h1>Test Authentication Flow</h1>
+    <button onclick="testLogin()">Test Login</button>
+    <button onclick="testCreateEmployee()">Test Create Employee</button>
+    <div id="result"></div>
+    
+    <script>
+        async function testLogin() {
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        email: 'test@example.com',
+                        password: 'test123'
+                    })
+                });
+                
+                const data = await response.json();
+                console.log('Login response:', data);
+                
+                if (data.token) {
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    document.getElementById('result').innerHTML = 'Login successful! Token saved.';
+                } else {
+                    document.getElementById('result').innerHTML = 'Login failed: ' + JSON.stringify(data);
+                }
+            } catch (error) {
+                document.getElementById('result').innerHTML = 'Login error: ' + error.message;
+            }
+        }
+        
+        async function testCreateEmployee() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                document.getElementById('result').innerHTML = 'No token found. Please login first.';
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/employees', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        firstName: 'Frontend',
+                        lastName: 'Test',
+                        email: 'frontend@test.com',
+                        position: 'Regnskapsfører',
+                        department: 'Regnskap',
+                        startDate: '2025-01-01'
+                    })
+                });
+                
+                const data = await response.json();
+                console.log('Create employee response:', data);
+                
+                if (response.ok) {
+                    document.getElementById('result').innerHTML = 'Employee created successfully: ' + JSON.stringify(data);
+                } else {
+                    document.getElementById('result').innerHTML = 'Employee creation failed: ' + JSON.stringify(data);
+                }
+            } catch (error) {
+                document.getElementById('result').innerHTML = 'Employee creation error: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>
