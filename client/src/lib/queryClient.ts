@@ -32,7 +32,8 @@ export async function apiRequest(
 
   // Handle expired token
   if (res.status === 403 || res.status === 401) {
-    const errorText = await res.text();
+    const responseClone = res.clone();
+    const errorText = await responseClone.text();
     if (errorText.includes('Invalid token') || errorText.includes('expired')) {
       console.log('Token expired, clearing auth data');
       localStorage.removeItem('token');
@@ -67,7 +68,8 @@ export const getQueryFn: <T>(options: {
 
     // Handle expired token
     if (res.status === 403 || res.status === 401) {
-      const errorText = await res.text();
+      const responseClone = res.clone();
+      const errorText = await responseClone.text();
       if (errorText.includes('Invalid token') || errorText.includes('expired')) {
         console.log('Token expired, clearing auth data');
         localStorage.removeItem('token');
