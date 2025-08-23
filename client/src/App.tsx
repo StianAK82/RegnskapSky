@@ -31,7 +31,13 @@ function AuthenticatedRoutes() {
   }
 
   if (!user) {
-    return <Login />;
+    return (
+      <Switch>
+        <Route path="/login" component={Login} />
+        <Route path="/" component={Login} />
+        <Route path="/:rest*" component={Login} />
+      </Switch>
+    );
   }
 
   return (
@@ -119,7 +125,7 @@ function AuthenticatedRoutes() {
         }} 
       />
 
-      <Route component={NotFound} />
+      <Route path="/:rest*" component={NotFound} />
     </Switch>
   );
 }
