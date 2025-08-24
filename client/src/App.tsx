@@ -221,6 +221,15 @@ function AuthenticatedRoutes() {
         );
       }} />
 
+      <Route path="/bare-clients" component={() => {
+        const BareClients = lazy(() => import("./pages/bare-clients"));
+        return (
+          <Suspense fallback={<div>Loading...</div>}>
+            <BareClients />
+          </Suspense>
+        );
+      }} />
+
       <Route path="/:rest*" component={NotFound} />
     </Switch>
   );
