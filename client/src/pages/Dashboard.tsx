@@ -68,7 +68,7 @@ export default function Dashboard() {
         <Sidebar />
         <div className="flex-1 flex flex-col overflow-hidden">
           <TopBar title="Dashboard" />
-          <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-6">
+          <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 sm:p-6">
             <div className="flex items-center justify-center h-64">
               <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
             </div>
@@ -94,7 +94,7 @@ export default function Dashboard() {
             </div>
 
             {/* Metrics Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 sm:gap-6">
               {/* Total Clients Card */}
               <Card className="bg-white border border-gray-200 hover:shadow-md transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2">
@@ -179,28 +179,28 @@ export default function Dashboard() {
                   <CardDescription className="text-gray-600">Vanlige oppgaver og handlinger</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-                    <button className="flex flex-col items-center p-4 sm:p-6 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 group min-h-[100px] sm:min-h-[120px]">
-                      <Users className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400 mb-2 sm:mb-3 group-hover:text-gray-600" />
-                      <span className="text-xs sm:text-sm font-medium text-gray-700 text-center leading-tight">Opprett klient</span>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                    <button className="flex flex-col items-center p-3 sm:p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 group min-h-[80px] sm:min-h-[100px]">
+                      <Users className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400 mb-1 sm:mb-2 group-hover:text-gray-600" />
+                      <span className="text-xs font-medium text-gray-700 text-center leading-tight">Opprett klient</span>
                     </button>
                     
-                    <button className="flex flex-col items-center p-4 sm:p-6 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 group min-h-[100px] sm:min-h-[120px]">
-                      <FileText className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400 mb-2 sm:mb-3 group-hover:text-gray-600" />
-                      <span className="text-xs sm:text-sm font-medium text-gray-700 text-center leading-tight">Last opp bilag</span>
+                    <button className="flex flex-col items-center p-3 sm:p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 group min-h-[80px] sm:min-h-[100px]">
+                      <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400 mb-1 sm:mb-2 group-hover:text-gray-600" />
+                      <span className="text-xs font-medium text-gray-700 text-center leading-tight">Last opp bilag</span>
                     </button>
                     
-                    <button className="flex flex-col items-center p-4 sm:p-6 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 group min-h-[100px] sm:min-h-[120px]">
-                      <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400 mb-2 sm:mb-3 group-hover:text-gray-600" />
-                      <span className="text-xs sm:text-sm font-medium text-gray-700 text-center leading-tight">Generer rapport</span>
+                    <button className="flex flex-col items-center p-3 sm:p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 group min-h-[80px] sm:min-h-[100px]">
+                      <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400 mb-1 sm:mb-2 group-hover:text-gray-600" />
+                      <span className="text-xs font-medium text-gray-700 text-center leading-tight">Generer rapport</span>
                     </button>
                     
                     <button 
                       onClick={() => window.open('https://www.verified.eu/no', '_blank')}
-                      className="flex flex-col items-center p-4 sm:p-6 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 group min-h-[100px] sm:min-h-[120px]"
+                      className="flex flex-col items-center p-3 sm:p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 group min-h-[80px] sm:min-h-[100px]"
                     >
-                      <Shield className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400 mb-2 sm:mb-3 group-hover:text-gray-600" />
-                      <span className="text-xs sm:text-sm font-medium text-gray-700 text-center leading-tight">AML/KYC</span>
+                      <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400 mb-1 sm:mb-2 group-hover:text-gray-600" />
+                      <span className="text-xs font-medium text-gray-700 text-center leading-tight">AML/KYC</span>
                     </button>
                   </div>
                 </CardContent>
