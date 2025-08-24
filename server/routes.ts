@@ -140,10 +140,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const engagementOwner = client.engagementOwnerId ? 
               await storage.getUser(client.engagementOwnerId) : null;
             
+            // Get recurring tasks and check which are due this month
+            const recurringTasks = client.recurringTasks ? 
+              (Array.isArray(client.recurringTasks) ? client.recurringTasks : [client.recurringTasks]).map((task: any) => {
+                const currentMonth = new Date().getMonth();
+                let dueThisMonth = false;
+
+                // Check if task is due this month based on frequency
+                if (task.frequency) {
+                  const freq = task.frequency.toLowerCase();
+                  if (freq.includes('månedlig') || freq.includes('monthly')) {
+                    dueThisMonth = true;
+                  } else if (freq.includes('kvartalsvis') || freq.includes('quarterly')) {
+                    dueThisMonth = [0, 3, 6, 9].includes(currentMonth); // Q1, Q2, Q3, Q4
+                  } else if (freq.includes('årlig') || freq.includes('yearly')) {
+                    dueThisMonth = currentMonth === 11; // December
+                  } else if (freq.includes('ukentlig') || freq.includes('weekly') || freq.includes('daglig') || freq.includes('daily')) {
+                    dueThisMonth = true;
+                  }
+                }
+
+                return {
+                  taskName: task.taskName || task.task || 'Ukjent oppgave',
+                  frequency: task.frequency || 'Ikke spesifisert',
+                  dueThisMonth
+                };
+              }) : [];
+
             return {
               ...client,
               openTasksCount: openTasks,
               overdueTasksCount: overdueTasks,
+              recurringTasks,
               engagementOwner: engagementOwner ? {
                 id: engagementOwner.id,
                 firstName: engagementOwner.firstName,

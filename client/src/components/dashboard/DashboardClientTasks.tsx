@@ -27,6 +27,11 @@ interface ClientWithSummary {
     firstName: string;
     lastName: string;
   } | null;
+  recurringTasks?: Array<{
+    taskName: string;
+    frequency: string;
+    dueThisMonth?: boolean;
+  }>;
 }
 
 export function DashboardClientTasks() {
@@ -110,16 +115,50 @@ export function DashboardClientTasks() {
     return b.openTasksCount - a.openTasksCount;
   });
 
+  // Calculate monthly task summary
+  const monthlyTaskSummary = clientsWithSummary.reduce((acc, client) => {
+    if (client.recurringTasks) {
+      client.recurringTasks.filter(task => task.dueThisMonth).forEach(task => {
+        acc[task.taskName] = (acc[task.taskName] || 0) + 1;
+      });
+    }
+    return acc;
+  }, {} as Record<string, number>);
+
+  const totalMonthlyTasks = Object.values(monthlyTaskSummary).reduce((sum, count) => sum + count, 0);
+
   return (
-    <Card className="bg-white border border-gray-200/70 rounded-xl shadow-sm">
-      <CardHeader>
-        <div className="flex justify-between items-center">
-          <CardTitle className="text-lg font-semibold">Klient Oppgaver</CardTitle>
-          <Badge variant="outline" className="text-xs">
-            {clientsWithSummary.length} klienter
-          </Badge>
-        </div>
-      </CardHeader>
+    <div className="space-y-4">
+      {/* Monthly Tasks Summary */}
+      {totalMonthlyTasks > 0 && (
+        <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg font-semibold text-blue-800">
+              Denne måneds oppgaver - {new Date().toLocaleDateString('nb-NO', { month: 'long', year: 'numeric' })}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+              {Object.entries(monthlyTaskSummary).map(([taskName, count]) => (
+                <div key={taskName} className="text-center">
+                  <div className="text-2xl font-bold text-blue-700">{count}</div>
+                  <div className="text-sm text-blue-600">{taskName}</div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <Card className="bg-white border border-gray-200/70 rounded-xl shadow-sm">
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-lg font-semibold">Klient Oppgaver</CardTitle>
+            <Badge variant="outline" className="text-xs">
+              {clientsWithSummary.length} klienter
+            </Badge>
+          </div>
+        </CardHeader>
       <CardContent className="p-0">
         {/* Desktop Table View */}
         <div className="hidden md:block">
@@ -131,6 +170,7 @@ export function DashboardClientTasks() {
                   <th className="text-left p-4 text-sm font-medium text-gray-700">Oppdragsansvarlig</th>
                   <th className="text-center p-4 text-sm font-medium text-gray-700">Åpne oppgaver</th>
                   <th className="text-center p-4 text-sm font-medium text-gray-700">Forfalt</th>
+                  <th className="text-left p-4 text-sm font-medium text-gray-700">Denne måneds oppgaver</th>
                   <th className="text-left p-4 text-sm font-medium text-gray-700">Lønn</th>
                   <th className="text-right p-4 text-sm font-medium text-gray-700">Handlinger</th>
                 </tr>
@@ -184,6 +224,26 @@ export function DashboardClientTasks() {
                         </Badge>
                       ) : (
                         <span className="text-sm text-gray-500">-</span>
+                      )}
+                    </td>
+                    <td className="p-4">
+                      {client.recurringTasks && client.recurringTasks.length > 0 ? (
+                        <div className="space-y-1">
+                          {client.recurringTasks.filter(task => task.dueThisMonth).map((task, idx) => (
+                            <Badge 
+                              key={idx}
+                              variant="outline" 
+                              className="text-xs mr-1 mb-1 bg-blue-50 text-blue-700 border-blue-300"
+                            >
+                              {task.taskName}
+                            </Badge>
+                          ))}
+                          {client.recurringTasks.filter(task => task.dueThisMonth).length === 0 && (
+                            <span className="text-sm text-gray-500">Ingen forfalt denne måneden</span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-sm text-gray-500">Ingen oppgaver</span>
                       )}
                     </td>
                     <td className="p-4">
@@ -254,6 +314,27 @@ export function DashboardClientTasks() {
                     )}
                   </div>
 
+                  {/* Monthly tasks */}
+                  {client.recurringTasks && client.recurringTasks.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="text-sm font-medium text-gray-700">Denne måneds oppgaver:</div>
+                      <div className="flex flex-wrap gap-1">
+                        {client.recurringTasks.filter(task => task.dueThisMonth).map((task, idx) => (
+                          <Badge 
+                            key={idx}
+                            variant="outline" 
+                            className="text-xs bg-blue-50 text-blue-700 border-blue-300"
+                          >
+                            {task.taskName}
+                          </Badge>
+                        ))}
+                        {client.recurringTasks.filter(task => task.dueThisMonth).length === 0 && (
+                          <span className="text-sm text-gray-500">Ingen forfalt denne måneden</span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Engagement owner */}
                   {client.engagementOwner && (
                     <div className="flex items-center text-sm text-gray-600">
@@ -293,6 +374,7 @@ export function DashboardClientTasks() {
           ))}
         </div>
       </CardContent>
-    </Card>
+      </Card>
+    </div>
   );
 }
