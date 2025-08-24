@@ -84,9 +84,9 @@ export default function Dashboard() {
         </div>
 
         {/* Top Metrics Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 w-full">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Active Tasks Card */}
-          <Card>
+          <Card className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Aktive oppgaver</p>
@@ -98,7 +98,7 @@ export default function Dashboard() {
           </Card>
 
           {/* Overdue Tasks Card */}
-          <Card>
+          <Card className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Forsinkede</p>
@@ -110,7 +110,7 @@ export default function Dashboard() {
           </Card>
 
           {/* Weekly Hours Card */}
-          <Card>
+          <Card className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Timer/uke</p>
@@ -122,7 +122,7 @@ export default function Dashboard() {
           </Card>
 
           {/* Documents Card */}
-          <Card>
+          <Card className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Bilag</p>
@@ -132,22 +132,10 @@ export default function Dashboard() {
               <FileText className="h-8 w-8 text-gray-400" />
             </div>
           </Card>
-
-          {/* Completed This Week Card */}
-          <Card>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Ferdigstilt</p>
-                <p className="text-2xl font-bold text-green-600">{metrics?.completedThisWeek || 0}</p>
-                <p className="text-xs text-gray-500">Denne uke</p>
-              </div>
-              <TrendingUp className="h-8 w-8 text-green-400" />
-            </div>
-          </Card>
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <section className="lg:col-span-2">
             <Card>
               <CardHeader>
@@ -223,7 +211,7 @@ export default function Dashboard() {
         </div>
 
         {/* Recent Activity and Task Summary */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 w-full">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-gray-900">

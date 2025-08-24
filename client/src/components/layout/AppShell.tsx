@@ -16,10 +16,10 @@ export function AppShell({ children, title, subtitle }: AppShellProps) {
           <Sidebar />
         </aside>
 
-        {/* Main */}
-        <main className="flex-1 overflow-y-auto min-w-0">
+        {/* Main Content */}
+        <main className="flex-1 overflow-y-auto max-w-full">
           {title && <TopBar title={title} subtitle={subtitle} />}
-          <div className="px-4 sm:px-6 lg:px-8 py-6 w-full">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
             {children}
           </div>
         </main>
