@@ -1,0 +1,161 @@
+OPPDRAG: Fiks layouten slik at sidebaren har fast bredde og hovedinnhold aldri går under/forbi sidebaren. Gjør dashboardet fullt responsivt (autoskalering etter skjermbredde) med riktig grid og uten overlapp. Behold eksisterende funksjoner.
+
+1) AppShell: fast sidebar + fleksibelt hovedinnhold
+
+Krav
+
+Sidebar skal ha fast, konsistent bredde (w-64 desktop, w-72 om appen bruker større ikoner).
+
+Sidebar skal ikke skalere innholdet.
+
+Hovedinnhold skal starte etter sidebar (ikke under).
+
+På mobil: sidebar kan være “off‑canvas” (skjules bak burger).
+
+Kun hovedinnholdet scroller.
+
+Gjør slik (Tailwind/React – tilpass filsti):
+
+I src/components/layout/AppShell.* (eller tilsvarende), erstatt wrapper med:
+
+export default function AppShell({ children }) {
+  return (
+    <div className="min-h-screen bg-gray-50 text-gray-900">
+      {/* Topbar (valgfritt) */}
+      <div id="app-body" className="flex min-h-screen overflow-hidden">
+        {/* Sidebar */}
+        <aside
+          className="
+            hidden md:flex
+            w-64 flex-shrink-0
+            border-r border-gray-200 bg-white
+            sticky top-0
+            h-screen
+          "
+        >
+          {/* SidebarContent */} 
+        </aside>
+
+        {/* Mobil off-canvas monteres separat hvis det finnes allerede */}
+
+        {/* Main */}
+        <main
+          className="
+            flex-1 overflow-y-auto
+            max-w-full
+          "
+        >
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
+            {children}
+          </div>
+        </main>
+      </div>
+    </div>
+  )
+}
+
+
+Sørg for at ingen globale regler setter position:absolute på dashboard‑containeren.
+
+Fjern margin hacks på main; bruk kun flex layout over.
+
+2) Grid for dashboard‑kort
+
+Bytt ut dashboard‑seksjonen med konsekvent grid:
+
+// Top-widgets (Aktive oppgaver, Forsinkede, Timer/uke, Bilag, Ferdigstilt)
+<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+  <Card /> <Card /> <Card /> <Card /> <Card />
+</div>
+
+// Seksjon under widgets
+<div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <section className="lg:col-span-2">
+    {/* “Hurtigaksjoner” / opplast / generer rapport / AML */}
+  </section>
+
+  <aside className="lg:col-span-1">
+    {/* API Status kort */}
+  </aside>
+</div>
+
+
+Card‑standardisering (gjenbruk i alle kort):
+
+function Card({children}) {
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-5">
+      {children}
+    </div>
+  )
+}
+
+3) Sidebar som ikke påvirker skalering
+
+Fjern alle bredde‑regler på root som setter width: 100vw når sidebar er åpen; bruk flex som over.
+
+Pass på at topbar (om den finnes) ikke legger pl-64 manuelt — overlat layouten til flex.
+
+Legg z-20 på topbar og z-10 på sidebar hvis de overlapper i mobilmodus.
+
+4) Responsiv autoskalering
+
+Bruk container for innhold: mx-auto max-w-7xl px-4 sm:px-6 lg:px-8.
+
+Breakpoints:
+
+grid-cols-1 på mobil,
+
+sm:grid-cols-2 på tablet,
+
+lg:grid-cols-4/5 på desktop (tilpass hvor mange widgets dere har).
+
+Sørg for at bilder/ikoner har shrink-0 og at tall/tekster brytes: text-ellipsis overflow-hidden.
+
+5) Scroll‑oppførsel
+
+html, body skal ikke ha overflow:hidden.
+
+Sidebar: sticky top-0 h-screen overflow-y-auto (scroll inne i sidebar ved behov).
+
+Main: overflow-y-auto.
+
+Ingen dobbel scrollbar.
+
+6) Rydding av CSS som skaper feilen
+
+Søk og fjern/oppdater:
+
+Absolutte posisjoner i layouten: absolute left-0 top-0 på wrappers → erstatt med flex.
+
+Negative margins som skyver main under sidebar.
+
+Globale vh‑høyder på innhold som forårsaker overlapp på små skjermer.
+
+7) Akseptansekriterier
+
+Når vinduet skaleres fra 320px til 1920px:
+
+Sidebar holder konstant bredde; main starter rett ved siden av.
+
+Ingen innhold overlapper sidebaren.
+
+Dashboard‑kort reflow’er i 1/2/4–5 kolonner uten hull.
+
+Kun main‑området scroller.
+
+Lighthouse CLS < 0.05 på dashboard‑ruten.
+
+8) Bonus: støtte for svært smale skjermer
+
+Skjul sidebar på <md (allerede hidden md:flex).
+
+Legg til eksisterende mobil‑drawer hvis prosjektet har det; ellers la det stå.
+
+9) Leveranse
+
+Oppdaterte filer: AppShell.*, Sidebar.*, Dashboard.*, Card.* (navn kan variere — finn tilsvarende).
+
+Fjern ubrukte CSS‑regler som kolliderer.
+
+Kjør og bekreft akseptansekriterier.
