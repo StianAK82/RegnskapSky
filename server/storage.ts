@@ -53,6 +53,11 @@ export interface IStorage {
   updateClientTask(id: string, updates: any): Promise<any>;
   deleteClientTask(id: string): Promise<void>;
   
+  // Task Template and Instance management
+  getTaskInstancesByClient(clientId: string, options?: any): Promise<any[]>;
+  generatePayrollTask(clientId: string, payrollRunDay: number, payrollRunTime?: string): Promise<any>;
+  generateUpcomingTasks(tenantId: string, days: number): Promise<number>;
+  
   // Client Responsible management
   getClientResponsiblesByClient(clientId: string): Promise<any[]>;
   createClientResponsible(data: any): Promise<any>;
@@ -958,6 +963,158 @@ export class DatabaseStorage implements IStorage {
       employeeWorkload,
       clientDistribution
     };
+  }
+
+  // Task Template and Instance management methods
+  async getTaskInstancesByClient(clientId: string, options: any = {}): Promise<any[]> {
+    try {
+      const { taskInstances } = await import("../shared/schema");
+      let query = db.select().from(taskInstances).where(eq(taskInstances.clientId, clientId));
+      
+      if (options.status) {
+        query = query.where(and(eq(taskInstances.clientId, clientId), eq(taskInstances.status, options.status)));
+      }
+      
+      query = query.orderBy(desc(taskInstances.dueAt));
+      
+      if (options.limit) {
+        query = query.limit(options.limit);
+      }
+      
+      const instances = await query;
+      return instances;
+    } catch (error) {
+      console.error('Error getting task instances:', error);
+      return [];
+    }
+  }
+
+  async generatePayrollTask(clientId: string, payrollRunDay: number, payrollRunTime?: string): Promise<any> {
+    try {
+      const { taskTemplates, taskInstances } = await import("../shared/schema");
+      
+      // Find or create payroll template
+      let template = await db
+        .select()
+        .from(taskTemplates)
+        .where(and(eq(taskTemplates.type, 'recurring'), eq(taskTemplates.title, 'Lønn')))
+        .limit(1);
+      
+      if (template.length === 0) {
+        // Create default payroll template
+        const [newTemplate] = await db
+          .insert(taskTemplates)
+          .values({
+            title: 'Lønn',
+            description: 'Månedlig lønnskjøring',
+            type: 'recurring',
+            interval: 'monthly',
+            isActive: true
+          })
+          .returning();
+        template = [newTemplate];
+      }
+
+      // Calculate next payroll due date
+      const now = new Date();
+      const nextRun = new Date(now.getFullYear(), now.getMonth(), payrollRunDay);
+      if (nextRun < now) {
+        nextRun.setMonth(nextRun.getMonth() + 1);
+      }
+      
+      if (payrollRunTime) {
+        const [hours, minutes] = payrollRunTime.split(':');
+        nextRun.setHours(parseInt(hours), parseInt(minutes));
+      }
+
+      // Create task instance
+      const [instance] = await db
+        .insert(taskInstances)
+        .values({
+          templateId: template[0].id,
+          clientId,
+          title: `Lønn - ${nextRun.toLocaleDateString('nb-NO', { month: 'long', year: 'numeric' })}`,
+          description: 'Månedlig lønnskjøring',
+          status: 'open',
+          dueAt: nextRun,
+          priority: 'high'
+        })
+        .returning();
+      
+      return instance;
+    } catch (error) {
+      console.error('Error generating payroll task:', error);
+      throw error;
+    }
+  }
+
+  async generateUpcomingTasks(tenantId: string, days: number): Promise<number> {
+    try {
+      const { taskTemplates, taskInstances } = await import("../shared/schema");
+      let generatedCount = 0;
+      
+      // Get all active clients for the tenant
+      const tenantClients = await db
+        .select()
+        .from(clients)
+        .where(and(eq(clients.tenantId, tenantId), eq(clients.isActive, true)));
+      
+      // Get all recurring task templates
+      const templates = await db
+        .select()
+        .from(taskTemplates)
+        .where(and(eq(taskTemplates.type, 'recurring'), eq(taskTemplates.isActive, true)));
+      
+      const endDate = new Date();
+      endDate.setDate(endDate.getDate() + days);
+      
+      for (const client of tenantClients) {
+        for (const template of templates) {
+          // Check if we need to generate instances for this template
+          if (template.interval === 'monthly' && client.payrollRunDay) {
+            // Generate monthly payroll tasks
+            const nextRun = new Date();
+            nextRun.setDate(client.payrollRunDay);
+            if (nextRun < new Date()) {
+              nextRun.setMonth(nextRun.getMonth() + 1);
+            }
+            
+            while (nextRun <= endDate) {
+              // Check if task already exists
+              const existing = await db
+                .select()
+                .from(taskInstances)
+                .where(and(
+                  eq(taskInstances.clientId, client.id),
+                  eq(taskInstances.templateId, template.id),
+                  sql`DATE(${taskInstances.dueAt}) = DATE(${nextRun})`
+                ))
+                .limit(1);
+              
+              if (existing.length === 0) {
+                await db.insert(taskInstances).values({
+                  templateId: template.id,
+                  clientId: client.id,
+                  title: `${template.title} - ${nextRun.toLocaleDateString('nb-NO', { month: 'long', year: 'numeric' })}`,
+                  description: template.description,
+                  status: 'open',
+                  dueAt: nextRun,
+                  priority: template.priority || 'medium'
+                });
+                generatedCount++;
+              }
+              
+              nextRun.setMonth(nextRun.getMonth() + 1);
+            }
+          }
+        }
+      }
+      
+      return generatedCount;
+    } catch (error) {
+      console.error('Error generating upcoming tasks:', error);
+      return 0;
+    }
   }
 }
 

@@ -76,6 +76,9 @@ export const clients = pgTable("clients", {
   accountingSystem: text("accounting_system"), // Fiken, Tripletex, Unimicro, PowerOffice, Conta, Andre
   accountingSystemUrl: text("accounting_system_url"), // Custom URL for "Other"
   responsiblePersonId: uuid("responsible_person_id"), // References employees.id
+  engagementOwnerId: uuid("engagement_owner_id"), // Oppdragsansvarlig (references users.id)
+  payrollRunDay: integer("payroll_run_day"), // Day of month (1-31) for payroll
+  payrollRunTime: text("payroll_run_time"), // HH:MM format for payroll time
   amlStatus: text("aml_status").default("pending"), // pending, approved, rejected
   kycStatus: text("kyc_status").default("pending"), // pending, approved, rejected
   tasks: jsonb("tasks"), // Multi-select task list
@@ -107,6 +110,18 @@ export const clientResponsibles = pgTable("client_responsibles", {
 export const taskIntervals = ["weekly", "monthly", "bi-monthly", "yearly", "specific_date"] as const;
 export type TaskInterval = typeof taskIntervals[number];
 
+// Task frequencies for new task system
+export const taskFrequencies = ["weekly", "monthly", "quarterly", "yearly", "once"] as const;
+export type TaskFrequency = typeof taskFrequencies[number];
+
+// Task types for categorization
+export const taskTypes = ["payroll", "accounting", "report", "other"] as const;
+export type TaskType = typeof taskTypes[number];
+
+// Task statuses for instances
+export const taskStatuses = ["open", "in_progress", "done", "overdue"] as const;
+export type TaskStatus = typeof taskStatuses[number];
+
 // Client Tasks (enhanced task system)
 export const clientTasks = pgTable("client_tasks", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -120,6 +135,36 @@ export const clientTasks = pgTable("client_tasks", {
   repeatInterval: text("repeat_interval"), // daglig, ukentlig, månedlig, årlig
   status: text("status").default("ikke_startet"), // ikke_startet, pågår, ferdig
   assignedTo: uuid("assigned_to"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Task Templates (defines what tasks should be done for each client)
+export const taskTemplates = pgTable("task_templates", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  clientId: uuid("client_id").notNull(),
+  tenantId: uuid("tenant_id").notNull(),
+  title: text("title").notNull(), // e.g., "Kjør MVA-termin", "Kjør lønn"
+  frequency: text("frequency").$type<TaskFrequency>().notNull(), // weekly, monthly, quarterly, yearly, once
+  dueRule: text("due_rule").notNull(), // e.g., "day=15", "weekday=FRI", "offsetDays=-2"
+  type: text("type").$type<TaskType>().notNull(), // payroll, accounting, report, other
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Task Instances (actual task occurrences generated from templates)
+export const taskInstances = pgTable("task_instances", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  clientId: uuid("client_id").notNull(),
+  tenantId: uuid("tenant_id").notNull(),
+  templateId: uuid("template_id"), // References taskTemplates.id, can be null for manual tasks
+  title: text("title").notNull(),
+  dueAt: timestamp("due_at").notNull(),
+  status: text("status").$type<TaskStatus>().default("open"), // open, in_progress, done, overdue
+  assigneeId: uuid("assignee_id"), // References users.id
+  completedAt: timestamp("completed_at"),
+  notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -425,6 +470,12 @@ export const clientsRelations = relations(clients, ({ one, many }) => ({
   responsibles: many(clientResponsibles),
   documents: many(documents),
   timeEntries: many(timeEntries),
+  taskTemplates: many(taskTemplates),
+  taskInstances: many(taskInstances),
+  engagementOwner: one(users, {
+    fields: [clients.engagementOwnerId],
+    references: [users.id],
+  }),
 }));
 
 export const clientTasksRelations = relations(clientTasks, ({ one }) => ({
@@ -445,6 +496,29 @@ export const clientResponsiblesRelations = relations(clientResponsibles, ({ one 
   }),
   user: one(users, {
     fields: [clientResponsibles.userId],
+    references: [users.id],
+  }),
+}));
+
+export const taskTemplatesRelations = relations(taskTemplates, ({ one, many }) => ({
+  client: one(clients, {
+    fields: [taskTemplates.clientId],
+    references: [clients.id],
+  }),
+  taskInstances: many(taskInstances),
+}));
+
+export const taskInstancesRelations = relations(taskInstances, ({ one }) => ({
+  client: one(clients, {
+    fields: [taskInstances.clientId],
+    references: [clients.id],
+  }),
+  template: one(taskTemplates, {
+    fields: [taskInstances.templateId],
+    references: [taskTemplates.id],
+  }),
+  assignee: one(users, {
+    fields: [taskInstances.assigneeId],
     references: [users.id],
   }),
 }));
@@ -543,12 +617,32 @@ export const insertClientSchema = createInsertSchema(clients).omit({
   city: z.string().optional(),
   accountingSystem: z.string().optional(),
   responsiblePersonId: z.string().transform(val => val === "" ? undefined : val).pipe(z.string().uuid()).optional(),
+  engagementOwnerId: z.string().transform(val => val === "" ? undefined : val).pipe(z.string().uuid()).optional(),
+  payrollRunDay: z.number().min(1).max(31).optional(),
+  payrollRunTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
 });
 
 export const insertClientTaskSchema = createInsertSchema(clientTasks).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+});
+
+export const insertTaskTemplateSchema = createInsertSchema(taskTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  frequency: z.enum(taskFrequencies),
+  type: z.enum(taskTypes),
+});
+
+export const insertTaskInstanceSchema = createInsertSchema(taskInstances).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  status: z.enum(taskStatuses).optional(),
 });
 
 export const insertTaskSchema = createInsertSchema(tasks).omit({

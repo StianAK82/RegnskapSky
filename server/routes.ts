@@ -123,8 +123,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Client management
   app.get("/api/clients", authenticateToken, async (req: AuthRequest, res) => {
     try {
+      const { include } = req.query;
       const clients = await storage.getClientsByTenant(req.user!.tenantId);
-      res.json(clients);
+      
+      if (include === 'summary') {
+        // Get task summaries for each client
+        const clientsWithSummary = await Promise.all(
+          clients.map(async (client) => {
+            const taskInstances = await storage.getTaskInstancesByClient(client.id);
+            const openTasks = taskInstances.filter(task => task.status === 'open').length;
+            const overdueTasks = taskInstances.filter(task => 
+              task.status !== 'done' && task.dueAt && new Date(task.dueAt) < new Date()
+            ).length;
+            
+            // Get engagement owner info
+            const engagementOwner = client.engagementOwnerId ? 
+              await storage.getUser(client.engagementOwnerId) : null;
+            
+            return {
+              ...client,
+              openTasksCount: openTasks,
+              overdueTasksCount: overdueTasks,
+              engagementOwner: engagementOwner ? {
+                id: engagementOwner.id,
+                firstName: engagementOwner.firstName,
+                lastName: engagementOwner.lastName
+              } : null
+            };
+          })
+        );
+        res.json(clientsWithSummary);
+      } else {
+        res.json(clients);
+      }
     } catch (error: any) {
       res.status(500).json({ message: "Feil ved henting av klienter: " + error.message });
     }
@@ -210,6 +241,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(client);
     } catch (error: any) {
       res.status(400).json({ message: "Feil ved oppdatering av klient: " + error.message });
+    }
+  });
+
+  // PATCH endpoint for updating client engagement settings
+  app.patch("/api/clients/:id", authenticateToken, requireRole(["admin", "oppdragsansvarlig"]), async (req: AuthRequest, res) => {
+    try {
+      const clientId = req.params.id;
+      
+      // Validate client belongs to tenant
+      const existingClient = await storage.getClient(clientId);
+      if (!existingClient || existingClient.tenantId !== req.user!.tenantId) {
+        return res.status(404).json({ message: "Klient ikke funnet" });
+      }
+
+      // Validate engagement owner if provided
+      if (req.body.engagementOwnerId) {
+        const user = await storage.getUser(req.body.engagementOwnerId);
+        if (!user || user.tenantId !== req.user!.tenantId) {
+          return res.status(400).json({ message: "Ugyldig oppdragsansvarlig" });
+        }
+      }
+
+      // Validate payroll day
+      if (req.body.payrollRunDay && (req.body.payrollRunDay < 1 || req.body.payrollRunDay > 31)) {
+        return res.status(400).json({ message: "Lønnskjøringsdag må være mellom 1 og 31" });
+      }
+
+      // Generate payroll task if payrollRunDay is set
+      if (req.body.payrollRunDay && req.body.payrollRunDay !== existingClient.payrollRunDay) {
+        await storage.generatePayrollTask(clientId, req.body.payrollRunDay, req.body.payrollRunTime);
+      }
+
+      const client = await storage.updateClient(clientId, req.body);
+      res.json(client);
+    } catch (error: any) {
+      res.status(400).json({ message: "Feil ved oppdatering av klient: " + error.message });
+    }
+  });
+
+  // Get tasks for a specific client
+  app.get("/api/clients/:id/tasks", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const { status, limit } = req.query;
+      const clientId = req.params.id;
+
+      // Validate client belongs to tenant
+      const client = await storage.getClient(clientId);
+      if (!client || client.tenantId !== req.user!.tenantId) {
+        return res.status(404).json({ message: "Klient ikke funnet" });
+      }
+
+      const tasks = await storage.getTaskInstancesByClient(clientId, {
+        status: status as string,
+        limit: limit ? parseInt(limit as string) : undefined
+      });
+
+      res.json(tasks);
+    } catch (error: any) {
+      res.status(500).json({ message: "Feil ved henting av oppgaver: " + error.message });
+    }
+  });
+
+  // Generate upcoming tasks based on templates and payroll settings
+  app.post("/api/tasks/generate-upcoming", authenticateToken, requireRole(["admin", "oppdragsansvarlig"]), async (req: AuthRequest, res) => {
+    try {
+      const { days = 60 } = req.body;
+      const generated = await storage.generateUpcomingTasks(req.user!.tenantId, days);
+      res.json({ message: `${generated} oppgaver generert for de neste ${days} dagene`, count: generated });
+    } catch (error: any) {
+      res.status(500).json({ message: "Feil ved generering av oppgaver: " + error.message });
     }
   });
 

@@ -1,0 +1,231 @@
+VIKTIG:
+
+Oppdag stacken automatisk (React + Tailwind + [Next.js/Vite] i frontend, Node/Express/[Next API] + Prisma/[ORM] i backend). Ikke endre rammeverk – jobb med det som finnes.
+
+Hold koden modulær, typet der mulig (TS), og følg eksisterende design tokens.
+
+Ikke fjern eksisterte funksjoner; refaktor forsiktig.
+
+1) Fiks layout‑feilen på “Dashboard”
+
+Feil som skal bort: kort/tiles hopper rundt, ujevn spacing, feil bredder, overlapp ved mindre skjermer.
+
+Gjør dette:
+
+Innfør et konsekvent grid:
+
+Wrapper: max-w-7xl mx-auto px-4 sm:px-6 lg:px-8
+
+Grid for topp‑widgets (Aktive oppgaver, Forsinkede, Timer/uke, Ferdigstilt):
+grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4
+
+Sørg for min‑høyde og riktig scrolling:
+
+Sett min-h-screen, overflow-y-auto på content‑containeren.
+
+Sidebar får fast bredde (f.eks. w-64) og flex-shrink-0.
+
+Hovedinnhold: flex-1 overflow-hidden med intern overflow-auto.
+
+Fjern “magiske” marginer. Bruk kun gap-* i grids og space-y-* i stacks.
+
+Kortkomponent (Card): standardiser padding (p-5), radius (rounded-xl), skygge (shadow-sm), border (border border-gray-200/70 dark:border-gray-800).
+
+Ikoner/indikatorer alignes med flex items-center justify-between.
+
+Mobil: kort går 1 kolonne; tablet: 2 kolonner; desktop: 4.
+
+Rett opp eventuelle position: absolute som brukes til statiske ikoner/merker; bytt til flex.
+
+Akseptanse for layout:
+
+Ingen overlapp ved 320px bredde.
+
+Lighthouse layout shift (CLS) < 0.05 på dashboard‑ruten.
+
+Scrollbar vises kun på hovedinnhold, ikke hele appen.
+
+Endre filer (juster etter faktisk struktur):
+
+src/components/layout/Sidebar.*
+
+src/components/layout/AppShell.*
+
+src/pages/Dashboard.* eller src/routes/dashboard.*
+
+src/components/ui/Card.*
+
+2) Ny seksjon på Dashboard: “Klienter og oppgaver”
+
+Mål: Liste alle klienter med deres kommende/åpne oppgaver, hentet fra innstillinger i klientkortet. Vis også hvem som er oppdragsansvarlig.
+
+Datamodell (utvidelse):
+
+Client
+
+id: string
+
+name: string
+
+engagementOwnerId: string | null // oppdragsansvarlig (referanse til Employee/User)
+
+payrollRunDay: number | null // dag i måneden (1–31) når lønn skal kjøres
+
+payrollRunTime: string | null // HH:MM (valgfritt)
+
+TaskTemplate (definerer hva som “skal gjøres” pr. klient)
+
+id: string
+
+clientId: string
+
+title: string // f.eks. “Kjør MVA‑termin”, “Kjør lønn”
+
+frequency: "weekly" | "monthly" | "quarterly" | "yearly" | "once"
+
+dueRule: string // enkel regel, eksempel: day=15, weekday=FRI, offsetDays=-2
+
+type: "payroll" | "accounting" | "report" | "other"
+
+TaskInstance
+
+id: string
+
+clientId: string
+
+templateId: string | null
+
+title: string
+
+dueAt: Date
+
+status: "open" | "in_progress" | "done" | "overdue"
+
+assigneeId: string | null
+
+Hvis ORM (Prisma) brukes: opprett migrasjon med disse feltene. Hvis annen DB brukes, lag tilsvarende migrasjon.
+
+Backend‑endepunkter (REST eller RPC – match eksisterende stil):
+
+GET /api/clients?include=summary
+Returner: [{ id, name, engagementOwner: { id, name }, payrollRunDay, payrollRunTime, openTasksCount, overdueTasksCount }]
+
+GET /api/clients/:id/tasks?status=open|overdue|all&limit=…
+Returner task‑instanser m/dueAt & assignee.
+
+PATCH /api/clients/:id
+Tillat oppdatering av engagementOwnerId, payrollRunDay, payrollRunTime.
+
+(Valgfritt) POST /api/tasks/generate-upcoming
+Generer kommende TaskInstances for neste 60 dager basert på TaskTemplate + payrollRunDay.
+
+Genereringslogikk (forfall):
+
+Når TaskTemplate.type === "payroll" og client.payrollRunDay er satt:
+
+Sett dueAt = neste dato i denne eller neste måned med dag = payrollRunDay (klokkeslett = payrollRunTime hvis satt, ellers 12:00).
+
+“overdue” hvis dueAt < now og status !== done.
+
+Frontend – ny komponent på dashboard:
+
+DashboardClientTasks.tsx
+
+Fetcher GET /api/clients?include=summary + per klient de 1–3 neste åpne oppgavene.
+
+Tabellkort med kolonner: Klient | Oppgaver (chips) | Neste frist | Oppdragsansvarlig | Handlinger
+
+Chips: vis status (“Åpen”, “Forsinket”) og kategori (Payroll, MVA, Rapport).
+
+Handlinger: “Se alle oppgaver”, “Åpne klient”.
+
+Responsiv: på mobil blir dette en “stacked list” (hver rad et kort).
+
+UI‑endringer i klientkort (ClientDetail):
+
+Seksjon “Oppdrag & Rutiner”
+
+Felt “Oppdragsansvarlig” (dropdown av ansatte)
+
+Felt “Dato for lønnskjøring (dag i mnd)” (number input 1–31)
+
+Felt “Klokkeslett for lønnskjøring” (time input)
+
+Under: liste over TaskTemplates for klienten (legg til / rediger)
+
+Ved lagring: PATCH /api/clients/:id.
+
+Akseptanse for funksjonen:
+
+På dashboard vises alle klienter. For hver klient vises 0–3 kommende oppgaver (nærmest dato først) og navn på oppdragsansvarlig.
+
+Når jeg setter “Dato for lønnskjøring” i klientkortet og lagrer, dukker neste “Kjør lønn”‑oppgave opp i dashboardet med riktig forfallsdato.
+
+Filtrering: mulighet til å filtrere dashboard‑listen på “Kun forsinkede” og søke på klientnavn.
+
+Tomtilfelle: hvis ingen klienter/oppgaver, vis informativ tomtilstand.
+
+3) Tilpasning av eksisterende teller‑widgets
+
+Aktive oppgaver = antall TaskInstance.status IN ("open","in_progress").
+
+Forsinkede = status != "done" AND dueAt < now.
+
+Timer/uke beholdes som er (henter dagens uke).
+
+Ferdigstilt (Denne uke) = tasks “done” med completedAt denne uken.
+
+4) Kvalitet & testing
+
+Legg til server‑side enhetstester for datoreglene (payrollRunDay) og status “overdue”.
+
+Frakoble timezone‑feil: bruk UTC i DB og lokal tid i UI via Intl.DateTimeFormat.
+
+Tilby seed‑skript med 3 eksempelklienter, 1 payroll‑mal, 1 MVA‑mal.
+
+Eksempleseed (pseudo):
+
+Client A (OA: “Stian Karlsen”), payrollRunDay=15
+
+Client B (OA: “Anna Test”), payrollRunDay=25
+
+Client C (OA tom), ingen payroll
+
+5) Leveranse
+
+Opprett migrasjoner, implementer endepunkter, UI‑komponenter og koblinger.
+
+Sørg for at CI bygger.
+
+Skriv korte release notes i docs/CHANGELOG.md:
+
+“Fikset dashboard‑layout (responsivt grid, stabil scrolling, card‑standard).”
+
+“Ny seksjon: Klienter og oppgaver med oppdragsansvarlig.”
+
+“Klientkort: felt for dato/klokkeslett for lønnskjøring.”
+
+6) Sjekkliste før ferdig
+
+ Dashboard uten layout‑glitch ved 320px / 768px / 1280px.
+
+ Klientliste på dashboard viser riktig antall oppgaver og riktig ansvarlig.
+
+ Endring av “Dato for lønnskjøring” skaper neste payroll‑oppgave korrekt.
+
+ Teller‑widgets matcher tallene i listen.
+
+ Ingen console errors, ingen unødige re‑renders.
+
+Hvis du oppdager at prosjektet ikke har noen Task‑modeller fra før:
+Opprett dem som beskrevet over og koble til eksisterende bruker/ansatt‑tabell. Bruk samme navngivnings‑konvensjon som i repoet.
+
+Output du skal gi etter endringene:
+
+Liste over endrede filer.
+
+Sammendrag av migrasjoner.
+
+Kort demo‑gif/tekst for hvordan funksjonen brukes (kan være Markdown).
+
+Bekreftelse på at akseptansekravene er oppfylt.
