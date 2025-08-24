@@ -230,6 +230,24 @@ function AuthenticatedRoutes() {
         );
       }} />
 
+      <Route path="/super-simple" component={() => {
+        const SuperSimple = lazy(() => import("./pages/super-simple"));
+        return (
+          <Suspense fallback={<div>Loading...</div>}>
+            <SuperSimple />
+          </Suspense>
+        );
+      }} />
+
+      <Route path="/direct-test" component={() => {
+        const DirectTest = lazy(() => import("./pages/direct-test"));
+        return (
+          <Suspense fallback={<div>Loading...</div>}>
+            <DirectTest />
+          </Suspense>
+        );
+      }} />
+
       <Route path="/:rest*" component={NotFound} />
     </Switch>
   );
