@@ -31,17 +31,44 @@ interface ClientWithSummary {
 
 export function DashboardClientTasks() {
   // Fetch clients with task summary
-  const { data: clientsWithSummary = [], isLoading } = useQuery<ClientWithSummary[]>({
-    queryKey: ["/api/clients", "include=summary"],
+  const { data: clientsWithSummary = [], isLoading, error } = useQuery<ClientWithSummary[]>({
+    queryKey: ["/api/clients", { include: "summary" }],
     queryFn: async () => {
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("No authentication token");
+      
       const response = await fetch("/api/clients?include=summary", {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
       });
-      if (!response.ok) throw new Error("Failed to fetch clients");
+      
+      if (!response.ok) {
+        // Fallback to regular clients API if include=summary fails
+        console.warn("Failed to fetch clients with summary, falling back to regular clients");
+        const fallbackResponse = await fetch("/api/clients", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        if (!fallbackResponse.ok) throw new Error("Failed to fetch clients");
+        const clients = await fallbackResponse.json();
+        
+        // Return clients with default summary values
+        return clients.map((client: any) => ({
+          ...client,
+          openTasksCount: 0,
+          overdueTasksCount: 0,
+          engagementOwner: null
+        }));
+      }
+      
       return response.json();
     },
+    retry: 1,
+    staleTime: 30000, // Cache for 30 seconds
   });
 
   if (isLoading) {
