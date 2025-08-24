@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 // Pages
+import TestDashboard from "@/pages/TestDashboard";
 import Dashboard from "@/pages/Dashboard";
 import Clients from "@/pages/clients";
 import ClientDetail from "@/pages/client-detail";
@@ -17,14 +18,15 @@ import Subscriptions from "@/pages/subscriptions";
 import NotFound from "@/pages/not-found";
 
 function AppRoutes() {
-  // TESTMODUS: Direkteadgang til dashboardet uten innlogging
-  console.log('TESTMODUS: Innlogging fjernet - direkte tilgang til dashboard');
+  // TESTMODUS: Direkteadgang til enkel dashboard uten innlogging
+  console.log('TESTMODUS: Enkel dashboard lastet - ingen autentisering');
   
   return (
     <Switch>
-      <Route path="/" component={() => <Dashboard />} />
-      <Route path="/dashboard" component={() => <Dashboard />} />
-      <Route path="/login" component={() => <Dashboard />} />
+      <Route path="/" component={() => <TestDashboard />} />
+      <Route path="/dashboard" component={() => <TestDashboard />} />
+      <Route path="/login" component={() => <TestDashboard />} />
+      <Route path="/test" component={() => <TestDashboard />} />
       
       <Route path="/clients" component={() => <Clients />} />
       <Route path="/clients/:id" component={() => <ClientDetail />} />
