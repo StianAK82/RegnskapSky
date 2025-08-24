@@ -15,6 +15,99 @@ import {
   Shield
 } from "lucide-react";
 
+// Component for showing completed activities (admin only)
+function CompletedActivities() {
+  const { data: completedTasks = [], isLoading } = useQuery({
+    queryKey: ['/api/tasks', { status: 'completed', limit: 10 }],
+    queryFn: async () => {
+      const response = await fetch('/api/tasks?status=completed&limit=10', {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      if (!response.ok) throw new Error('Failed to fetch completed tasks');
+      return response.json();
+    },
+  });
+
+  const { data: users = [] } = useQuery({
+    queryKey: ['/api/users'],
+    queryFn: async () => {
+      const response = await fetch('/api/users', {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      if (!response.ok) throw new Error('Failed to fetch users');
+      return response.json();
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-gray-900">
+            <CheckCircle className="h-5 w-5 text-gray-600" />
+            Fullførte aktiviteter
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="animate-pulse">
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                <div className="h-3 bg-gray-100 rounded w-1/2"></div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-gray-900">
+          <CheckCircle className="h-5 w-5 text-gray-600" />
+          Fullførte aktiviteter
+        </CardTitle>
+        <CardDescription className="text-gray-600">Siste fullførte oppgaver</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-3">
+          {completedTasks.length > 0 ? (
+            completedTasks.map((task: any) => {
+              const assignedUser = users.find((u: any) => u.id === task.assignedTo);
+              return (
+                <div key={task.id} className="border-b border-gray-100 last:border-0 pb-3 last:pb-0">
+                  <div className="font-medium text-sm text-gray-900">{task.title}</div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    Fullført av: {assignedUser ? `${assignedUser.firstName} ${assignedUser.lastName}` : 'Ukjent'}
+                  </div>
+                  {task.completedAt && (
+                    <div className="text-xs text-gray-400">
+                      {new Date(task.completedAt).toLocaleDateString('nb-NO')}
+                    </div>
+                  )}
+                  {task.timeSpent && (
+                    <div className="text-xs text-blue-600 mt-1">
+                      {task.timeSpent} timer
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          ) : (
+            <div className="text-sm text-gray-500">Ingen fullførte oppgaver</div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 interface DashboardMetrics {
   totalClients: number;
   activeTasks: number;
@@ -152,10 +245,6 @@ export default function Dashboard() {
                     <span className="text-xs font-medium text-gray-700 text-center leading-tight">Opprett klient</span>
                   </button>
                   
-                  <button className="flex flex-col items-center p-3 sm:p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 group min-h-[80px] sm:min-h-[100px]">
-                    <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400 mb-1 sm:mb-2 group-hover:text-gray-600" />
-                    <span className="text-xs font-medium text-gray-700 text-center leading-tight">Last opp bilag</span>
-                  </button>
                   
                   <button className="flex flex-col items-center p-3 sm:p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 group min-h-[80px] sm:min-h-[100px]">
                     <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400 mb-1 sm:mb-2 group-hover:text-gray-600" />
@@ -174,35 +263,11 @@ export default function Dashboard() {
             </Card>
           </section>
 
-          <aside className="lg:col-span-1">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-gray-900">
-                  <CheckCircle className="h-5 w-5 text-gray-600" />
-                  API Status
-                </CardTitle>
-                <CardDescription className="text-gray-600">Integrasjoner og tjenester</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-700">Fiken</span>
-                  <Badge className="bg-green-50 text-green-700 border border-green-200 text-xs">Tilkoblet</Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-700">Tripletex</span>
-                  <Badge className="bg-green-50 text-green-700 border border-green-200 text-xs">Tilkoblet</Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-700">Brønnøysund</span>
-                  <Badge className="bg-green-50 text-green-700 border border-green-200 text-xs">Aktiv</Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-700">OpenAI</span>
-                  <Badge className="bg-amber-50 text-amber-700 border border-amber-200 text-xs">Begrenset</Badge>
-                </div>
-              </CardContent>
-            </Card>
-          </aside>
+          {user?.role === 'admin' && (
+            <aside className="lg:col-span-1">
+              <CompletedActivities />
+            </aside>
+          )}
         </div>
 
         {/* Client Tasks Overview */}
@@ -210,15 +275,15 @@ export default function Dashboard() {
           <DashboardClientTasks />
         </div>
 
-        {/* Recent Activity and Task Summary */}
+        {/* Task Summary */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-gray-900">
-                <Clock className="h-5 w-5 text-gray-600" />
-                Siste aktivitet
+                <TrendingUp className="h-5 w-5 text-gray-600" />
+                Oppgaveoversikt
               </CardTitle>
-              <CardDescription className="text-gray-600">Nylige handlinger og endringer</CardDescription>
+              <CardDescription className="text-gray-600">Status på pågående arbeid</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
