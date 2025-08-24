@@ -49,11 +49,21 @@ function AuthenticatedRoutes() {
       
       <Route 
         path="/clients" 
-        component={() => (
-          <ProtectedRoute allowedRoles={['admin', 'ansatt']}>
-            <Clients />
-          </ProtectedRoute>
-        )} 
+        component={() => {
+          const Clients = lazy(() => import("./pages/clients"));
+          const { DebugProtectedRoute } = require("./components/ui/debug-protected-route");
+          return (
+            <DebugProtectedRoute allowedRoles={['admin', 'ansatt']}>
+              <Suspense fallback={
+                <div className="min-h-screen flex items-center justify-center">
+                  <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+                </div>
+              }>
+                <Clients />
+              </Suspense>
+            </DebugProtectedRoute>
+          );
+        }}
       />
 
       <Route 
@@ -148,6 +158,28 @@ function AuthenticatedRoutes() {
             </div>
           }>
             <FixAuth />
+          </Suspense>
+        );
+      }} />
+
+      <Route path="/test-simple" component={() => {
+        const TestSimple = lazy(() => import("./pages/test-simple"));
+        return (
+          <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center">
+              <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+            </div>
+          }>
+            <TestSimple />
+          </Suspense>
+        );
+      }} />
+
+      <Route path="/minimal" component={() => {
+        const MinimalTest = lazy(() => import("./pages/minimal-test"));
+        return (
+          <Suspense fallback={<div>Loading...</div>}>
+            <MinimalTest />
           </Suspense>
         );
       }} />
