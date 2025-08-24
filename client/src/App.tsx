@@ -4,11 +4,8 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthProvider, useAuth } from "@/hooks/use-auth";
-import { ProtectedRoute } from "@/components/ui/protected-route";
 
 // Pages
-import Login from "@/pages/login";
 import Dashboard from "@/pages/Dashboard";
 import Clients from "@/pages/clients";
 import ClientDetail from "@/pages/client-detail";
@@ -19,78 +16,23 @@ import Reports from "@/pages/reports";
 import Subscriptions from "@/pages/subscriptions";
 import NotFound from "@/pages/not-found";
 
-function AuthenticatedRoutes() {
-  // BYPASS AUTHENTICATION - Direct access to dashboard for testing
-  console.log('TESTING MODE: Authentication bypassed');
+function AppRoutes() {
+  // TESTMODUS: Direkteadgang til dashboardet uten innlogging
+  console.log('TESTMODUS: Innlogging fjernet - direkte tilgang til dashboard');
   
   return (
     <Switch>
-      <Route path="/login" component={() => <Dashboard />} />
       <Route path="/" component={() => <Dashboard />} />
       <Route path="/dashboard" component={() => <Dashboard />} />
+      <Route path="/login" component={() => <Dashboard />} />
       
-      <Route 
-        path="/clients" 
-        component={() => (
-          <ProtectedRoute allowedRoles={['admin', 'ansatt']}>
-            <Clients />
-          </ProtectedRoute>
-        )} 
-      />
-
-      <Route 
-        path="/clients/:id" 
-        component={() => (
-          <ProtectedRoute allowedRoles={['admin', 'ansatt']}>
-            <ClientDetail />
-          </ProtectedRoute>
-        )} 
-      />
-
-      <Route 
-        path="/employees" 
-        component={() => (
-          <ProtectedRoute allowedRoles={['admin', 'ansatt']}>
-            <Employees />
-          </ProtectedRoute>
-        )} 
-      />
-      
-      <Route 
-        path="/tasks" 
-        component={() => (
-          <ProtectedRoute allowedRoles={['admin', 'ansatt']}>
-            <Tasks />
-          </ProtectedRoute>
-        )} 
-      />
-      
-      <Route 
-        path="/ai-assistant" 
-        component={() => (
-          <ProtectedRoute allowedRoles={['admin', 'ansatt']}>
-            <AIAssistant />
-          </ProtectedRoute>
-        )} 
-      />
-      
-      <Route 
-        path="/reports" 
-        component={() => (
-          <ProtectedRoute allowedRoles={['admin', 'ansatt']}>
-            <Reports />
-          </ProtectedRoute>
-        )} 
-      />
-      
-      <Route 
-        path="/subscriptions" 
-        component={() => (
-          <ProtectedRoute allowedRoles={['admin']}>
-            <Subscriptions />
-          </ProtectedRoute>
-        )} 
-      />
+      <Route path="/clients" component={() => <Clients />} />
+      <Route path="/clients/:id" component={() => <ClientDetail />} />
+      <Route path="/employees" component={() => <Employees />} />
+      <Route path="/tasks" component={() => <Tasks />} />
+      <Route path="/ai-assistant" component={() => <AIAssistant />} />
+      <Route path="/reports" component={() => <Reports />} />
+      <Route path="/subscriptions" component={() => <Subscriptions />} />
       
       <Route 
         path="/norwegian-features" 
@@ -117,10 +59,8 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <AuthProvider>
-          <Toaster />
-          <AuthenticatedRoutes />
-        </AuthProvider>
+        <Toaster />
+        <AppRoutes />
       </TooltipProvider>
     </QueryClientProvider>
   );
