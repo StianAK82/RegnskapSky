@@ -181,6 +181,8 @@ export const tasks = pgTable("tasks", {
   status: text("status").default("pending"), // pending, in_progress, completed, overdue
   dueDate: timestamp("due_date"),
   completedAt: timestamp("completed_at"),
+  completionNotes: text("completion_notes"), // Notes when marking task as complete
+  timeSpent: decimal("time_spent", { precision: 5, scale: 2 }), // Hours spent when completing
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

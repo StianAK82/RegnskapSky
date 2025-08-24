@@ -44,11 +44,20 @@ const taskSchema = z.object({
   clientId: z.string().optional(),
 });
 
+const completionSchema = z.object({
+  timeSpent: z.string().min(1, 'Timer er påkrevd').refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
+    message: 'Timer må være et gyldig tall større enn 0'
+  }),
+  completionNotes: z.string().optional(),
+});
+
 type TaskFormData = z.infer<typeof taskSchema>;
+type CompletionFormData = z.infer<typeof completionSchema>;
 
 export default function Tasks() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [completingTask, setCompletingTask] = useState<Task | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterPriority, setFilterPriority] = useState<string>('all');
   const { toast } = useToast();
@@ -112,6 +121,32 @@ export default function Tasks() {
     },
   });
 
+  const completeMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: CompletionFormData }) => {
+      const response = await apiRequest('PUT', `/api/tasks/${id}/complete`, {
+        timeSpent: Number(data.timeSpent),
+        completionNotes: data.completionNotes,
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+      setCompletingTask(null);
+      completionForm.reset();
+      toast({ 
+        title: 'Oppgave fullført',
+        description: 'Oppgaven ble markert som fullført og tid ble registrert'
+      });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: 'Feil ved fullføring av oppgave',
+        description: error.message || 'Kunne ikke fullføre oppgave',
+        variant: 'destructive'
+      });
+    },
+  });
+
   const form = useForm<TaskFormData>({
     resolver: zodResolver(taskSchema),
     defaultValues: {
@@ -125,12 +160,31 @@ export default function Tasks() {
     },
   });
 
+  const completionForm = useForm<CompletionFormData>({
+    resolver: zodResolver(completionSchema),
+    defaultValues: {
+      timeSpent: '',
+      completionNotes: '',
+    },
+  });
+
   const onSubmit = (data: TaskFormData) => {
     if (editingTask) {
       updateMutation.mutate({ id: editingTask.id, data });
     } else {
       createMutation.mutate(data);
     }
+  };
+
+  const onCompleteSubmit = (data: CompletionFormData) => {
+    if (completingTask) {
+      completeMutation.mutate({ id: completingTask.id, data });
+    }
+  };
+
+  const handleMarkComplete = (task: Task) => {
+    setCompletingTask(task);
+    completionForm.reset();
   };
 
   const handleEdit = (task: Task) => {
@@ -486,6 +540,18 @@ export default function Tasks() {
                               <i className="fas fa-edit mr-1"></i>
                               Rediger
                             </Button>
+                            {task.status !== 'completed' && (
+                              <Button
+                                variant="default"
+                                size="sm"
+                                className="bg-green-600 hover:bg-green-700"
+                                onClick={() => handleMarkComplete(task)}
+                                data-testid={`button-complete-task-${task.id}`}
+                              >
+                                <i className="fas fa-check mr-1"></i>
+                                Marker som klar
+                              </Button>
+                            )}
                           </div>
                         )}
                       </div>
@@ -495,6 +561,95 @@ export default function Tasks() {
               })}
             </div>
           )}
+
+          {/* Task Completion Modal */}
+          <Dialog open={!!completingTask} onOpenChange={(open) => {
+            if (!open) {
+              setCompletingTask(null);
+              completionForm.reset();
+            }
+          }}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Marker oppgave som fullført</DialogTitle>
+              </DialogHeader>
+              
+              {completingTask && (
+                <div className="mb-4">
+                  <p className="font-medium text-gray-900">{completingTask.title}</p>
+                  {completingTask.description && (
+                    <p className="text-sm text-gray-600 mt-1">{completingTask.description}</p>
+                  )}
+                </div>
+              )}
+
+              <Form {...completionForm}>
+                <form onSubmit={completionForm.handleSubmit(onCompleteSubmit)} className="space-y-4">
+                  <FormField
+                    control={completionForm.control}
+                    name="timeSpent"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Timer brukt *</FormLabel>
+                        <FormControl>
+                          <Input 
+                            {...field} 
+                            type="number" 
+                            step="0.25" 
+                            min="0.25"
+                            placeholder="f.eks. 2.5"
+                            data-testid="input-time-spent"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={completionForm.control}
+                    name="completionNotes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Kommentarer (valgfritt)</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            {...field} 
+                            rows={3} 
+                            placeholder="Eventuelle notater om oppgaven..."
+                            data-testid="textarea-completion-notes"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="flex justify-end space-x-2 pt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setCompletingTask(null);
+                        completionForm.reset();
+                      }}
+                      data-testid="button-cancel-completion"
+                    >
+                      Avbryt
+                    </Button>
+                    <Button
+                      type="submit"
+                      className="bg-green-600 hover:bg-green-700"
+                      disabled={completeMutation.isPending}
+                      data-testid="button-confirm-completion"
+                    >
+                      {completeMutation.isPending ? 'Lagrer...' : 'Marker som fullført'}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
     </AppShell>
   );
 }

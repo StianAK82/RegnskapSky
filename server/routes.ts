@@ -477,6 +477,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Complete task with time tracking
+  app.put("/api/tasks/:id/complete", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const { timeSpent, completionNotes } = req.body;
+      
+      if (!timeSpent || isNaN(Number(timeSpent)) || Number(timeSpent) <= 0) {
+        return res.status(400).json({ message: "Ugyldig tidsinformasjon" });
+      }
+
+      // Get the task first to ensure it exists and get client info
+      const existingTask = await storage.getTask(req.params.id);
+      if (!existingTask) {
+        return res.status(404).json({ message: "Oppgave ikke funnet" });
+      }
+
+      // Update task with completion data
+      const updatedTask = await storage.updateTask(req.params.id, {
+        status: "completed",
+        completedAt: new Date(),
+        completionNotes: completionNotes || null,
+        timeSpent: Number(timeSpent)
+      });
+
+      // Create time entry for the completed task
+      if (existingTask.clientId) {
+        await storage.createTimeEntry({
+          tenantId: req.user!.tenantId,
+          userId: req.user!.id,
+          clientId: existingTask.clientId,
+          taskId: req.params.id,
+          taskType: "task",
+          description: `${existingTask.title}${completionNotes ? ` - ${completionNotes}` : ''}`,
+          timeSpent: Number(timeSpent),
+          date: new Date(),
+          billable: true
+        });
+      }
+
+      res.json(updatedTask);
+    } catch (error: any) {
+      console.error('Task completion error:', error);
+      res.status(500).json({ message: "Feil ved fullføring av oppgave: " + error.message });
+    }
+  });
+
   // Client Responsibles management
   app.get("/api/clients/:clientId/responsibles", authenticateToken, async (req: AuthRequest, res) => {
     try {
