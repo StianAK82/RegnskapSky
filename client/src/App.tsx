@@ -126,6 +126,32 @@ function AuthenticatedRoutes() {
         }} 
       />
 
+      <Route path="/debug-auth" component={() => {
+        const DebugAuth = lazy(() => import("./pages/debug-auth"));
+        return (
+          <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center">
+              <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+            </div>
+          }>
+            <DebugAuth />
+          </Suspense>
+        );
+      }} />
+
+      <Route path="/fix-auth" component={() => {
+        const FixAuth = lazy(() => import("./pages/fix-auth"));
+        return (
+          <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center">
+              <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+            </div>
+          }>
+            <FixAuth />
+          </Suspense>
+        );
+      }} />
+
       <Route path="/:rest*" component={NotFound} />
     </Switch>
   );
