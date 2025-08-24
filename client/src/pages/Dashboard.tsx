@@ -97,76 +97,88 @@ export default function Dashboard() {
             </div>
 
             {/* Metrics Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-2 sm:gap-3 lg:gap-4">
               {/* Total Clients Card */}
-              <Card className="bg-white border border-gray-200/70 rounded-xl shadow-sm p-3 sm:p-4 hover:shadow-md transition-shadow min-h-[100px] sm:min-h-[120px]">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                  <div className="space-y-1">
-                    <p className="text-xs sm:text-sm font-medium text-gray-700">Totalt klienter</p>
-                    <p className="text-xl sm:text-2xl font-bold text-gray-900">{metrics?.totalClients || 0}</p>
-                    <p className="text-xs text-gray-500">Aktive klienter</p>
+              <Card className="bg-white border border-gray-200/70 rounded-lg shadow-sm p-2 sm:p-3 lg:p-4 hover:shadow-md transition-shadow min-h-[90px] sm:min-h-[110px]">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-medium text-gray-700 truncate">Totalt klienter</p>
+                    <Users className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 shrink-0" />
                   </div>
-                  <Users className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500 mt-2 sm:mt-0 self-start sm:self-center" />
+                  <div>
+                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">{metrics?.totalClients || 0}</p>
+                    <p className="text-xs text-gray-500 truncate">Aktive klienter</p>
+                  </div>
                 </div>
               </Card>
 
               {/* Active Tasks Card */}
-              <Card className="bg-white border border-gray-200/70 rounded-xl shadow-sm p-3 sm:p-4 hover:shadow-md transition-shadow min-h-[100px] sm:min-h-[120px]">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                  <div className="space-y-1">
-                    <p className="text-xs sm:text-sm font-medium text-gray-700">Aktive oppgaver</p>
-                    <p className="text-xl sm:text-2xl font-bold text-gray-900">{metrics?.activeTasks || 0}</p>
-                    <p className="text-xs text-gray-500">Pågående</p>
+              <Card className="bg-white border border-gray-200/70 rounded-lg shadow-sm p-2 sm:p-3 lg:p-4 hover:shadow-md transition-shadow min-h-[90px] sm:min-h-[110px]">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-medium text-gray-700 truncate">Aktive oppgaver</p>
+                    <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 shrink-0" />
                   </div>
-                  <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500 mt-2 sm:mt-0 self-start sm:self-center" />
+                  <div>
+                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">{metrics?.activeTasks || 0}</p>
+                    <p className="text-xs text-gray-500 truncate">Pågående</p>
+                  </div>
                 </div>
               </Card>
 
               {/* Overdue Tasks Card */}
-              <Card className="bg-white border border-gray-200/70 rounded-xl shadow-sm p-3 sm:p-4 hover:shadow-md transition-shadow min-h-[100px] sm:min-h-[120px]">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                  <div className="space-y-1">
-                    <p className="text-xs sm:text-sm font-medium text-gray-700">Forsinkede</p>
-                    <p className="text-xl sm:text-2xl font-bold text-amber-600">{metrics?.overdueTasks || 0}</p>
-                    <p className="text-xs text-gray-500">Krever handling</p>
+              <Card className="bg-white border border-gray-200/70 rounded-lg shadow-sm p-2 sm:p-3 lg:p-4 hover:shadow-md transition-shadow min-h-[90px] sm:min-h-[110px]">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-medium text-gray-700 truncate">Forsinkede</p>
+                    <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4 text-amber-500 shrink-0" />
                   </div>
-                  <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-amber-500 mt-2 sm:mt-0 self-start sm:self-center" />
+                  <div>
+                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-amber-600">{metrics?.overdueTasks || 0}</p>
+                    <p className="text-xs text-gray-500 truncate">Krever handling</p>
+                  </div>
                 </div>
               </Card>
 
               {/* Weekly Hours Card */}
-              <Card className="bg-white border border-gray-200/70 rounded-xl shadow-sm p-3 sm:p-4 hover:shadow-md transition-shadow min-h-[100px] sm:min-h-[120px]">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                  <div className="space-y-1">
-                    <p className="text-xs sm:text-sm font-medium text-gray-700">Timer/uke</p>
-                    <p className="text-xl sm:text-2xl font-bold text-gray-900">{metrics?.weeklyHours || 0}t</p>
-                    <p className="text-xs text-gray-500">Registrert</p>
+              <Card className="bg-white border border-gray-200/70 rounded-lg shadow-sm p-2 sm:p-3 lg:p-4 hover:shadow-md transition-shadow min-h-[90px] sm:min-h-[110px]">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-medium text-gray-700 truncate">Timer/uke</p>
+                    <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 shrink-0" />
                   </div>
-                  <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500 mt-2 sm:mt-0 self-start sm:self-center" />
+                  <div>
+                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">{metrics?.weeklyHours || 0}t</p>
+                    <p className="text-xs text-gray-500 truncate">Registrert</p>
+                  </div>
                 </div>
               </Card>
 
               {/* Documents Processed Card */}
-              <Card className="bg-white border border-gray-200/70 rounded-xl shadow-sm p-3 sm:p-4 hover:shadow-md transition-shadow min-h-[100px] sm:min-h-[120px]">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                  <div className="space-y-1">
-                    <p className="text-xs sm:text-sm font-medium text-gray-700">Bilag</p>
-                    <p className="text-xl sm:text-2xl font-bold text-gray-900">{metrics?.documentsProcessed || 0}</p>
-                    <p className="text-xs text-gray-500">AI-behandlet</p>
+              <Card className="bg-white border border-gray-200/70 rounded-lg shadow-sm p-2 sm:p-3 lg:p-4 hover:shadow-md transition-shadow min-h-[90px] sm:min-h-[110px]">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-medium text-gray-700 truncate">Bilag</p>
+                    <FileText className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 shrink-0" />
                   </div>
-                  <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500 mt-2 sm:mt-0 self-start sm:self-center" />
+                  <div>
+                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">{metrics?.documentsProcessed || 0}</p>
+                    <p className="text-xs text-gray-500 truncate">AI-behandlet</p>
+                  </div>
                 </div>
               </Card>
 
               {/* Completed This Week Card */}
-              <Card className="bg-white border border-gray-200/70 rounded-xl shadow-sm p-3 sm:p-4 hover:shadow-md transition-shadow min-h-[100px] sm:min-h-[120px]">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                  <div className="space-y-1">
-                    <p className="text-xs sm:text-sm font-medium text-gray-700">Ferdigstilt</p>
-                    <p className="text-xl sm:text-2xl font-bold text-green-600">{metrics?.completedThisWeek || 0}</p>
-                    <p className="text-xs text-gray-500">Denne uke</p>
+              <Card className="bg-white border border-gray-200/70 rounded-lg shadow-sm p-2 sm:p-3 lg:p-4 hover:shadow-md transition-shadow min-h-[90px] sm:min-h-[110px]">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-medium text-gray-700 truncate">Ferdigstilt</p>
+                    <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-green-500 shrink-0" />
                   </div>
-                  <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mt-2 sm:mt-0 self-start sm:self-center" />
+                  <div>
+                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-green-600">{metrics?.completedThisWeek || 0}</p>
+                    <p className="text-xs text-gray-500 truncate">Denne uke</p>
+                  </div>
                 </div>
               </Card>
             </div>
