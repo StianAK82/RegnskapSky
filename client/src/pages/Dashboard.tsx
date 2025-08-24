@@ -97,76 +97,76 @@ export default function Dashboard() {
             </div>
 
             {/* Metrics Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
               {/* Total Clients Card */}
-              <Card className="bg-white border border-gray-200/70 dark:border-gray-800 rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow min-h-[120px]">
-                <div className="flex items-center justify-between">
+              <Card className="bg-white border border-gray-200/70 rounded-xl shadow-sm p-3 sm:p-4 hover:shadow-md transition-shadow min-h-[100px] sm:min-h-[120px]">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                   <div className="space-y-1">
-                    <p className="text-sm font-medium text-gray-700">Totalt klienter</p>
-                    <p className="text-2xl font-bold text-gray-900">{metrics?.totalClients || 0}</p>
+                    <p className="text-xs sm:text-sm font-medium text-gray-700">Totalt klienter</p>
+                    <p className="text-xl sm:text-2xl font-bold text-gray-900">{metrics?.totalClients || 0}</p>
                     <p className="text-xs text-gray-500">Aktive klienter</p>
                   </div>
-                  <Users className="h-5 w-5 text-gray-500" />
+                  <Users className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500 mt-2 sm:mt-0 self-start sm:self-center" />
                 </div>
               </Card>
 
               {/* Active Tasks Card */}
-              <Card className="bg-white border border-gray-200/70 dark:border-gray-800 rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow min-h-[120px]">
-                <div className="flex items-center justify-between">
+              <Card className="bg-white border border-gray-200/70 rounded-xl shadow-sm p-3 sm:p-4 hover:shadow-md transition-shadow min-h-[100px] sm:min-h-[120px]">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                   <div className="space-y-1">
-                    <p className="text-sm font-medium text-gray-700">Aktive oppgaver</p>
-                    <p className="text-2xl font-bold text-gray-900">{metrics?.activeTasks || 0}</p>
+                    <p className="text-xs sm:text-sm font-medium text-gray-700">Aktive oppgaver</p>
+                    <p className="text-xl sm:text-2xl font-bold text-gray-900">{metrics?.activeTasks || 0}</p>
                     <p className="text-xs text-gray-500">Pågående</p>
                   </div>
-                  <CheckCircle className="h-5 w-5 text-gray-500" />
+                  <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500 mt-2 sm:mt-0 self-start sm:self-center" />
                 </div>
               </Card>
 
               {/* Overdue Tasks Card */}
-              <Card className="bg-white border border-gray-200/70 dark:border-gray-800 rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow min-h-[120px]">
-                <div className="flex items-center justify-between">
+              <Card className="bg-white border border-gray-200/70 rounded-xl shadow-sm p-3 sm:p-4 hover:shadow-md transition-shadow min-h-[100px] sm:min-h-[120px]">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                   <div className="space-y-1">
-                    <p className="text-sm font-medium text-gray-700">Forsinkede</p>
-                    <p className="text-2xl font-bold text-amber-600">{metrics?.overdueTasks || 0}</p>
+                    <p className="text-xs sm:text-sm font-medium text-gray-700">Forsinkede</p>
+                    <p className="text-xl sm:text-2xl font-bold text-amber-600">{metrics?.overdueTasks || 0}</p>
                     <p className="text-xs text-gray-500">Krever handling</p>
                   </div>
-                  <AlertTriangle className="h-5 w-5 text-amber-500" />
+                  <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-amber-500 mt-2 sm:mt-0 self-start sm:self-center" />
                 </div>
               </Card>
 
               {/* Weekly Hours Card */}
-              <Card className="bg-white border border-gray-200/70 dark:border-gray-800 rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow min-h-[120px]">
-                <div className="flex items-center justify-between">
+              <Card className="bg-white border border-gray-200/70 rounded-xl shadow-sm p-3 sm:p-4 hover:shadow-md transition-shadow min-h-[100px] sm:min-h-[120px]">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                   <div className="space-y-1">
-                    <p className="text-sm font-medium text-gray-700">Timer/uke</p>
-                    <p className="text-2xl font-bold text-gray-900">{metrics?.weeklyHours || 0}t</p>
+                    <p className="text-xs sm:text-sm font-medium text-gray-700">Timer/uke</p>
+                    <p className="text-xl sm:text-2xl font-bold text-gray-900">{metrics?.weeklyHours || 0}t</p>
                     <p className="text-xs text-gray-500">Registrert</p>
                   </div>
-                  <Clock className="h-5 w-5 text-gray-500" />
+                  <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500 mt-2 sm:mt-0 self-start sm:self-center" />
                 </div>
               </Card>
 
               {/* Documents Processed Card */}
-              <Card className="bg-white border border-gray-200/70 dark:border-gray-800 rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow min-h-[120px]">
-                <div className="flex items-center justify-between">
+              <Card className="bg-white border border-gray-200/70 rounded-xl shadow-sm p-3 sm:p-4 hover:shadow-md transition-shadow min-h-[100px] sm:min-h-[120px]">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                   <div className="space-y-1">
-                    <p className="text-sm font-medium text-gray-700">Bilag</p>
-                    <p className="text-2xl font-bold text-gray-900">{metrics?.documentsProcessed || 0}</p>
+                    <p className="text-xs sm:text-sm font-medium text-gray-700">Bilag</p>
+                    <p className="text-xl sm:text-2xl font-bold text-gray-900">{metrics?.documentsProcessed || 0}</p>
                     <p className="text-xs text-gray-500">AI-behandlet</p>
                   </div>
-                  <FileText className="h-5 w-5 text-gray-500" />
+                  <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500 mt-2 sm:mt-0 self-start sm:self-center" />
                 </div>
               </Card>
 
               {/* Completed This Week Card */}
-              <Card className="bg-white border border-gray-200/70 dark:border-gray-800 rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow min-h-[120px]">
-                <div className="flex items-center justify-between">
+              <Card className="bg-white border border-gray-200/70 rounded-xl shadow-sm p-3 sm:p-4 hover:shadow-md transition-shadow min-h-[100px] sm:min-h-[120px]">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                   <div className="space-y-1">
-                    <p className="text-sm font-medium text-gray-700">Ferdigstilt</p>
-                    <p className="text-2xl font-bold text-green-600">{metrics?.completedThisWeek || 0}</p>
+                    <p className="text-xs sm:text-sm font-medium text-gray-700">Ferdigstilt</p>
+                    <p className="text-xl sm:text-2xl font-bold text-green-600">{metrics?.completedThisWeek || 0}</p>
                     <p className="text-xs text-gray-500">Denne uke</p>
                   </div>
-                  <TrendingUp className="h-5 w-5 text-green-500" />
+                  <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mt-2 sm:mt-0 self-start sm:self-center" />
                 </div>
               </Card>
             </div>
