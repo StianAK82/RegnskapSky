@@ -4,8 +4,8 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/hooks/use-auth";
 import Dashboard from "@/pages/Dashboard";
 import ClientsSimple from "@/pages/clients-simple";
-import Employees from "@/pages/employees";
-import Tasks from "@/pages/tasks";
+import EmployeesSimple from "@/pages/employees-simple";
+import TasksSimple from "@/pages/tasks-simple";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
 
@@ -19,8 +19,8 @@ function App() {
             <Route path="/" component={Dashboard} />
             <Route path="/dashboard" component={Dashboard} />
             <Route path="/clients" component={ClientsSimple} />
-            <Route path="/employees" component={Employees} />
-            <Route path="/tasks" component={Tasks} />
+            <Route path="/employees" component={EmployeesSimple} />
+            <Route path="/tasks" component={TasksSimple} />
             <Route path="/:rest*" component={NotFound} />
           </Switch>
         </div>
