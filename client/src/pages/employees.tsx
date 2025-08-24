@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { Sidebar } from '@/components/layout/sidebar';
-import { TopBar } from '@/components/layout/top-bar';
+import { AppShell } from '@/components/layout/AppShell';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -211,13 +210,7 @@ export default function Employees() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 md:flex">
-      <Sidebar />
-      
-      <div className="flex-1 flex flex-col overflow-hidden md:ml-64">
-        <TopBar title="Ansatte" />
-        
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-3 sm:p-6">
+    <AppShell title="Ansatte" subtitle="Administrer ansatte i organisasjonen din">
           <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
@@ -544,8 +537,6 @@ export default function Employees() {
               </div>
             )}
           </div>
-        </main>
-      </div>
-    </div>
+    </AppShell>
   );
 }

@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { Sidebar } from '@/components/layout/sidebar';
-import { TopBar } from '@/components/layout/top-bar';
+import { AppShell } from '@/components/layout/AppShell';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -205,15 +204,7 @@ export default function Tasks() {
   const canCreateEdit = user?.role && ['admin', 'oppdragsansvarlig'].includes(user.role);
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar />
-      <div className="flex-1 ml-64 overflow-hidden">
-        <TopBar 
-          title="Oppgaver" 
-          subtitle="Administrer oppgaver og fremdrift" 
-        />
-        
-        <main className="flex-1 overflow-y-auto p-6">
+    <AppShell title="Oppgaver" subtitle="Administrer oppgaver og fremdrift">
           {/* Filters and Actions */}
           <div className="flex justify-between items-center mb-6">
             <div className="flex space-x-4">
@@ -504,8 +495,6 @@ export default function Tasks() {
               })}
             </div>
           )}
-        </main>
-      </div>
-    </div>
+    </AppShell>
   );
 }

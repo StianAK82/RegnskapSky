@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { Sidebar } from '@/components/layout/sidebar';
-import { TopBar } from '@/components/layout/top-bar';
+import { AppShell } from '@/components/layout/AppShell';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -331,15 +330,7 @@ export default function Clients() {
   ) || [];
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar />
-      <div className="flex-1 ml-64 overflow-hidden">
-        <TopBar 
-          title="Klienter" 
-          subtitle="Administrer dine klienter og deres informasjon" 
-        />
-        
-        <main className="flex-1 overflow-y-auto p-6">
+    <AppShell title="Klienter" subtitle="Administrer dine klienter og deres informasjon">
           {/* Search and Actions */}
           <div className="flex justify-between items-center mb-6">
             <div className="flex-1 max-w-md">
@@ -1066,9 +1057,7 @@ export default function Clients() {
               ))}
             </div>
           )}
-        </main>
-      </div>
-    </div>
+    </AppShell>
   );
 }
 
