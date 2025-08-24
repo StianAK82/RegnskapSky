@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,22 +26,24 @@ interface DashboardMetrics {
 }
 
 export default function Dashboard() {
-  // TESTMODUS: Ingen autentiseringssjekk - direkte tilgang til dashboard
-  console.log('Dashboard lastet uten innloggingskrav - TESTMODUS aktiv');
+  const { user } = useAuth();
 
   // Simple dashboard metrics
   const { data: metrics, isLoading: metricsLoading } = useQuery<DashboardMetrics>({
     queryKey: ["/api/dashboard/metrics"],
+    enabled: !!user,
   });
 
   // Recent clients
   const { data: recentClients = [], isLoading: clientsLoading } = useQuery<any[]>({
     queryKey: ["/api/clients"],
+    enabled: !!user,
   });
 
   // Get tasks for client overview
   const { data: allTasks = [] } = useQuery<any[]>({
     queryKey: ["/api/tasks"],
+    enabled: !!user,
   });
 
   // Group tasks by client
@@ -76,7 +79,7 @@ export default function Dashboard() {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
           <p className="text-gray-600">
-            Velkommen til Zaldo CRM - testmodus aktiv
+            Velkommen tilbake, {user?.firstName}!
           </p>
         </div>
 
