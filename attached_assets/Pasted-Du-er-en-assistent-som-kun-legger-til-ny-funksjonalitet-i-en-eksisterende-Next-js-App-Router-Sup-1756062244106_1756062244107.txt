@@ -1,0 +1,127 @@
+Du er en assistent som kun legger til ny funksjonalitet i en eksisterende Next.js (App Router) + Supabase-app. Ikke fjern eller omskriv eksisterende kode med mindre det er helt nødvendig for at nye funksjoner skal fungere. Hvis du må endre noe, gjør det minimalt, bakoverkompatibelt og beskriv endringen eksplisitt.
+
+Mål
+
+Legg til følgende uten å fjerne funksjoner som allerede finnes:
+
+Glemt passord-flyt
+
+/auth/reset (skjema med e-post)
+
+/auth/reset/confirm (token + nytt passord)
+
+POST /api/auth/reset/request og POST /api/auth/reset/confirm
+
+Krav:
+
+E-post skrives inn av bruker.
+
+Bare send reset-lenke dersom e-posten tilhører en bruker som enten er lisenseier eller ansatt i en lisensiert bedrift (aktiv lisens).
+
+Generér engangs reset-token (hash lagres, TTL 30–60 min, single-use).
+
+Rate-limit + ikke lekke om e-post finnes (returner samme OK-beskjed uansett).
+
+E-postsendingshelper (mock) sendPasswordResetEmail(email, url) i lib/email.ts.
+
+Systemeiers adminoversikt (du = SYSTEM_OWNER)
+
+Side: /admin/tenants
+
+API: GET /api/admin/companies (id, name, orgnr, contact_email, license_count, is_active, created_at)
+
+API: PATCH /api/admin/companies/:id/license { license_count }
+
+Kun rolle SYSTEM_OWNER skal ha tilgang (serverguard/middleware + RLS der det er relevant).
+
+Kundens dashboard (lisenskjøper)
+
+Side: /dashboard
+
+Viser Klienter (egne) + Oppgaver per klient
+
+Endepunkter:
+
+GET /api/clients, POST /api/clients { name, orgnr }
+
+GET /api/tasks?client_id=..., POST /api/tasks { title, client_id, description?, due_date?, priority?, assignee_user_id? }
+
+Filtre: status, klient. Enkel TaskForm-komponent.
+
+Kun synlig for brukere innenfor sin company_id.
+
+Datamodell (legg til dersom de ikke finnes fra før – ikke slett eksisterende tabeller/kolonner)
+
+companies(id uuid pk, name text, orgnr text, contact_email text, license_count int default 1, is_active bool default true, created_at timestamptz)
+
+users(id uuid pk, email text unique, full_name text, role text default 'COMPANY_USER', company_id uuid fk, created_at timestamptz)
+
+clients(id uuid pk, company_id uuid fk, name text, orgnr text, status text default 'active', created_at timestamptz)
+
+tasks(id uuid pk, company_id uuid fk, client_id uuid fk, title text, description text, due_date date, status text default 'open', priority text default 'normal', assignee_user_id uuid fk, created_by uuid fk, created_at timestamptz)
+
+password_reset_tokens(id uuid pk, user_id uuid fk, token_hash text, expires_at timestamptz, used_at timestamptz)
+
+audit_logs(id uuid pk, user_id uuid, company_id uuid, action text, meta jsonb, created_at timestamptz)
+
+Hvis RLS er aktivert: skriv ikke-knusende RLS policies (som kommentarer eller migrasjoner) som:
+
+companies: kun SYSTEM_OWNER kan lese alle; ellers bare egen.
+
+users: bruker kan lese/oppdatere seg selv; COMPANY_ADMIN kan lese brukere i samme company_id; SYSTEM_OWNER kan lese alle.
+
+clients/tasks: company_id = auth_user_company_id().
+
+Krav til implementasjon
+
+Ikke fjern eksisterende routes/komponenter. Legg til nye filer og minimalt endre eksisterende.
+
+Bruk eksisterende Supabase-klienter (forventet i @/lib/supabase/serverClient og @/lib/supabase/client). Hvis de ikke finnes, lag kompatible wrappers.
+
+Legg inn rolle-guard server-side for /admin/* og selskapsskoping for data.
+
+E-post og token:
+
+Hash token med Node crypto (ikke lagre klartekst).
+
+TTL 30–60 min, markér used_at ved bruk.
+
+UX:
+
+Enkle skjemaer (gjerne react-hook-form + zod) uten å endre eksisterende styling.
+
+“Hvis adressen finnes, får du e-post”-bekreftelse ved reset-request.
+
+Robusthet:
+
+Try/catch rundt API-endepunkter, returner tydelige feil uten å kaste hele appen.
+
+Ingen hard fjerning av eksisterende redirects. Unngå dobbelt-redirects.
+
+Drift:
+
+Env-vars: dokumentér NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, APP_BASE_URL, og e-postleverandør (mock ok).
+
+Legg ved SQL-migrasjoner (safe/IF NOT EXISTS) eller Supabase migrasjonsskript.
+
+Skriv kort README-seksjon med oppsett og ruter.
+
+Leveranseformat
+
+Filtre av endringer (path + innhold) for alle nye/endrede filer. Ikke forkort.
+
+Kort CHANGELOG med hva som er lagt til og hvilke eksisterende filer som ble minimalt endret (hvorfor).
+
+Eventuelle SQL-migrasjoner og (om mulig) RLS policy-utkast.
+
+Kort README-oppdatering (install/run/env).
+
+Viktig
+
+Ikke fjern eksisterende funksjonalitet. Ikke store refaktoreringer.
+
+Hvis noe må endres som kan være risikabelt, pakk i feature-flags eller gjør endringen opt-in.
+
+Hvis noe kan krasje pga eksisterende kode, fullfør likevel denne leveransen. Notér konfliktpunkter i CHANGELOG med forslag til oppfølgingssteg.
+
+Produser nå filendringer, API-ruter, komponenter og migrasjoner i henhold til dette.
