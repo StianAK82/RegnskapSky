@@ -1,5 +1,4 @@
 import React from "react";
-import { Card } from "@/components/ui/card";
 
 export default function TestDashboard() {
   return (
@@ -41,7 +40,7 @@ export default function TestDashboard() {
 
           {/* Metrics Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <Card className="p-6 bg-white">
+            <div className="p-6 bg-white rounded-lg shadow">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Aktive oppgaver</p>
@@ -52,9 +51,9 @@ export default function TestDashboard() {
                   ✅
                 </div>
               </div>
-            </Card>
+            </div>
 
-            <Card className="p-6 bg-white">
+            <div className="p-6 bg-white rounded-lg shadow">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Forsinkede</p>
@@ -65,9 +64,9 @@ export default function TestDashboard() {
                   ⚠️
                 </div>
               </div>
-            </Card>
+            </div>
 
-            <Card className="p-6 bg-white">
+            <div className="p-6 bg-white rounded-lg shadow">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Timer/uke</p>
@@ -78,9 +77,9 @@ export default function TestDashboard() {
                   🕐
                 </div>
               </div>
-            </Card>
+            </div>
 
-            <Card className="p-6 bg-white">
+            <div className="p-6 bg-white rounded-lg shadow">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Klienter</p>
@@ -91,12 +90,12 @@ export default function TestDashboard() {
                   👥
                 </div>
               </div>
-            </Card>
+            </div>
           </div>
 
           {/* Quick Actions */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="p-6">
+            <div className="p-6 bg-white rounded-lg shadow">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Hurtighandlinger</h3>
               <div className="space-y-3">
                 <button className="w-full p-3 text-left bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
@@ -112,9 +111,9 @@ export default function TestDashboard() {
                   <div className="text-sm text-purple-700">Utfør kundeidentifisering</div>
                 </button>
               </div>
-            </Card>
+            </div>
 
-            <Card className="p-6">
+            <div className="p-6 bg-white rounded-lg shadow">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Siste aktivitet</h3>
               <div className="space-y-3">
                 <div className="p-3 bg-gray-50 rounded-lg">
@@ -130,7 +129,7 @@ export default function TestDashboard() {
                   <div className="text-xs text-gray-500">Stavanger Tech - 2 dager siden</div>
                 </div>
               </div>
-            </Card>
+            </div>
           </div>
         </div>
       </div>
