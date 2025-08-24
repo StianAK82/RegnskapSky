@@ -102,7 +102,6 @@ export default function Clients() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid'); // Add view mode state
   const [registrationStep, setRegistrationStep] = useState(1); // Two-step registration
   const [companyData, setCompanyData] = useState<any>(null);
   const [isLoadingOrgData, setIsLoadingOrgData] = useState(false);
@@ -344,27 +343,6 @@ export default function Clients() {
             </div>
             
             <div className="flex items-center space-x-4">
-              {/* View Toggle */}
-              <div className="flex rounded-lg border border-gray-200 p-1">
-                <Button
-                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('grid')}
-                  className="h-8 px-3"
-                >
-                  <i className="fas fa-th mr-2"></i>
-                  Rutenett
-                </Button>
-                <Button
-                  variant={viewMode === 'list' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('list')}
-                  className="h-8 px-3"
-                >
-                  <i className="fas fa-list mr-2"></i>
-                  Liste
-                </Button>
-              </div>
             </div>
             
             <Dialog open={isCreateOpen || !!editingClient} onOpenChange={handleDialogClose}>
@@ -1043,9 +1021,9 @@ export default function Clients() {
             </Dialog>
           </div>
 
-          {/* Clients Grid */}
+          {/* Clients List */}
           {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="space-y-4">
               {[...Array(6)].map((_, i) => (
                 <Card key={i} className="animate-pulse">
                   <CardContent className="p-6">
@@ -1075,12 +1053,6 @@ export default function Clients() {
                 )}
               </CardContent>
             </Card>
-          ) : viewMode === 'grid' ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredClients.map((client) => (
-                <ClientCard key={client.id} client={client} onEdit={handleEdit} />
-              ))}
-            </div>
           ) : (
             <div className="space-y-4">
               {filteredClients.map((client) => (
@@ -1092,172 +1064,6 @@ export default function Clients() {
   );
 }
 
-// Enhanced Client Card Component with all requested features
-function ClientCard({ client, onEdit }: { client: any; onEdit: (client: any) => void }) {
-  const [bilagCount, setBilagCount] = useState<{ count: number; processed: number } | null>(null);
-  const { toast } = useToast();
-  
-  // Fetch bilag count when component mounts
-  useEffect(() => {
-    const fetchBilagCount = async () => {
-      try {
-        const response = await apiRequest('GET', `/api/bilag-count/${client.id}`);
-        if (response.ok) {
-          const data = await response.json();
-          setBilagCount(data);
-        }
-      } catch (error) {
-        // Silently handle - not critical for display
-      }
-    };
-    
-    fetchBilagCount();
-  }, [client.id]);
-
-  // Accounting system URLs mapping
-  const accountingSystemUrls = {
-    fiken: "https://fiken.no",
-    tripletex: "https://tripletex.no", 
-    unimicro: "https://unimicro.no",
-    poweroffice: "https://poweroffice.no",
-    conta: "https://conta.no"
-  };
-
-  const handleAccountingSystemRedirect = () => {
-    if (client.accountingSystem && accountingSystemUrls[client.accountingSystem as keyof typeof accountingSystemUrls]) {
-      window.open(accountingSystemUrls[client.accountingSystem as keyof typeof accountingSystemUrls], '_blank');
-    } else {
-      toast({
-        title: "Ingen URL",
-        description: "Ingen URL er satt opp for dette regnskapssystemet",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const getKYCStatusBadge = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return <Badge className="bg-green-100 text-green-800 text-xs">✓ KYC OK</Badge>;
-      case 'rejected':
-        return <Badge className="bg-red-100 text-red-800 text-xs">✗ KYC Avvist</Badge>;
-      default:
-        return <Badge className="bg-yellow-100 text-yellow-800 text-xs">⏳ KYC Venter</Badge>;
-    }
-  };
-
-  const getAMLStatusBadge = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return <Badge className="bg-green-100 text-green-800 text-xs">✓ AML OK</Badge>;
-      case 'rejected':
-        return <Badge className="bg-red-100 text-red-800 text-xs">✗ AML Avvist</Badge>;
-      default:
-        return <Badge className="bg-yellow-100 text-yellow-800 text-xs">⏳ AML Venter</Badge>;
-    }
-  };
-
-  return (
-    <Card className="hover:shadow-lg transition-all duration-200 border-l-4 border-l-blue-500">
-      <CardHeader className="pb-3">
-        <div className="flex justify-between items-start">
-          <div>
-            <CardTitle className="text-lg font-semibold text-gray-900">{client.name}</CardTitle>
-            {client.orgNumber && (
-              <p className="text-sm text-gray-500 mt-1">Org.nr: {client.orgNumber}</p>
-            )}
-          </div>
-          <div className="flex flex-col gap-1">
-            {getAMLStatusBadge(client.amlStatus)}
-            {getKYCStatusBadge(client.kycStatus)}
-          </div>
-        </div>
-      </CardHeader>
-      
-      <CardContent className="pt-0">
-        {/* Basic Client Info */}
-        <div className="space-y-2 mb-4">
-          {client.contactPerson && (
-            <div className="flex items-center text-sm text-gray-600">
-              <Users className="h-4 w-4 text-gray-400 mr-2" />
-              {client.contactPerson}
-            </div>
-          )}
-          
-          {client.accountingSystem && (
-            <div className="flex items-center text-sm text-gray-600">
-              <FileText className="h-4 w-4 text-gray-400 mr-2" />
-              <span className="capitalize">{client.accountingSystem}</span>
-              <button
-                onClick={handleAccountingSystemRedirect}
-                className="ml-2 text-blue-600 hover:text-blue-800 text-xs"
-                title="Gå til regnskapssystem"
-              >
-                <i className="fas fa-external-link-alt"></i>
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Bilag Count Display */}
-        <div className="bg-gray-50 rounded-lg p-3 mb-4">
-          <div className="flex justify-between items-center">
-            <span className="text-sm font-medium text-gray-700">Bilag</span>
-            <div className="text-right">
-              {bilagCount ? (
-                <>
-                  <div className="text-lg font-semibold text-gray-900">{bilagCount.count}</div>
-                  <div className="text-xs text-gray-500">
-                    {bilagCount.processed} behandlet
-                  </div>
-                </>
-              ) : (
-                <div className="text-sm text-gray-500">Laster...</div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Notes Section */}
-        {client.notes && (
-          <div className="mb-4">
-            <p className="text-sm text-gray-600 bg-blue-50 p-2 rounded border-l-2 border-blue-200">
-              <strong>Notater:</strong> {client.notes}
-            </p>
-          </div>
-        )}
-        
-        {/* Action Buttons */}
-        <div className="flex justify-between items-center pt-4 border-t">
-          <span className="text-xs text-gray-500">
-            {new Date(client.createdAt).toLocaleDateString('nb-NO')}
-          </span>
-          
-          <div className="flex space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onEdit(client)}
-              className="text-blue-600 border-blue-300 hover:bg-blue-50"
-            >
-              <i className="fas fa-edit mr-1"></i>
-              Rediger
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => window.location.href = `/client-detail/${client.id}`}
-              className="text-green-600 border-green-300 hover:bg-green-50"
-            >
-              <i className="fas fa-tasks mr-1"></i>
-              Oppgaver
-            </Button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
 
 // List Item Component for List View
 function ClientListItem({ client, onEdit }: { client: any; onEdit: (client: any) => void }) {
