@@ -51,9 +51,9 @@ function AuthenticatedRoutes() {
         path="/clients" 
         component={() => {
           const Clients = lazy(() => import("./pages/clients"));
-          const { DebugProtectedRoute } = require("./components/ui/debug-protected-route");
+          const { SimpleProtectedRoute } = require("./components/ui/simple-protected-route");
           return (
-            <DebugProtectedRoute allowedRoles={['admin', 'ansatt']}>
+            <SimpleProtectedRoute allowedRoles={['admin', 'ansatt']}>
               <Suspense fallback={
                 <div className="min-h-screen flex items-center justify-center">
                   <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
@@ -61,7 +61,7 @@ function AuthenticatedRoutes() {
               }>
                 <Clients />
               </Suspense>
-            </DebugProtectedRoute>
+            </SimpleProtectedRoute>
           );
         }}
       />
@@ -77,11 +77,21 @@ function AuthenticatedRoutes() {
 
       <Route 
         path="/employees" 
-        component={() => (
-          <ProtectedRoute allowedRoles={['admin', 'ansatt']}>
-            <Employees />
-          </ProtectedRoute>
-        )} 
+        component={() => {
+          const Employees = lazy(() => import("./pages/employees"));
+          const { SimpleProtectedRoute } = require("./components/ui/simple-protected-route");
+          return (
+            <SimpleProtectedRoute allowedRoles={['admin', 'ansatt']}>
+              <Suspense fallback={
+                <div className="min-h-screen flex items-center justify-center">
+                  <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+                </div>
+              }>
+                <Employees />
+              </Suspense>
+            </SimpleProtectedRoute>
+          );
+        }}
       />
       
       <Route 
@@ -180,6 +190,33 @@ function AuthenticatedRoutes() {
         return (
           <Suspense fallback={<div>Loading...</div>}>
             <MinimalTest />
+          </Suspense>
+        );
+      }} />
+
+      <Route path="/simple-clients" component={() => {
+        const SimpleClients = lazy(() => import("./pages/simple-clients"));
+        return (
+          <Suspense fallback={<div>Loading...</div>}>
+            <SimpleClients />
+          </Suspense>
+        );
+      }} />
+
+      <Route path="/working-clients" component={() => {
+        const WorkingClients = lazy(() => import("./pages/working-clients"));
+        return (
+          <Suspense fallback={<div>Loading...</div>}>
+            <WorkingClients />
+          </Suspense>
+        );
+      }} />
+
+      <Route path="/working-employees" component={() => {
+        const WorkingEmployees = lazy(() => import("./pages/working-employees"));
+        return (
+          <Suspense fallback={<div>Loading...</div>}>
+            <WorkingEmployees />
           </Suspense>
         );
       }} />
