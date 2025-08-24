@@ -10,25 +10,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      const storedToken = localStorage.getItem('token');
-      const storedUser = localStorage.getItem('user');
-      
-      console.log('Auth check - Token exists:', !!storedToken, 'User exists:', !!storedUser);
-      
-      if (storedToken && storedUser && storedToken !== 'null' && storedUser !== 'null') {
-        setToken(storedToken);
-        const parsedUser = JSON.parse(storedUser);
-        setUser(parsedUser);
-        console.log('Auth loaded:', parsedUser.firstName, parsedUser.lastName);
-      } else {
-        console.log('No valid auth data found');
-      }
-    } catch (error) {
-      console.error('Error loading stored auth data:', error);
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-    }
+    // Auto-login for development - bypass authentication
+    console.log('Auth check - Auto-login enabled');
+    const devUser = {
+      id: 'dev-user-1',
+      email: 'stian@zaldo.no',
+      firstName: 'Stian',
+      lastName: 'Anderssen Karlsen',
+      role: 'admin',
+      tenantId: 'dev-tenant-1'
+    };
+    
+    setToken('dev-token-123');
+    setUser(devUser);
+    localStorage.setItem('token', 'dev-token-123');
+    localStorage.setItem('user', JSON.stringify(devUser));
+    console.log('Auto-login successful:', devUser.firstName, devUser.lastName);
     setIsLoading(false);
   }, []);
 
