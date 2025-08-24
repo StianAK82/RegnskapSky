@@ -1,0 +1,228 @@
+IKKE fjerner eksisterende funksjoner. Du skal verifisere at løsningen vår matcher spesifikasjonen under. Hvis noe mangler, lag trygge tillegg (bakoverkompatibelt), og lever tester + rapport som gjør det lett å se status.
+
+Kontekst / Stack
+
+Next.js (App Router) + TypeScript + Tailwind
+
+Supabase (Auth + Postgres med RLS)
+
+Anta supabase-klient i @/lib/supabase/serverClient og @/lib/supabase/client
+
+Shadcn-komponenter kan brukes hvis de allerede finnes
+
+Hva skal være bygget (hovedpunkter)
+
+Glemt passord-flyt
+
+Sider: /auth/reset, /auth/reset/confirm
+
+API: POST /api/auth/reset/request, POST /api/auth/reset/confirm
+
+Token lagres hashed m/ TTL 30–60 min, single-use
+
+Rate-limit og “alltid OK”-respons (ikke lekke om e-post finnes)
+
+Audit-logg for request/confirm
+
+Systemeiers admin (SYSTEM_OWNER)
+
+Side: /admin/tenants
+
+API: GET /api/admin/companies, PATCH /api/admin/companies/:id/license
+
+Viser: name, orgnr, contact_email, license_count, is_active, created_at
+
+Ingen klientdata for systemeier
+
+Kundens dashboard (COMPANY_ADMIN/USER)
+
+Side: /dashboard
+
+Seksjoner: Klienter, Oppgaver, Timer (ukevisning), “Mine oppgaver”
+
+Oppgaver: filter på status/klient; opprett/oppdater; assignee/due_date
+
+Klientkort med KYC/AML + Altinn
+
+Badges på kortet: KYC (pending/under_review/verified/rejected), AML (clear/under_review/flagged), Altinn (har/mangler)
+
+Primærknapp (state‑styrt): Start/Fortsett/Se verifisering → /clients/[id]/kyc
+
+Sekundære handlinger: Last opp dokumenter, Se historikk, Kjør AML‑rescreen
+
+Altinn‑seksjon på kortet:
+
+Spør: “Har vi fått Altinn‑tilgang?” (Ja/Nei)
+
+Hvis Nei: coord_reg_signed (sammordnet registermelding signert), altinn_invitation_sent, altinn_notes
+
+Hvis Ja: altinn_access_type, altinn_access_granted_at, altinn_access_granted_by
+
+PATCH‑endepunkt for lagring
+
+Timer & godkjenning
+
+Timeføring per klient/oppgave
+
+Admin kan godkjenne/låse
+
+Rapporter enkel MVP (timer per klient/ansatt/periode)
+
+Rolle-/tilgangsstyring + RLS
+
+SYSTEM_OWNER: kun tenants/lisenser, ikke klientdata
+
+COMPANY_ADMIN: full tilgang innen egen company
+
+COMPANY_USER: egne oppgaver/timer, se egne klienter
+
+RLS på alle company‑scopede tabeller
+
+Datamodell (minimumsfelt som må finnes)
+
+companies(id, name, orgnr, contact_email, license_count, is_active, created_at)
+
+users(id, email, full_name, role, company_id, created_at)
+
+clients(id, company_id, name, orgnr, status, created_at, kyc_status, aml_status, accounting_system_url, altinn_access, altinn_access_type, altinn_access_granted_at, altinn_access_granted_by, coord_reg_signed, altinn_invitation_sent, altinn_notes)
+
+tasks(id, company_id, client_id, title, description, due_date, status, priority, assignee_user_id, created_by, created_at, estimated_hours, billable, invoice_status)
+
+time_entries(id, company_id, user_id, client_id, task_id, work_date, hours, description, billable, rate, approved, locked, created_at)
+
+password_reset_tokens(id, user_id, token_hash, expires_at, used_at)
+
+audit_logs(id, user_id, company_id, action, meta, created_at)
+
+kyc_cases(id, client_id, status, risk_score, documents, created_at)
+
+aml_screenings(id, client_id, result, status, created_at)
+
+Oppgaven din (gjør dette nå)
+A) Lag en ikke-destruktiv helsesjekk av kodebasen
+
+Søk etter ruter, komponenter og API‑endepunkter listet over. Lag scripts/audit/report.md med:
+
+Funnet / mangler / delvis for hver rute, komponent, API
+
+Filstier til implementasjon (hvis finnes)
+
+Konkrete TODOs for hull
+
+Sjekk datamodell mot minimumsfelt:
+
+Hvis vi bruker Prisma/Drizzle/Supabase‑migrasjoner, sammenlign skjema
+
+Lag migrasjon kun for manglende kolonner/tabeller (ikke endre/rename/fjerne)
+
+Plasser i supabase/migrations/*_add_missing_columns.sql (eller tilsvarende for vårt system)
+
+Sjekk RLS og rolle‑guards:
+
+Verifiser middleware/serverside guards for /admin/* (kun SYSTEM_OWNER)
+
+Verifiser at alle company‑scopede API endepunkter filtrerer på company_id
+
+Hvis mangler, legg til sikre guards uten å røre eksisterende logikk unødig. Dokumentér endringer i CHANGELOG.
+
+B) Generer testpakke som kan kjøres lokalt/CI
+
+API‑kontraktstester (Jest + Supertest) under tests/api/*:
+
+Auth reset: request/confirm (happy + token utløpt/brukes to ganger)
+
+Admin companies: GET, PATCH license (rollekrav)
+
+Clients: GET/POST/PATCH altinn; KYC docs upload (mock); AML rescreen (mock)
+
+Tasks: GET/POST/PATCH
+
+Time entries: GET/POST/PATCH (godkjenning/lås)
+
+E2E‑tester (Playwright) under tests/e2e/*:
+
+/dashboard viser: Klienter‑tabell, Oppgaver‑tabell, Timer‑ukevisning, “Mine oppgaver”
+
+Klientkort viser KYC/AML/Altinn‑badges og tilstandsstyrt primærknapp
+
+Altinn‑radio Ja/Nei lagrer og rendrer riktig underfelt
+
+Navigasjon til /clients/[id]/kyc fra klientkort
+
+Seeder (scripts/seed.ts) for lokal test:
+
+1 systemeier, 1 company admin, 2 users
+
+2 clients (én med KYC pending/Altinn mangler, én verified/Altinn har)
+
+3 tasks, 4 time_entries
+
+Env & CI:
+
+Legg til README.md seksjon “Test & CI”
+
+Legg til package.json scripts:
+
+"test:api", "test:e2e", "test:all", "seed"
+
+Opprett minimal GitHub Actions workflow .github/workflows/test.yml som kjører test:all
+
+C) Bygg status‑dashboard for verifikasjon (dev‑only)
+
+Side: /dev/verification
+
+Viser “sjekkliste med grønn/rød” for alle krav (ruter, API, DB‑felt, RLS)
+
+Les fra scripts/audit/report.json (generer denne i tillegg til report.md)
+
+Lenker direkte til filer/ruter (der det er mulig)
+
+D) Rapporter
+
+scripts/audit/report.md + scripts/audit/report.json:
+
+Sammendrag (pass/fail)
+
+Matrise per område (Auth reset / Admin / Dashboard / Klientkort / KYC‑AML / Altinn / Oppgaver / Timer / RLS)
+
+Liste over mangler med presise TODOs
+
+CHANGELOG.md: punktliste over hva du la til for å muliggjøre testing (ingen breaking changes)
+
+Oppdatert README.md med:
+
+Hvordan kjøre seeding og tester lokalt
+
+Env‑variabler som må settes for test (mock e‑post, service role key, base URL)
+
+Akseptansekriterier for oppgaven din
+
+Ingen eksisterende funksjoner fjernes eller knuses
+
+Kjørbare scripts:
+
+npm run seed
+
+npm run test:api
+
+npm run test:e2e
+
+npm run test:all
+
+/dev/verification viser status for alle punkter
+
+scripts/audit/report.md tydeliggjør hva som mangler og hvor filene finnes
+
+Eventuelle migrasjoner er additive (kun ADD COLUMN/CREATE TABLE IF NOT EXISTS)
+
+Rolle‑guards & RLS verifiseres i tester (negative tester inkludert)
+
+Hvis noe mangler
+
+Lever minimale, additive endringer (filer/kolonner/guard) for å få testene grønne
+
+Dokumentér nøyaktig hva som ble lagt til og hvorfor
+
+Ikke refaktorer bredt; hold endringer lokale og trygge
+
+Kjør nå.
