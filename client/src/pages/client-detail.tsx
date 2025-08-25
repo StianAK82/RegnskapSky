@@ -129,6 +129,7 @@ export default function ClientDetail() {
     enabled: boolean;
     frequency: string;
     dueDate: string;
+    assignedTo: string;
     nextDueDate?: string;
   }>>({});
 
@@ -220,6 +221,42 @@ export default function ClientDetail() {
     }
   });
 
+  const saveStandardTasksMutation = useMutation({
+    mutationFn: async (schedules: any) => {
+      const tasks = Object.entries(schedules)
+        .filter(([, config]: [string, any]) => config.enabled)
+        .map(([taskName, config]: [string, any]) => ({
+          taskName,
+          taskType: 'standard',
+          description: `${config.frequency} ${taskName.toLowerCase()}`,
+          dueDate: config.dueDate ? new Date(config.dueDate).toISOString() : null,
+          repeatInterval: config.frequency.toLowerCase(),
+          assignedTo: config.assignedTo || null,
+          status: 'ikke_startet'
+        }));
+
+      const promises = tasks.map(task => 
+        apiRequest('POST', `/api/clients/${clientId}/tasks`, task).then(res => res.json())
+      );
+      
+      return Promise.all(promises);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/clients', clientId, 'tasks'] });
+      toast({
+        title: "Oppgaveplaner lagret",
+        description: "Standardoppgaver er konfigurert for denne klienten."
+      });
+    },
+    onError: () => {
+      toast({ 
+        title: 'Feil', 
+        description: 'Kunne ikke lagre oppgaveplaner', 
+        variant: 'destructive' 
+      });
+    }
+  });
+
   useEffect(() => {
     if (client) {
       setClientUpdates({
@@ -271,6 +308,23 @@ export default function ClientDetail() {
     if (client?.accountingSystem && client.accountingSystemUrl) {
       window.open(client.accountingSystemUrl, '_blank');
     }
+  };
+
+  const saveStandardTaskSchedules = () => {
+    const enabledSchedules = Object.fromEntries(
+      Object.entries(standardTaskSchedules).filter(([, config]) => config.enabled)
+    );
+    
+    if (Object.keys(enabledSchedules).length === 0) {
+      toast({
+        title: 'Ingen oppgaver valgt',
+        description: 'Velg minst en oppgave å konfigurere.',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    saveStandardTasksMutation.mutate(standardTaskSchedules);
   };
 
   if (isLoading) {
@@ -458,7 +512,8 @@ export default function ClientDetail() {
                               ...prev[task.name],
                               enabled: e.target.checked,
                               frequency: prev[task.name]?.frequency || task.frequency[0],
-                              dueDate: prev[task.name]?.dueDate || ''
+                              dueDate: prev[task.name]?.dueDate || '',
+                              assignedTo: prev[task.name]?.assignedTo || ''
                             }
                           }));
                         }}
@@ -471,7 +526,7 @@ export default function ClientDetail() {
                   </div>
                   
                   {standardTaskSchedules[task.name]?.enabled && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ml-7">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 ml-7">
                       <div>
                         <Label className="text-sm">Frekvens</Label>
                         <Select 
@@ -492,6 +547,32 @@ export default function ClientDetail() {
                           <SelectContent>
                             {task.frequency.map(freq => (
                               <SelectItem key={freq} value={freq}>{freq}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-sm">Ansvarlig person</Label>
+                        <Select 
+                          value={standardTaskSchedules[task.name]?.assignedTo || ''}
+                          onValueChange={(value) => {
+                            setStandardTaskSchedules(prev => ({
+                              ...prev,
+                              [task.name]: {
+                                ...prev[task.name],
+                                assignedTo: value
+                              }
+                            }));
+                          }}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Velg ansvarlig person" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {users.map((user: any) => (
+                              <SelectItem key={user.id} value={user.id}>
+                                {user.firstName} {user.lastName}
+                              </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
@@ -520,16 +601,11 @@ export default function ClientDetail() {
               
               <div className="flex justify-end pt-4">
                 <Button 
-                  onClick={() => {
-                    // Save standard task schedules
-                    toast({
-                      title: "Oppgaveplaner lagret",
-                      description: "Standardoppgaver er konfigurert for denne klienten."
-                    });
-                  }}
+                  onClick={saveStandardTaskSchedules}
+                  disabled={saveStandardTasksMutation.isPending}
                   className="bg-primary hover:bg-primary/90"
                 >
-                  Lagre oppgaveplaner
+                  {saveStandardTasksMutation.isPending ? 'Lagrer...' : 'Lagre oppgaveplaner'}
                 </Button>
               </div>
             </CardContent>
