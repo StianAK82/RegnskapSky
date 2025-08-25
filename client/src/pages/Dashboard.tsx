@@ -262,11 +262,6 @@ export default function Dashboard() {
             </Card>
           </section>
 
-          {user?.role === 'admin' && (
-            <aside className="lg:col-span-1">
-              <CompletedActivities />
-            </aside>
-          )}
         </div>
 
         {/* Client Tasks Overview */}
