@@ -568,16 +568,6 @@ export default function Clients() {
                         </div>
                       </div>
                     )}
-
-                                <div className="text-center font-bold text-2xl text-purple-600 mb-4">
-                                  DETTA ÄR DEN RIKTIGA OPPGAVE-SEKTIONEN!
-                                </div>
-                                {TASK_OPTIONS.map((task) => (
-                                  <div key={task.value} className="space-y-3 bg-white p-4 rounded border-2 border-blue-500">
-                                    <div className="flex items-center space-x-2">
-                                      <Checkbox
-                                        id={`top-${task.value}`}
-                                        checked={field.value?.includes(task.value) || false}
                                         onCheckedChange={(checked) => {
                                           if (checked) {
                                             field.onChange([...(field.value || []), task.value]);
