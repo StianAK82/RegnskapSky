@@ -1190,6 +1190,15 @@ function ClientListItem({ client, onEdit }: { client: any; onEdit: (client: any)
             <Button
               variant="outline"
               size="sm"
+              onClick={() => window.open('https://www.verified.eu/no', '_blank')}
+              className="text-purple-600 border-purple-300 hover:bg-purple-50"
+            >
+              <i className="fas fa-shield-alt mr-1"></i>
+              AML/KYC
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => onEdit(client)}
               className="text-blue-600 border-blue-300 hover:bg-blue-50"
             >
