@@ -1004,11 +1004,11 @@ export default function Clients() {
                                 <div className="flex items-center space-x-2">
                                   <Checkbox
                                     id={task.value}
-                                    checked={taskSchedules[task.value]?.enabled || field.value?.includes(task.value) || false}
+                                    checked={field.value?.includes(task.value) || false}
                                     onCheckedChange={(checked) => {
-                                      // Update both form field and task schedules
                                       if (checked) {
                                         field.onChange([...(field.value || []), task.value]);
+                                        // Initialize task schedule when task is checked
                                         setTaskSchedules(prev => ({
                                           ...prev,
                                           [task.value]: {
@@ -1020,13 +1020,12 @@ export default function Clients() {
                                         }));
                                       } else {
                                         field.onChange(field.value?.filter((t: string) => t !== task.value) || []);
-                                        setTaskSchedules(prev => ({
-                                          ...prev,
-                                          [task.value]: {
-                                            ...prev[task.value],
-                                            enabled: false
-                                          }
-                                        }));
+                                        // Remove task schedule when task is unchecked
+                                        setTaskSchedules(prev => {
+                                          const newSchedules = { ...prev };
+                                          delete newSchedules[task.value];
+                                          return newSchedules;
+                                        });
                                       }
                                     }}
                                   />
@@ -1036,8 +1035,11 @@ export default function Clients() {
                                   </span>
                                 </div>
                                 
-                                {(taskSchedules[task.value]?.enabled || field.value?.includes(task.value)) && (
-                                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 ml-6 p-4 bg-gray-50 rounded-lg">
+                                {field.value?.includes(task.value) && (
+                                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 ml-6 p-4 bg-blue-50 rounded-lg border-2 border-blue-200">
+                                    <div className="col-span-full text-xs text-blue-600 font-medium mb-2">
+                                      ⚙️ Konfigurasjon for {task.label}
+                                    </div>
                                     <div>
                                       <Label className="text-sm font-medium">Frekvens</Label>
                                       <Select 
