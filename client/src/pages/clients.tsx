@@ -568,118 +568,6 @@ export default function Clients() {
                         </div>
                       </div>
                     )}
-                                        onCheckedChange={(checked) => {
-                                          if (checked) {
-                                            field.onChange([...(field.value || []), task.value]);
-                                            setTaskSchedules(prev => ({
-                                              ...prev,
-                                              [task.value]: {
-                                                enabled: true,
-                                                frequency: prev[task.value]?.frequency || task.frequency[0],
-                                                assignedTo: prev[task.value]?.assignedTo || '',
-                                                dueDate: prev[task.value]?.dueDate || ''
-                                              }
-                                            }));
-                                          } else {
-                                            field.onChange(field.value?.filter((t: string) => t !== task.value) || []);
-                                            setTaskSchedules(prev => {
-                                              const newSchedules = { ...prev };
-                                              delete newSchedules[task.value];
-                                              return newSchedules;
-                                            });
-                                          }
-                                        }}
-                                      />
-                                      <Label htmlFor={`top-${task.value}`} className="font-bold text-lg">{task.label}</Label>
-                                      <span className="text-xs text-gray-500">
-                                        ({task.frequency.join(', ')})
-                                      </span>
-                                      <span className="text-xl font-bold text-red-500 ml-2">
-                                        {field.value?.includes(task.value) ? '✅ VALGT' : '❌ INTE VALGT'}
-                                      </span>
-                                    </div>
-                                    
-                                    {field.value?.includes(task.value) && (
-                                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 ml-6 p-4 bg-green-100 rounded-lg border-4 border-green-600">
-                                        <div className="col-span-full text-lg text-green-700 font-bold mb-2">
-                                          🔧 SCHEMALÄGGNING FÖR {task.label}
-                                        </div>
-                                        <div>
-                                          <Label className="text-sm font-medium">Frekvens</Label>
-                                          <Select 
-                                            value={taskSchedules[task.value]?.frequency || task.frequency[0]}
-                                            onValueChange={(value) => {
-                                              setTaskSchedules(prev => ({
-                                                ...prev,
-                                                [task.value]: {
-                                                  ...prev[task.value],
-                                                  frequency: value
-                                                }
-                                              }));
-                                            }}
-                                          >
-                                            <SelectTrigger className="w-full">
-                                              <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                              {task.frequency.map(freq => (
-                                                <SelectItem key={freq} value={freq}>{freq}</SelectItem>
-                                              ))}
-                                            </SelectContent>
-                                          </Select>
-                                        </div>
-                                        <div>
-                                          <Label className="text-sm font-medium">Ansvarlig person</Label>
-                                          <Select 
-                                            value={taskSchedules[task.value]?.assignedTo || ''}
-                                            onValueChange={(value) => {
-                                              setTaskSchedules(prev => ({
-                                                ...prev,
-                                                [task.value]: {
-                                                  ...prev[task.value],
-                                                  assignedTo: value
-                                                }
-                                              }));
-                                            }}
-                                          >
-                                            <SelectTrigger className="w-full">
-                                              <SelectValue placeholder="Velg ansvarlig person" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                              {employees.map((employee: any) => (
-                                                <SelectItem key={employee.id} value={employee.id}>
-                                                  {employee.firstName} {employee.lastName}
-                                                </SelectItem>
-                                              ))}
-                                            </SelectContent>
-                                          </Select>
-                                        </div>
-                                        <div>
-                                          <Label className="text-sm font-medium">Neste forfallsdato</Label>
-                                          <Input
-                                            type="date"
-                                            value={taskSchedules[task.value]?.dueDate || ''}
-                                            onChange={(e) => {
-                                              setTaskSchedules(prev => ({
-                                                ...prev,
-                                                [task.value]: {
-                                                  ...prev[task.value],
-                                                  dueDate: e.target.value
-                                                }
-                                              }));
-                                            }}
-                                            className="w-full"
-                                          />
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
 
                     {/* Step 2: Detailed Configuration */}
                     {(registrationStep === 2 || editingClient) && (
@@ -953,7 +841,7 @@ export default function Clients() {
                                                 <SelectValue placeholder="Velg ansvarlig" />
                                               </SelectTrigger>
                                               <SelectContent>
-                                                {users.map(user => (
+                                                {users.map((user: any) => (
                                                   <SelectItem key={user.id} value={user.id}>
                                                     {user.firstName} {user.lastName}
                                                   </SelectItem>
