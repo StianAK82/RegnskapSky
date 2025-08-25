@@ -491,9 +491,9 @@ export default function ClientDetail() {
           {/* Standard Task Scheduling */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg font-semibold text-gray-900">Oppgave Schemaläggning</CardTitle>
+              <CardTitle className="text-lg font-semibold text-gray-900">Oppgaveplanlegging</CardTitle>
               <CardDescription>
-                Konfigurer når standardoppgaver skal utføres för denna klient
+                Konfigurer når standardoppgaver skal utføres for denne klienten
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">

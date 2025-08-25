@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
+import { LanguageSelector } from '@/components/ui/language-selector';
 
 interface TopBarProps {
   title: string;
@@ -20,6 +21,9 @@ export function TopBar({ title, subtitle }: TopBarProps) {
         </div>
         
         <div className="flex items-center space-x-4">
+          {/* Language Selector */}
+          <LanguageSelector />
+          
           {/* Notifications */}
           <button className="relative p-2 text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-full">
             <i className="fas fa-bell text-lg"></i>
