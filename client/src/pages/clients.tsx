@@ -579,6 +579,139 @@ export default function Clients() {
                           </div>
                         )}
 
+                        {/* 🚨 EXTRA TYDLIG OPPGAVE-SEKTION DIREKT I BÖRJAN AV STEG 2! 🚨 */}
+                        <div className="border-8 border-red-600 bg-yellow-300 p-8 rounded-lg">
+                          <h1 className="text-4xl font-black text-red-800 text-center mb-6 animate-pulse">
+                            🚨🚨🚨 OPPGAVER MED SCHEMALÄGGNING HÄR! 🚨🚨🚨
+                          </h1>
+                          <div className="text-center text-2xl font-bold text-purple-800 mb-4">
+                            DENNA SEKTION MÅSTE SYNAS NÄR DU TRYCKER "REDIGER"!
+                          </div>
+                          <FormField
+                            control={form.control}
+                            name="tasks"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-2xl font-bold text-blue-800">Välj oppgaver att utföra:</FormLabel>
+                                <div className="space-y-4 border-4 border-purple-500 p-6 bg-white">
+                                  {TASK_OPTIONS.map((task) => (
+                                    <div key={task.value} className="bg-green-50 p-4 border-2 border-green-500 rounded">
+                                      <div className="flex items-center space-x-3 mb-3">
+                                        <Checkbox
+                                          id={`extra-${task.value}`}
+                                          checked={field.value?.includes(task.value) || false}
+                                          onCheckedChange={(checked) => {
+                                            if (checked) {
+                                              field.onChange([...(field.value || []), task.value]);
+                                              setTaskSchedules(prev => ({
+                                                ...prev,
+                                                [task.value]: {
+                                                  enabled: true,
+                                                  frequency: prev[task.value]?.frequency || task.frequency[0],
+                                                  assignedTo: prev[task.value]?.assignedTo || '',
+                                                  dueDate: prev[task.value]?.dueDate || ''
+                                                }
+                                              }));
+                                            } else {
+                                              field.onChange(field.value?.filter((t: string) => t !== task.value) || []);
+                                              setTaskSchedules(prev => {
+                                                const newSchedules = { ...prev };
+                                                delete newSchedules[task.value];
+                                                return newSchedules;
+                                              });
+                                            }
+                                          }}
+                                        />
+                                        <Label htmlFor={`extra-${task.value}`} className="text-xl font-bold text-green-800">
+                                          {task.label}
+                                        </Label>
+                                        <span className="text-lg font-bold text-red-600">
+                                          {field.value?.includes(task.value) ? '✅ AKTIVERAD' : '❌ INAKTIV'}
+                                        </span>
+                                      </div>
+                                      
+                                      {field.value?.includes(task.value) && (
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 ml-8 p-4 bg-blue-100 border-3 border-blue-600 rounded">
+                                          <div className="col-span-full text-lg font-bold text-blue-800 mb-3">
+                                            ⚙️ SCHEMALÄGGNING FÖR {task.label}:
+                                          </div>
+                                          <div>
+                                            <Label className="font-semibold text-blue-700">Frekvens</Label>
+                                            <Select 
+                                              value={taskSchedules[task.value]?.frequency || task.frequency[0]}
+                                              onValueChange={(value) => {
+                                                setTaskSchedules(prev => ({
+                                                  ...prev,
+                                                  [task.value]: {
+                                                    ...prev[task.value],
+                                                    frequency: value
+                                                  }
+                                                }));
+                                              }}
+                                            >
+                                              <SelectTrigger>
+                                                <SelectValue />
+                                              </SelectTrigger>
+                                              <SelectContent>
+                                                {task.frequency.map(freq => (
+                                                  <SelectItem key={freq} value={freq}>{freq}</SelectItem>
+                                                ))}
+                                              </SelectContent>
+                                            </Select>
+                                          </div>
+                                          <div>
+                                            <Label className="font-semibold text-blue-700">Ansvarlig person</Label>
+                                            <Select 
+                                              value={taskSchedules[task.value]?.assignedTo || ''}
+                                              onValueChange={(value) => {
+                                                setTaskSchedules(prev => ({
+                                                  ...prev,
+                                                  [task.value]: {
+                                                    ...prev[task.value],
+                                                    assignedTo: value
+                                                  }
+                                                }));
+                                              }}
+                                            >
+                                              <SelectTrigger>
+                                                <SelectValue placeholder="Velg person" />
+                                              </SelectTrigger>
+                                              <SelectContent>
+                                                {users.map((user: any) => (
+                                                  <SelectItem key={user.id} value={user.id}>
+                                                    {user.firstName} {user.lastName}
+                                                  </SelectItem>
+                                                ))}
+                                              </SelectContent>
+                                            </Select>
+                                          </div>
+                                          <div>
+                                            <Label className="font-semibold text-blue-700">Förfallodato</Label>
+                                            <Input
+                                              type="date"
+                                              value={taskSchedules[task.value]?.dueDate || ''}
+                                              onChange={(e) => {
+                                                setTaskSchedules(prev => ({
+                                                  ...prev,
+                                                  [task.value]: {
+                                                    ...prev[task.value],
+                                                    dueDate: e.target.value
+                                                  }
+                                                }));
+                                              }}
+                                            />
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
                         {/* Contact Information */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <FormField
