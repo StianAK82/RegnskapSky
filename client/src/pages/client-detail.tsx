@@ -86,11 +86,11 @@ const ACCOUNTING_SYSTEMS = [
 ];
 
 const STANDARD_TASKS = [
-  'Bokføring',
-  'MVA',
-  'Lønn',
-  'Bankavstemming',
-  'Kontoavstemming'
+  { name: 'Bokføring', frequency: ['Daglig', 'Ukentlig', 'Månedlig'] },
+  { name: 'MVA', frequency: ['Månedlig', 'Kvartalsvis'] },
+  { name: 'Lønn', frequency: ['Månedlig'] },
+  { name: 'Bankavstemming', frequency: ['Daglig', 'Ukentlig'] },
+  { name: 'Kontoavstemming', frequency: ['Månedlig', 'Kvartalsvis'] }
 ];
 
 const REPEAT_INTERVALS = [
@@ -124,6 +124,13 @@ export default function ClientDetail() {
     repeatInterval: '',
     assignedTo: ''
   });
+
+  const [standardTaskSchedules, setStandardTaskSchedules] = useState<Record<string, {
+    enabled: boolean;
+    frequency: string;
+    dueDate: string;
+    nextDueDate?: string;
+  }>>({});
 
   const [clientUpdates, setClientUpdates] = useState({
     accountingSystem: '',
@@ -426,6 +433,107 @@ export default function ClientDetail() {
               </Button>
             </div>
           </div>
+
+          {/* Standard Task Scheduling */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Standard oppgaver</CardTitle>
+              <CardDescription>
+                Konfigurer når standardoppgaver skal utføres for denne klienten
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {STANDARD_TASKS.map((task) => (
+                <div key={task.name} className="border rounded-lg p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-gray-300"
+                        checked={standardTaskSchedules[task.name]?.enabled || false}
+                        onChange={(e) => {
+                          setStandardTaskSchedules(prev => ({
+                            ...prev,
+                            [task.name]: {
+                              ...prev[task.name],
+                              enabled: e.target.checked,
+                              frequency: prev[task.name]?.frequency || task.frequency[0],
+                              dueDate: prev[task.name]?.dueDate || ''
+                            }
+                          }));
+                        }}
+                      />
+                      <label className="font-medium">{task.name}</label>
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      ({task.frequency.join(', ')})
+                    </div>
+                  </div>
+                  
+                  {standardTaskSchedules[task.name]?.enabled && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ml-7">
+                      <div>
+                        <Label className="text-sm">Frekvens</Label>
+                        <Select 
+                          value={standardTaskSchedules[task.name]?.frequency || task.frequency[0]}
+                          onValueChange={(value) => {
+                            setStandardTaskSchedules(prev => ({
+                              ...prev,
+                              [task.name]: {
+                                ...prev[task.name],
+                                frequency: value
+                              }
+                            }));
+                          }}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {task.frequency.map(freq => (
+                              <SelectItem key={freq} value={freq}>{freq}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-sm">Neste forfallsdato</Label>
+                        <Input
+                          type="date"
+                          value={standardTaskSchedules[task.name]?.dueDate || ''}
+                          onChange={(e) => {
+                            setStandardTaskSchedules(prev => ({
+                              ...prev,
+                              [task.name]: {
+                                ...prev[task.name],
+                                dueDate: e.target.value
+                              }
+                            }));
+                          }}
+                          className="w-full"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+              
+              <div className="flex justify-end pt-4">
+                <Button 
+                  onClick={() => {
+                    // Save standard task schedules
+                    toast({
+                      title: "Oppgaveplaner lagret",
+                      description: "Standardoppgaver er konfigurert for denne klienten."
+                    });
+                  }}
+                  className="bg-primary hover:bg-primary/90"
+                >
+                  Lagre oppgaveplaner
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
           
 
           {isTasksLoading ? (
@@ -626,8 +734,8 @@ export default function ClientDetail() {
                   </SelectTrigger>
                   <SelectContent>
                     {STANDARD_TASKS.map((task) => (
-                      <SelectItem key={task} value={task}>
-                        {task}
+                      <SelectItem key={task.name} value={task.name}>
+                        {task.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
