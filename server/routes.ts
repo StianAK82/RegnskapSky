@@ -430,7 +430,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Task management
   app.get("/api/tasks", authenticateToken, async (req: AuthRequest, res) => {
     try {
-      const tasks = await storage.getTasksByTenant(req.user!.tenantId);
+      const tasks = await storage.getAllTasksForTenant(req.user!.tenantId);
       res.json(tasks);
     } catch (error: any) {
       res.status(500).json({ message: "Feil ved henting av oppgaver: " + error.message });

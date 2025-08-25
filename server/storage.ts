@@ -46,6 +46,7 @@ export interface IStorage {
   getOverdueTasks(tenantId: string): Promise<Task[]>;
   createTask(task: InsertTask): Promise<Task>;
   updateTask(id: string, updates: Partial<Task>): Promise<Task>;
+  getAllTasksForTenant(tenantId: string): Promise<any[]>;
 
   // Client Task management
   getClientTasksByClient(clientId: string): Promise<any[]>;
@@ -251,6 +252,46 @@ export class DatabaseStorage implements IStorage {
 
   async getTasksByTenant(tenantId: string): Promise<Task[]> {
     return db.select().from(tasks).where(eq(tasks.tenantId, tenantId)).orderBy(desc(tasks.createdAt));
+  }
+
+  async getAllTasksForTenant(tenantId: string): Promise<any[]> {
+    // Get regular tasks
+    const regularTasks = await db
+      .select({
+        id: tasks.id,
+        title: tasks.title,
+        description: tasks.description,
+        status: tasks.status,
+        priority: tasks.priority,
+        dueDate: tasks.dueDate,
+        clientId: tasks.clientId,
+        assignedTo: tasks.assignedTo,
+        createdAt: tasks.createdAt,
+        source: sql<string>`'manual'`.as('source')
+      })
+      .from(tasks)
+      .where(eq(tasks.tenantId, tenantId));
+
+    // Get client tasks
+    const clientTasksData = await db
+      .select({
+        id: clientTasks.id,
+        title: clientTasks.taskName,
+        description: clientTasks.description,
+        status: clientTasks.status,
+        priority: sql<string>`'medium'`.as('priority'),
+        dueDate: clientTasks.dueDate,
+        clientId: clientTasks.clientId,
+        assignedTo: clientTasks.assignedTo,
+        createdAt: clientTasks.createdAt,
+        source: sql<string>`'client_schedule'`.as('source')
+      })
+      .from(clientTasks)
+      .where(eq(clientTasks.tenantId, tenantId));
+
+    // Combine and sort by creation date
+    const allTasks = [...regularTasks, ...clientTasksData];
+    return allTasks.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }
 
   async getTodaysTasks(tenantId: string): Promise<Task[]> {
@@ -495,18 +536,37 @@ export class DatabaseStorage implements IStorage {
       .from(clients)
       .where(and(eq(clients.tenantId, tenantId), eq(clients.isActive, true)));
 
-    const [activeTasksResult] = await db
+    // Count active tasks from both tasks and clientTasks tables
+    const [regularActiveTasksResult] = await db
       .select({ count: count() })
       .from(tasks)
       .where(and(eq(tasks.tenantId, tenantId), eq(tasks.status, 'pending')));
 
-    const [overdueTasksResult] = await db
+    const [clientActiveTasksResult] = await db
+      .select({ count: count() })
+      .from(clientTasks)
+      .where(and(
+        eq(clientTasks.tenantId, tenantId), 
+        sql`status IN ('ikke_startet', 'pågår')`
+      ));
+
+    // Count overdue tasks from both tables
+    const [regularOverdueTasksResult] = await db
       .select({ count: count() })
       .from(tasks)
       .where(and(
         eq(tasks.tenantId, tenantId),
         eq(tasks.status, 'pending'),
         lte(tasks.dueDate, now)
+      ));
+
+    const [clientOverdueTasksResult] = await db
+      .select({ count: count() })
+      .from(clientTasks)
+      .where(and(
+        eq(clientTasks.tenantId, tenantId),
+        lt(clientTasks.dueDate, now),
+        sql`status != 'ferdig'`
       ));
 
     const [weeklyHoursResult] = await db
@@ -524,8 +584,8 @@ export class DatabaseStorage implements IStorage {
 
     return {
       totalClients: totalClientsResult.count,
-      activeTasks: activeTasksResult.count,
-      overdueTasks: overdueTasksResult.count,
+      activeTasks: regularActiveTasksResult.count + clientActiveTasksResult.count,
+      overdueTasks: regularOverdueTasksResult.count + clientOverdueTasksResult.count,
       weeklyHours: Number(weeklyHoursResult.sum) || 0,
       documentsProcessed: documentsResult.count,
     };
