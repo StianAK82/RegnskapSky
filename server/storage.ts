@@ -44,6 +44,7 @@ export interface IStorage {
   getTasksByTenant(tenantId: string): Promise<Task[]>;
   getTodaysTasks(tenantId: string): Promise<Task[]>;
   getOverdueTasks(tenantId: string): Promise<Task[]>;
+  getTask(id: string): Promise<Task | undefined>;
   createTask(task: InsertTask): Promise<Task>;
   updateTask(id: string, updates: Partial<Task>): Promise<Task>;
   getAllTasksForTenant(tenantId: string): Promise<any[]>;
@@ -252,6 +253,11 @@ export class DatabaseStorage implements IStorage {
 
   async getTasksByTenant(tenantId: string): Promise<Task[]> {
     return db.select().from(tasks).where(eq(tasks.tenantId, tenantId)).orderBy(desc(tasks.createdAt));
+  }
+
+  async getTask(id: string): Promise<Task | undefined> {
+    const [task] = await db.select().from(tasks).where(eq(tasks.id, id));
+    return task;
   }
 
   async getAllTasksForTenant(tenantId: string): Promise<any[]> {

@@ -12,8 +12,10 @@ import {
   insertTimeEntrySchema, insertDocumentSchema, insertNotificationSchema, insertIntegrationSchema,
   insertCompanyRegistryDataSchema, insertAmlProviderSchema, insertAmlDocumentSchema,
   insertAccountingIntegrationSchema, insertClientChecklistSchema,
-  type User 
+  type User, clientTasks
 } from "../shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
@@ -496,19 +498,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Ugyldig tidsinformasjon" });
       }
 
-      // Get the task first to ensure it exists and get client info
-      const existingTask = await storage.getTask(req.params.id);
+      let existingTask: any = null;
+      let updatedTask: any = null;
+      let isClientTask = false;
+
+      // Try to get the task from regular tasks first
+      try {
+        existingTask = await storage.getTask(req.params.id);
+      } catch (error) {
+        // If not found in regular tasks, try client tasks
+        try {
+          const clientTasksData = await db
+            .select()
+            .from(clientTasks)
+            .where(eq(clientTasks.id, req.params.id));
+          
+          if (clientTasksData.length > 0) {
+            existingTask = clientTasksData[0];
+            isClientTask = true;
+          }
+        } catch (clientError) {
+          // Task not found in either table
+        }
+      }
+
       if (!existingTask) {
         return res.status(404).json({ message: "Oppgave ikke funnet" });
       }
 
-      // Update task with completion data
-      const updatedTask = await storage.updateTask(req.params.id, {
-        status: "completed",
-        completedAt: new Date(),
-        completionNotes: completionNotes || null,
-        timeSpent: Number(timeSpent)
-      });
+      // Update the appropriate task type
+      if (isClientTask) {
+        updatedTask = await storage.updateClientTask(req.params.id, {
+          status: "ferdig",
+          completedAt: new Date(),
+          completionNotes: completionNotes || null,
+          timeSpent: Number(timeSpent)
+        });
+      } else {
+        updatedTask = await storage.updateTask(req.params.id, {
+          status: "completed",
+          completedAt: new Date(),
+          completionNotes: completionNotes || null,
+          timeSpent: Number(timeSpent)
+        });
+      }
 
       // Create time entry for the completed task
       if (existingTask.clientId) {
@@ -517,8 +550,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userId: req.user!.id,
           clientId: existingTask.clientId,
           taskId: req.params.id,
-          taskType: "task",
-          description: `${existingTask.title}${completionNotes ? ` - ${completionNotes}` : ''}`,
+          taskType: isClientTask ? "client_task" : "task",
+          description: `${existingTask.taskName || existingTask.title}${completionNotes ? ` - ${completionNotes}` : ''}`,
           timeSpent: Number(timeSpent),
           date: new Date(),
           billable: true
