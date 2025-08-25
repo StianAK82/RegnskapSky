@@ -83,9 +83,9 @@ const ACCOUNTING_SYSTEMS = [
 
 const TASK_OPTIONS = [
   { value: 'Bokføring', label: 'Bokføring', frequency: ['Daglig', 'Ukentlig', 'Månedlig'] },
-  { value: 'MVA', label: 'MVA', frequency: ['Månedlig', 'Kvartalsvis'] },
+  { value: 'MVA', label: 'MVA', frequency: ['2 vær måned'] },
   { value: 'Lønn', label: 'Lønn', frequency: ['Månedlig'] },
-  { value: 'Bankavstemming', label: 'Bankavstemming', frequency: ['Daglig', 'Ukentlig'] },
+  { value: 'Bankavstemming', label: 'Bankavstemming', frequency: ['Månedlig'] },
   { value: 'Kontoavstemming', label: 'Kontoavstemming', frequency: ['Månedlig', 'Kvartalsvis'] }
 ];
 
