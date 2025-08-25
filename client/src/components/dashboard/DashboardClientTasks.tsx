@@ -1,15 +1,19 @@
-import React from "react";
+import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { 
   Users, 
   Clock, 
   AlertTriangle, 
   CheckCircle,
   User,
-  Calendar
+  Calendar,
+  ExternalLink,
+  Building2,
+  ChevronRight
 } from "lucide-react";
 
 interface ClientWithSummary {
@@ -22,6 +26,8 @@ interface ClientWithSummary {
   overdueTasksCount: number;
   payrollRunDay?: number;
   payrollRunTime?: string;
+  accountingSystem?: string;
+  accountingSystemUrl?: string;
   engagementOwner?: {
     id: string;
     firstName: string;
@@ -32,9 +38,72 @@ interface ClientWithSummary {
     frequency: string;
     dueThisMonth?: boolean;
   }>;
+  clientTasks?: Array<{
+    id: string;
+    taskName: string;
+    frequency: string;
+    dueDate?: string;
+    status: string;
+  }>;
+}
+
+// Component to show detailed tasks for a client
+function ClientTasksDialog({ client }: { client: ClientWithSummary }) {
+  const { data: clientTasks = [], isLoading } = useQuery({
+    queryKey: [`/api/clients/${client.id}/tasks`],
+    queryFn: async () => {
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("No authentication token");
+      
+      const response = await fetch(`/api/clients/${client.id}/tasks`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      
+      if (!response.ok) throw new Error("Failed to fetch client tasks");
+      return response.json();
+    },
+  });
+
+  return (
+    <DialogContent className="max-w-2xl">
+      <DialogHeader>
+        <DialogTitle>Oppgaver for {client.name}</DialogTitle>
+      </DialogHeader>
+      <div className="space-y-4">
+        {isLoading ? (
+          <div className="flex justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        ) : clientTasks.length === 0 ? (
+          <p className="text-gray-500 text-center py-8">Ingen oppgaver funnet</p>
+        ) : (
+          <div className="space-y-3">
+            {clientTasks.map((task: any) => (
+              <div key={task.id} className="flex items-center justify-between p-3 border rounded-lg">
+                <div>
+                  <div className="font-medium">{task.taskName}</div>
+                  <div className="text-sm text-gray-500">
+                    {task.frequency} - {task.dueDate ? new Date(task.dueDate).toLocaleDateString('nb-NO') : 'Ingen forfallsdato'}
+                  </div>
+                </div>
+                <Badge variant={task.status === 'ferdig' ? 'default' : 'secondary'}>
+                  {task.status === 'ferdig' ? 'Fullført' : 'Åpen'}
+                </Badge>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </DialogContent>
+  );
 }
 
 export function DashboardClientTasks() {
+  const [selectedClient, setSelectedClient] = useState<ClientWithSummary | null>(null);
+  
   // Fetch clients with task summary
   const { data: clientsWithSummary = [], isLoading, error } = useQuery<ClientWithSummary[]>({
     queryKey: ["/api/clients", { include: "summary" }],
@@ -208,10 +277,17 @@ export function DashboardClientTasks() {
                     </td>
                     <td className="p-4 text-center">
                       {client.openTasksCount > 0 ? (
-                        <Badge variant="secondary" className="text-xs" data-testid={`badge-open-tasks-${client.id}`}>
-                          <CheckCircle className="h-3 w-3 mr-1" />
-                          {client.openTasksCount}
-                        </Badge>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="ghost" className="h-auto p-0">
+                              <Badge variant="secondary" className="text-xs cursor-pointer hover:bg-gray-200" data-testid={`badge-open-tasks-${client.id}`}>
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                {client.openTasksCount}
+                              </Badge>
+                            </Button>
+                          </DialogTrigger>
+                          <ClientTasksDialog client={client} />
+                        </Dialog>
                       ) : (
                         <span className="text-sm text-gray-500">-</span>
                       )}
@@ -260,14 +336,35 @@ export function DashboardClientTasks() {
                       )}
                     </td>
                     <td className="p-4 text-right">
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => window.location.href = `/clients/${client.id}`}
-                        data-testid={`button-view-client-${client.id}`}
-                      >
-                        Vis detaljer
-                      </Button>
+                      <div className="flex gap-2 justify-end">
+                        {/* Accounting System Button */}
+                        {client.accountingSystem && (
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              const url = getAccountingSystemUrl(client.accountingSystem!, client.accountingSystemUrl);
+                              if (url) window.open(url, '_blank');
+                            }}
+                            className="flex items-center gap-1"
+                            data-testid={`button-accounting-system-${client.id}`}
+                          >
+                            <Building2 className="h-3 w-3" />
+                            {client.accountingSystem}
+                            <ExternalLink className="h-3 w-3" />
+                          </Button>
+                        )}
+                        
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => window.location.href = `/clients/${client.id}`}
+                          data-testid={`button-view-client-${client.id}`}
+                        >
+                          Vis detaljer
+                          <ChevronRight className="h-3 w-3 ml-1" />
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -356,6 +453,26 @@ export function DashboardClientTasks() {
                     </div>
                   )}
 
+                  {/* Accounting system */}
+                  {client.accountingSystem && (
+                    <div>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full mb-2"
+                        onClick={() => {
+                          const url = getAccountingSystemUrl(client.accountingSystem!, client.accountingSystemUrl);
+                          if (url) window.open(url, '_blank');
+                        }}
+                        data-testid={`button-accounting-system-mobile-${client.id}`}
+                      >
+                        <Building2 className="h-3 w-3 mr-2" />
+                        {client.accountingSystem}
+                        <ExternalLink className="h-3 w-3 ml-2" />
+                      </Button>
+                    </div>
+                  )}
+
                   {/* Action button */}
                   <div className="pt-2">
                     <Button 
@@ -366,6 +483,7 @@ export function DashboardClientTasks() {
                       data-testid={`button-view-client-mobile-${client.id}`}
                     >
                       Vis detaljer
+                      <ChevronRight className="h-3 w-3 ml-2" />
                     </Button>
                   </div>
                 </div>
@@ -377,4 +495,21 @@ export function DashboardClientTasks() {
       </Card>
     </div>
   );
+}
+
+// Helper function to get accounting system URL
+function getAccountingSystemUrl(accountingSystem: string, customUrl?: string): string | null {
+  if (customUrl) return customUrl;
+  
+  const urls: Record<string, string> = {
+    'Fiken': 'https://fiken.no',
+    'Tripletex': 'https://tripletex.no',
+    'Unimicro': 'https://unimicro.no',
+    'PowerOffice': 'https://poweroffice.no',
+    'Conta': 'https://conta.no',
+    'Visma': 'https://visma.no',
+    'Mamut': 'https://mamut.com'
+  };
+  
+  return urls[accountingSystem] || null;
 }

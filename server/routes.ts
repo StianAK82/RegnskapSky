@@ -184,6 +184,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               openTasksCount: openTasks,
               overdueTasksCount: overdueTasks,
               recurringTasks,
+              accountingSystem: client.accountingSystem,
+              accountingSystemUrl: client.accountingSystemUrl,
               engagementOwner: engagementOwner ? {
                 id: engagementOwner.id,
                 firstName: engagementOwner.firstName,
