@@ -9,9 +9,8 @@ export function Sidebar() {
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: 'fas fa-tachometer-alt', roles: ['admin', 'ansatt'] },
     { name: 'Klienter', href: '/clients', icon: 'fas fa-users', roles: ['admin', 'ansatt'] },
-    { name: 'Klient Oppgaver', href: '/client-tasks-overview', icon: 'fas fa-clipboard-list', roles: ['admin', 'ansatt'] },
+    { name: 'Oppgaver', href: '/client-tasks-overview', icon: 'fas fa-tasks', roles: ['admin', 'ansatt'] },
     { name: 'Ansatte', href: '/employees', icon: 'fas fa-user-tie', roles: ['admin', 'ansatt'] },
-    { name: 'Oppgaver', href: '/tasks', icon: 'fas fa-tasks', roles: ['admin', 'ansatt'] },
     { name: 'Rapporter', href: '/reports', icon: 'fas fa-chart-bar', roles: ['admin', 'ansatt'] },
     { name: 'Timeføring', href: '/timetracking', icon: 'fas fa-clock', roles: ['admin', 'ansatt'] },
     { name: 'Dokumenter', href: '/documents', icon: 'fas fa-file-invoice', roles: ['admin', 'ansatt'] },

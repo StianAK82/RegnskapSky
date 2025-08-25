@@ -53,8 +53,26 @@ export default function ClientTasksOverview() {
   const totalThisMonthTasks = clientsOverview.reduce((sum, client) => sum + client.thisMonthTasks, 0);
 
   return (
-    <AppShell title="Klient Oppgaver" subtitle="Oversikt over alle klienters oppgaver og status">
+    <AppShell title="Oppgaver" subtitle="Oversikt over alle oppgaver og status">
       <div className="space-y-6">
+        {/* View Selector */}
+        <div className="flex justify-between items-center">
+          <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+            <button 
+              className="px-3 py-2 text-sm font-medium rounded-md bg-white text-blue-600 shadow-sm"
+              data-testid="button-client-view"
+            >
+              Klient Oppgaver
+            </button>
+            <a 
+              href="/tasks"
+              className="px-3 py-2 text-sm font-medium rounded-md text-gray-500 hover:text-gray-700 hover:bg-white transition-colors"
+              data-testid="link-tasks-view"
+            >
+              Alle Oppgaver
+            </a>
+          </div>
+        </div>
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <Card>
