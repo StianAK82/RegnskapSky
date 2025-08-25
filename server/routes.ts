@@ -503,22 +503,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let isClientTask = false;
 
       // Try to get the task from regular tasks first
-      try {
-        existingTask = await storage.getTask(req.params.id);
-      } catch (error) {
-        // If not found in regular tasks, try client tasks
-        try {
-          const clientTasksData = await db
-            .select()
-            .from(clientTasks)
-            .where(eq(clientTasks.id, req.params.id));
-          
-          if (clientTasksData.length > 0) {
-            existingTask = clientTasksData[0];
-            isClientTask = true;
-          }
-        } catch (clientError) {
-          // Task not found in either table
+      existingTask = await storage.getTask(req.params.id);
+      
+      // If not found in regular tasks, try client tasks
+      if (!existingTask) {
+        const clientTasksData = await db
+          .select()
+          .from(clientTasks)
+          .where(eq(clientTasks.id, req.params.id));
+        
+        if (clientTasksData.length > 0) {
+          existingTask = clientTasksData[0];
+          isClientTask = true;
         }
       }
 
