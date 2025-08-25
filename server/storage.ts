@@ -14,7 +14,7 @@ import {
   insertClientTaskSchema, insertClientResponsibleSchema
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, count, sql, gte, lte } from "drizzle-orm";
+import { eq, and, desc, count, sql, gte, lte, lt } from "drizzle-orm";
 
 export interface IStorage {
   // User management
@@ -115,6 +115,9 @@ export interface IStorage {
     weeklyHours: number;
     documentsProcessed: number;
   }>;
+  
+  // Client task overview
+  getClientsWithTaskOverview(tenantId: string): Promise<any[]>;
 
   // Brønnøysund and company registry
   getCompanyRegistryData(clientId: string): Promise<CompanyRegistryData | undefined>;
@@ -526,6 +529,77 @@ export class DatabaseStorage implements IStorage {
       weeklyHours: Number(weeklyHoursResult.sum) || 0,
       documentsProcessed: documentsResult.count,
     };
+  }
+
+  async getClientsWithTaskOverview(tenantId: string): Promise<any[]> {
+    const today = new Date();
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+    // Get clients with their responsible user information
+    const clientsWithResponsible = await db
+      .select({
+        clientId: clients.id,
+        clientName: clients.name,
+        clientOrgNumber: clients.orgNumber,
+        responsibleFirstName: users.firstName,
+        responsibleLastName: users.lastName,
+      })
+      .from(clients)
+      .leftJoin(clientResponsibles, eq(clients.id, clientResponsibles.clientId))
+      .leftJoin(users, eq(clientResponsibles.userId, users.id))
+      .where(eq(clients.tenantId, tenantId))
+      .orderBy(clients.name);
+
+    // Get task statistics for each client
+    const clientTaskStats = await Promise.all(
+      clientsWithResponsible.map(async (client) => {
+        // Count open tasks
+        const openTasks = await db
+          .select({ count: count() })
+          .from(clientTasks)
+          .where(and(
+            eq(clientTasks.clientId, client.clientId),
+            eq(clientTasks.tenantId, tenantId),
+            sql`status IN ('ikke_startet', 'pågår')`
+          ));
+
+        // Count overdue tasks
+        const overdueTasks = await db
+          .select({ count: count() })
+          .from(clientTasks)
+          .where(and(
+            eq(clientTasks.clientId, client.clientId),
+            eq(clientTasks.tenantId, tenantId),
+            lt(clientTasks.dueDate, today),
+            sql`status != 'ferdig'`
+          ));
+
+        // Count this month's tasks
+        const thisMonthTasks = await db
+          .select({ count: count() })
+          .from(clientTasks)
+          .where(and(
+            eq(clientTasks.clientId, client.clientId),
+            eq(clientTasks.tenantId, tenantId),
+            gte(clientTasks.dueDate, startOfMonth),
+            lte(clientTasks.dueDate, endOfMonth)
+          ));
+
+        return {
+          id: client.clientId,
+          name: client.clientName,
+          orgNumber: client.clientOrgNumber,
+          responsibleFirstName: client.responsibleFirstName,
+          responsibleLastName: client.responsibleLastName,
+          openTasks: openTasks[0]?.count || 0,
+          overdueTasks: overdueTasks[0]?.count || 0,
+          thisMonthTasks: thisMonthTasks[0]?.count || 0,
+        };
+      })
+    );
+
+    return clientTaskStats;
   }
 
   // Brønnøysund and company registry methods

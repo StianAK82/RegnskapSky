@@ -1,0 +1,264 @@
+Du er en assistent som KUN legger til funksjonalitet i en eksisterende Next.js (App Router) + TypeScript + Tailwind + Supabase‑app. Ikke fjern eller brekk eksisterende kode. Hvis du må endre noe, gjør det minimalt og dokumentér det i CHANGELOG.md.
+
+Mål
+
+Implementér planlagte oppgaver slik at bruker kan velge Daglig / Ukentlig / Månedlig pr. oppgave, se dette under Dashboard → Klient Oppgaver, og få en totaloversikt: Aktive oppgaver, Forsinkede, Denne månedens oppgaver, Timer/uke, Fullførte aktiviteter. Når en oppgave utføres kan bruker markere som fullført + føre timer i samme flyt, og widgetene oppdateres.
+
+0) Forutsetninger
+
+Supabase‑klient finnes i @/lib/supabase/serverClient og @/lib/supabase/client.
+
+Eksisterende tabeller: companies, users, clients, tasks, time_entries, audit_logs (fra tidligere spes).
+
+Eksisterende dashboard har widgets: Aktive oppgaver, Forsinkede, Timer/uke, Fullførte aktiviteter og tabellen Klient Oppgaver.
+
+1) Datamodell (ADD ONLY – ikke destructive)
+
+Lag migrasjon(er) som kun oppretter manglende kolonner/tabeller:
+
+-- 01_tasks_recurrence.sql
+alter table tasks
+  add column if not exists recurrence text check (recurrence in ('none','daily','weekly','monthly')) default 'none',
+  add column if not exists recur_interval int default 1,                -- hver 1., 2., 3. uke/mnd
+  add column if not exists recur_byweekday int[];                       -- 0=Mon .. 6=Sun (for weekly)
+  add column if not exists recur_bymonthday int;                        -- 1..31 (for monthly)
+  add column if not exists starts_on date,
+  add column if not exists ends_on date,
+  add column if not exists next_due_date date,                          -- neste planlagte forfall
+  add column if not exists completed_at timestamptz;                    -- siste fullførte tidspunkt
+
+
+Merk:
+
+status i tasks beholdes (open/in_progress/ready_for_review/done).
+
+due_date i tasks brukes som gjeldende forfall. next_due_date peker til neste (for generering).
+
+2) Serverlogikk
+2.1 Helpers
+
+Opprett lib/recurrence.ts:
+
+computeNextDueDate(task: Task, fromDate: Date): Date | null
+Beregner neste forfallsdato gitt recurrence, recur_interval, recur_byweekday, recur_bymonthday, starts_on, ends_on.
+
+isOverdue(dueDate: Date): boolean (UTC i dag > dueDate).
+
+2.2 API – oppgaver
+
+Legg til/utvid API‑ruter (App Router, edge‑friendly der det gir mening):
+
+POST /api/tasks
+Tar også inn feltene for repetisjon:
+
+{
+  title, client_id, description?, priority?, assignee_user_id?,
+  due_date,                           // første forfall
+  recurrence: 'none' | 'daily' | 'weekly' | 'monthly',
+  recur_interval?,                    // default 1
+  recur_byweekday?,                   // int[] for weekly
+  recur_bymonthday?,                 // int for monthly
+  starts_on?, ends_on?
+}
+
+
+Valider: due_date >= starts_on (dersom satt). Sett next_due_date = computeNextDueDate(... from due_date).
+
+PATCH /api/tasks/:id/schedule
+Oppdater felter over. Re‑kalkuler next_due_date.
+
+POST /api/tasks/:id/complete
+Body:
+
+{ hours: number, work_date?: string, description?: string, billable?: boolean }
+
+
+Effekt:
+
+Opprett time_entries (koblet til task & client & company & user).
+
+Sett completed_at = now().
+
+Hvis recurrence = 'none': sett status='done'.
+Hvis gjentagende: flytt nåværende syklus til fullført og:
+
+Beregn neste forfall med computeNextDueDate(task, current due_date).
+
+Oppdater due_date = neste, status tilbake til open.
+
+Oppdater next_due_date videre til neste etter det (prefetch).
+
+Skriv audit_logs med action='task_completed'.
+
+NB: Alle /api/* må scope til innlogget bruker og company_id med eksisterende guard/RLS.
+
+2.3 API – dashboard metrics
+
+GET /api/dashboard/metrics
+Returnér:
+
+{
+  activeTasks: number,                 // tasks.status in ('open','in_progress','ready_for_review')
+  overdueTasks: number,                // due_date < today AND status != 'done'
+  hoursThisWeek: number,               // sum(time_entries.hours) for inneværende uke (man–søn)
+  completedLast30d: number,            // tasks completed_at within last 30d
+  dueThisMonth: number                 // tasks med due_date i inneværende måned
+}
+
+
+Filtrer på company_id for innlogget bruker.
+
+2.4 API – klient oppgaver liste
+
+GET /api/clients (finnes): utvid slik at hver klient‑rad også kan inneholde et aggregatfelt:
+
+{ open_count, overdue_count, due_this_month_count }
+
+
+(Bruk tasks aggregering på server for ytelse.)
+
+3) UI
+3.1 Dashboard widgets (øverst)
+
+Oppdater komponenten(e) som rendrer “Aktive oppgaver”, “Forsinkede”, “Timer/uke”, “Fullførte aktiviteter” så de henter fra GET /api/dashboard/metrics.
+
+Når en oppgave fullføres og timer føres, refetch metrics (SWR/React Query).
+
+3.2 Klient Oppgaver (tabellen i dashboardet)
+
+Kolonner (behold eksisterende, utvid om mulig):
+
+Klient · Oppdragsansvarlig · Åpne oppgaver (open_count) · Forfalt (overdue_count) · Denne månedens oppgaver (due_this_month_count) · Lønn · Handlinger
+
+Handlinger:
+
+Vis detaljer (finnes)
+
+Utfør: åpner modal for valgt oppgave (se 3.3) hvis rad er på oppgave‑nivå. Hvis rad er på klient‑nivå, åpner en modal‑liste over klientens åpne/dagens/dette måneds oppgaver.
+
+3.3 Oppgave‑modal (“Marker som utført + før timer”)
+
+Felter:
+
+Timer (desimal, påkrevd)
+
+Dato (default i dag)
+
+Beskrivelse (valgfritt)
+
+Fakturerbar (default true)
+
+CTA: Marker som utført
+-> kaller POST /api/tasks/:id/complete
+-> ved suksess: lukk modal, refetch:
+
+klientens oppgaveliste
+
+/api/dashboard/metrics
+
+widget for Timer/uke (samme kall)
+
+3.4 Oppgaveopprettelse / redigering (skjema)
+
+Legg til scheduling‑felt:
+
+Frekvens: Ingen, Daglig, Ukentlig, Månedlig
+
+Intervall: hver n (default 1)
+
+Ukedager (ved Ukentlig): checkboxer (Man–Søn)
+
+Dag i måned (ved Månedlig): 1..31
+
+Startdato (påkrevd ved gjentagende), Sluttdato (valgfri)
+
+Første forfallsdato (due_date)
+Valider: konsistente kombinasjoner. Vis hjelpetekst “Neste forekomst: <dato>” (beregnet i klient vha. lib/recurrence.ts eksportert for browser, eller duplikat liten util).
+
+4) RLS/Guard
+
+Gjenbruk eksisterende guard (SYSTEM_OWNER har ikke tilgang til klient/oppgave/time).
+
+Alle nye endepunkter må bekrefte user.company_id = resource.company_id.
+
+Legg negative tester dersom du lager testpakke.
+
+5) UI‑tilpasning til screenshots
+
+Behold dagens layout/stil.
+
+I Klient Oppgaver: vis tellerne (—> “Ingen oppgaver” kan erstattes av 0) og farg “Forsinkede” i varselfarge dersom > 0.
+
+6) End‑to‑end flyt (må fungere)
+
+Opprett/endre en oppgave og sett plan:
+
+Daglig, Ukentlig (velg ukedager), eller Månedlig (dag i måned).
+
+Oppgaven vises i Klient Oppgaver‑tellerne: Åpne, Denne månedens oppgaver.
+
+Når dato passerer forfall uten fullføring → går inn i Forsinkede.
+
+Bruker klikker Utfør, fyller timer → POST /complete:
+
+Oppgave markeres fullført og timer lagres.
+
+Widgets oppdateres: “Fullførte aktiviteter” (siste 30d) + “Timer/uke”.
+
+For gjentagende oppgave: due_date flyttes til neste forekomst (status tilbake til open).
+
+7) Filer som skal opprettes/endres (forslag)
+
+lib/recurrence.ts (ny)
+
+app/api/tasks/route.ts (utvid POST)
+
+app/api/tasks/[id]/schedule/route.ts (ny PATCH)
+
+app/api/tasks/[id]/complete/route.ts (ny POST)
+
+app/api/dashboard/metrics/route.ts (ny GET)
+
+app/dashboard/_components/TaskModal.tsx (ny)
+
+app/dashboard/_components/ClientTasksTable.tsx (utvid)
+
+app/dashboard/_components/KpiCards.tsx (refetch metrics)
+
+supabase/migrations/*_01_tasks_recurrence.sql (ny)
+
+CHANGELOG.md (oppdater)
+
+README.md → kort “Planlagte oppgaver” avsnitt
+
+8) Akseptansekriterier
+
+Jeg kan opprette/redigere oppgaver med Daglig/Ukentlig/Månedlig plan.
+
+Klient Oppgaver viser tellerne: Åpne, Forfalt, Denne månedens oppgaver.
+
+Når jeg fullfører en oppgave via modal og fører timer:
+
+Fullførte aktiviteter (siste 30 dager) øker.
+
+Timer/uke oppdateres.
+
+For gjentagende: oppgaven dukker opp igjen med nytt forfall.
+
+Aktive oppgaver = open|in_progress|ready_for_review.
+
+Forsinkede = due_date < i dag og ikke done.
+
+Alt scoper korrekt til innlogget company_id (RLS/guards).
+
+Ingen breaking changes i eksisterende ruter/komponenter.
+
+9) Dokumentasjon
+
+Skriv kort seksjon i README.md:
+
+Hvordan sette opp gjentagende oppgaver
+
+Forklaring av widgets og hvordan de oppdateres
+
+API‑kontrakter for complete og metrics

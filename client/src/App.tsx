@@ -12,6 +12,7 @@ import Login from "@/pages/login";
 import Dashboard from "@/pages/Dashboard";
 import Clients from "@/pages/clients";
 import ClientDetail from "@/pages/client-detail";
+import ClientTasksOverview from "@/pages/client-tasks-overview";
 import Employees from "@/pages/employees";
 import Tasks from "@/pages/tasks";
 import AIAssistant from "@/pages/ai-assistant";
@@ -61,6 +62,15 @@ function AuthenticatedRoutes() {
         component={() => (
           <ProtectedRoute allowedRoles={['admin', 'ansatt']}>
             <ClientDetail />
+          </ProtectedRoute>
+        )} 
+      />
+
+      <Route 
+        path="/client-tasks-overview" 
+        component={() => (
+          <ProtectedRoute allowedRoles={['admin', 'ansatt']}>
+            <ClientTasksOverview />
           </ProtectedRoute>
         )} 
       />

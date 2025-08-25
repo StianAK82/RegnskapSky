@@ -120,6 +120,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Client task overview
+  app.get("/api/clients/task-overview", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const clientsOverview = await storage.getClientsWithTaskOverview(req.user!.tenantId);
+      res.json(clientsOverview);
+    } catch (error: any) {
+      res.status(500).json({ message: "Feil ved henting av klientoppgaveoversikt: " + error.message });
+    }
+  });
+
   // Client management
   app.get("/api/clients", authenticateToken, async (req: AuthRequest, res) => {
     try {
