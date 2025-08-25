@@ -95,7 +95,7 @@ function AuthenticatedRoutes() {
       />
 
       <Route 
-        path="/timer" 
+        path="/timetracking" 
         component={() => (
           <ProtectedRoute allowedRoles={['admin', 'ansatt']}>
             <Timer />
