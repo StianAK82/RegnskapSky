@@ -105,6 +105,12 @@ export default function Clients() {
   const [registrationStep, setRegistrationStep] = useState(1); // Two-step registration
   const [companyData, setCompanyData] = useState<any>(null);
   const [isLoadingOrgData, setIsLoadingOrgData] = useState(false);
+  const [taskSchedules, setTaskSchedules] = useState<Record<string, {
+    enabled: boolean;
+    frequency: string;
+    assignedTo: string;
+    dueDate: string;
+  }>>({});
   const { toast } = useToast();
 
   const { data: clients, isLoading } = useQuery<Client[]>({
@@ -177,6 +183,7 @@ export default function Clients() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/clients'] });
       setIsCreateOpen(false);
+      setTaskSchedules({});
       toast({
         title: 'Klient opprettet',
         description: 'Ny klient ble opprettet successfully',
@@ -199,6 +206,7 @@ export default function Clients() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/clients'] });
       setEditingClient(null);
+      setTaskSchedules({});
       toast({
         title: 'Klient oppdatert',
         description: 'Klientinformasjon ble oppdatert',
@@ -207,7 +215,7 @@ export default function Clients() {
     onError: (error: any) => {
       toast({
         title: 'Feil',
-        description: error.message || 'Kunne ikke oppdatere klient',
+        description: error.message || 'Kunne inte oppdatere klient',
         variant: 'destructive',
       });
     },
@@ -238,23 +246,94 @@ export default function Clients() {
     },
   });
 
-  const onSubmit = (data: ClientFormData) => {
+  const saveTaskSchedulesMutation = useMutation({
+    mutationFn: async ({ clientId, schedules }: { clientId: string; schedules: any }) => {
+      const tasks = Object.entries(schedules)
+        .filter(([, config]: [string, any]) => config.enabled)
+        .map(([taskName, config]: [string, any]) => ({
+          taskName,
+          taskType: 'standard',
+          description: `${config.frequency} ${taskName.toLowerCase()}`,
+          dueDate: config.dueDate ? new Date(config.dueDate).toISOString() : null,
+          repeatInterval: config.frequency.toLowerCase(),
+          assignedTo: config.assignedTo || null,
+          status: 'ikke_startet'
+        }));
+
+      const promises = tasks.map(task => 
+        apiRequest('POST', `/api/clients/${clientId}/tasks`, task).then(res => res.json())
+      );
+      
+      return Promise.all(promises);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/clients'] });
+      toast({
+        title: "Oppgaveplaner lagret",
+        description: "Standardoppgaver er konfigurert for klienten."
+      });
+    },
+    onError: () => {
+      toast({ 
+        title: 'Feil', 
+        description: 'Kunne ikke lagre oppgaveplaner', 
+        variant: 'destructive' 
+      });
+    }
+  });
+
+  const onSubmit = async (data: ClientFormData) => {
     // Transform empty string to undefined for responsiblePersonId
     const cleanedData = {
       ...data,
       responsiblePersonId: data.responsiblePersonId === '' ? undefined : data.responsiblePersonId
     };
     
-    if (editingClient) {
-      updateMutation.mutate({ id: editingClient.id, data: cleanedData });
-    } else {
-      createMutation.mutate(cleanedData);
+    try {
+      let clientId: string;
+      
+      if (editingClient) {
+        await updateMutation.mutateAsync({ id: editingClient.id, data: cleanedData });
+        clientId = editingClient.id;
+      } else {
+        const newClient = await createMutation.mutateAsync(cleanedData);
+        clientId = newClient.id;
+      }
+
+      // Save task schedules if any are configured
+      const enabledSchedules = Object.fromEntries(
+        Object.entries(taskSchedules).filter(([, config]) => config.enabled)
+      );
+      
+      if (Object.keys(enabledSchedules).length > 0) {
+        await saveTaskSchedulesMutation.mutateAsync({ clientId, schedules: taskSchedules });
+      }
+      
+    } catch (error) {
+      // Error handling is done in individual mutations
+      console.error('Submit error:', error);
     }
   };
 
   const handleEdit = (client: Client) => {
     setEditingClient(client);
     setRegistrationStep(2); // Go directly to step 2 for editing
+    // Initialize task schedules for existing tasks
+    const clientTasks = client.tasks || [];
+    const initialSchedules: Record<string, any> = {};
+    clientTasks.forEach((taskName: string) => {
+      const taskOption = TASK_OPTIONS.find(t => t.value === taskName);
+      if (taskOption) {
+        initialSchedules[taskName] = {
+          enabled: true,
+          frequency: taskOption.frequency[0],
+          assignedTo: client.responsiblePersonId || '',
+          dueDate: ''
+        };
+      }
+    });
+    setTaskSchedules(initialSchedules);
+    
     form.reset({
       name: client.name,
       orgNumber: client.orgNumber || '',
@@ -283,11 +362,13 @@ export default function Clients() {
     setEditingClient(null);
     setRegistrationStep(1);
     setCompanyData(null);
+    setTaskSchedules({});
     form.reset();
   };
 
   const handleCreateNew = () => {
     setEditingClient(null);
+    setTaskSchedules({});
     form.reset({
       name: '',
       orgNumber: '',
@@ -917,24 +998,115 @@ export default function Clients() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Oppgaver</FormLabel>
-                          <div className="flex flex-col space-y-2">
+                          <div className="space-y-4">
                             {TASK_OPTIONS.map((task) => (
-                              <div key={task.value} className="flex items-center space-x-2">
-                                <Checkbox
-                                  id={task.value}
-                                  checked={field.value?.includes(task.value) || false}
-                                  onCheckedChange={(checked) => {
-                                    if (checked) {
-                                      field.onChange([...(field.value || []), task.value]);
-                                    } else {
-                                      field.onChange(field.value?.filter((t: string) => t !== task.value) || []);
-                                    }
-                                  }}
-                                />
-                                <Label htmlFor={task.value}>{task.label}</Label>
-                                <span className="text-xs text-gray-500">
-                                  ({task.frequency.join(', ')})
-                                </span>
+                              <div key={task.value} className="space-y-3">
+                                <div className="flex items-center space-x-2">
+                                  <Checkbox
+                                    id={task.value}
+                                    checked={taskSchedules[task.value]?.enabled || field.value?.includes(task.value) || false}
+                                    onCheckedChange={(checked) => {
+                                      // Update both form field and task schedules
+                                      if (checked) {
+                                        field.onChange([...(field.value || []), task.value]);
+                                        setTaskSchedules(prev => ({
+                                          ...prev,
+                                          [task.value]: {
+                                            enabled: true,
+                                            frequency: prev[task.value]?.frequency || task.frequency[0],
+                                            assignedTo: prev[task.value]?.assignedTo || '',
+                                            dueDate: prev[task.value]?.dueDate || ''
+                                          }
+                                        }));
+                                      } else {
+                                        field.onChange(field.value?.filter((t: string) => t !== task.value) || []);
+                                        setTaskSchedules(prev => ({
+                                          ...prev,
+                                          [task.value]: {
+                                            ...prev[task.value],
+                                            enabled: false
+                                          }
+                                        }));
+                                      }
+                                    }}
+                                  />
+                                  <Label htmlFor={task.value} className="font-medium">{task.label}</Label>
+                                  <span className="text-xs text-gray-500">
+                                    ({task.frequency.join(', ')})
+                                  </span>
+                                </div>
+                                
+                                {(taskSchedules[task.value]?.enabled || field.value?.includes(task.value)) && (
+                                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 ml-6 p-4 bg-gray-50 rounded-lg">
+                                    <div>
+                                      <Label className="text-sm font-medium">Frekvens</Label>
+                                      <Select 
+                                        value={taskSchedules[task.value]?.frequency || task.frequency[0]}
+                                        onValueChange={(value) => {
+                                          setTaskSchedules(prev => ({
+                                            ...prev,
+                                            [task.value]: {
+                                              ...prev[task.value],
+                                              frequency: value
+                                            }
+                                          }));
+                                        }}
+                                      >
+                                        <SelectTrigger className="w-full">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          {task.frequency.map(freq => (
+                                            <SelectItem key={freq} value={freq}>{freq}</SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                    <div>
+                                      <Label className="text-sm font-medium">Ansvarlig person</Label>
+                                      <Select 
+                                        value={taskSchedules[task.value]?.assignedTo || ''}
+                                        onValueChange={(value) => {
+                                          setTaskSchedules(prev => ({
+                                            ...prev,
+                                            [task.value]: {
+                                              ...prev[task.value],
+                                              assignedTo: value
+                                            }
+                                          }));
+                                        }}
+                                      >
+                                        <SelectTrigger className="w-full">
+                                          <SelectValue placeholder="Velg ansvarlig person" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          {employees.map((employee: any) => (
+                                            <SelectItem key={employee.id} value={employee.id}>
+                                              {employee.firstName} {employee.lastName}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                    <div>
+                                      <Label className="text-sm font-medium">Neste forfallsdato</Label>
+                                      <Input
+                                        type="date"
+                                        value={taskSchedules[task.value]?.dueDate || ''}
+                                        onChange={(e) => {
+                                          setTaskSchedules(prev => ({
+                                            ...prev,
+                                            [task.value]: {
+                                              ...prev[task.value],
+                                              dueDate: e.target.value
+                                            }
+                                          }));
+                                        }}
+                                        className="w-full"
+                                      />
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             ))}
                           </div>
