@@ -925,7 +925,7 @@ export default function Clients() {
                                       {field.value?.includes(task.value) && (
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 ml-6 p-4 bg-green-100 rounded-lg border-4 border-green-600">
                                           <div className="col-span-full text-lg text-green-700 font-bold mb-2">
-                                            🔧 SCHEMALÄGGNING FÖR {task.label}
+                                            🔧 PLANLEGGING FOR {task.label}
                                           </div>
                                           <div>
                                             <Label className="text-sm font-medium">Frekvens</Label>

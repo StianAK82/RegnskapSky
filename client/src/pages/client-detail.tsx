@@ -539,7 +539,7 @@ export default function ClientDetail() {
                   {standardTaskSchedules[task.name]?.enabled && (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 ml-7 p-4 bg-green-100 border-4 border-green-600 rounded-lg">
                       <div className="col-span-full text-lg text-green-700 font-bold mb-2">
-                        🔧 SCHEMALÄGGNING FÖR {task.name} - NU SYNLIG!
+                        🔧 PLANLEGGING FOR {task.name} - NÅ SYNLIG!
                       </div>
                       <div>
                         <Label className="text-sm font-bold">Frekvens</Label>
