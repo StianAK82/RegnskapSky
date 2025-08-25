@@ -406,7 +406,7 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(timeEntries).where(and(...conditions)).orderBy(desc(timeEntries.date));
   }
 
-  async getTimeEntriesByTenant(tenantId: string, startDate?: Date, endDate?: Date): Promise<TimeEntry[]> {
+  async getTimeEntriesByTenant(tenantId: string, startDate?: Date, endDate?: Date): Promise<any[]> {
     const conditions = [eq(timeEntries.tenantId, tenantId)];
     
     if (startDate) {
@@ -416,7 +416,25 @@ export class DatabaseStorage implements IStorage {
       conditions.push(lte(timeEntries.date, endDate));
     }
     
-    return db.select().from(timeEntries).where(and(...conditions)).orderBy(desc(timeEntries.date));
+    return db
+      .select({
+        id: timeEntries.id,
+        description: timeEntries.description,
+        timeSpent: timeEntries.timeSpent,
+        date: timeEntries.date,
+        billable: timeEntries.billable,
+        taskType: timeEntries.taskType,
+        createdAt: timeEntries.createdAt,
+        clientName: clients.name,
+        clientId: timeEntries.clientId,
+        userName: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`.as('userName'),
+        userId: timeEntries.userId
+      })
+      .from(timeEntries)
+      .leftJoin(clients, eq(timeEntries.clientId, clients.id))
+      .leftJoin(users, eq(timeEntries.userId, users.id))
+      .where(and(...conditions))
+      .orderBy(desc(timeEntries.date));
   }
 
   async getTimeEntriesByClient(clientId: string, startDate?: Date, endDate?: Date): Promise<TimeEntry[]> {

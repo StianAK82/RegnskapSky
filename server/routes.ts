@@ -644,12 +644,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Time tracking
+  // Time tracking - get all time entries for tenant with detailed info
   app.get("/api/time-entries", authenticateToken, async (req: AuthRequest, res) => {
     try {
       const { startDate, endDate } = req.query;
-      const entries = await storage.getTimeEntriesByUser(
-        req.user!.id,
+      const entries = await storage.getTimeEntriesByTenant(
+        req.user!.tenantId,
         startDate ? new Date(startDate as string) : undefined,
         endDate ? new Date(endDate as string) : undefined
       );

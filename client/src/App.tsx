@@ -15,6 +15,7 @@ import ClientDetail from "@/pages/client-detail";
 import ClientTasksOverview from "@/pages/client-tasks-overview";
 import Employees from "@/pages/employees";
 import Tasks from "@/pages/tasks";
+import Timer from "@/pages/timer";
 import AIAssistant from "@/pages/ai-assistant";
 import Reports from "@/pages/reports";
 import Subscriptions from "@/pages/subscriptions";
@@ -89,6 +90,15 @@ function AuthenticatedRoutes() {
         component={() => (
           <ProtectedRoute allowedRoles={['admin', 'ansatt']}>
             <Tasks />
+          </ProtectedRoute>
+        )} 
+      />
+
+      <Route 
+        path="/timer" 
+        component={() => (
+          <ProtectedRoute allowedRoles={['admin', 'ansatt']}>
+            <Timer />
           </ProtectedRoute>
         )} 
       />
