@@ -999,6 +999,9 @@ export default function Clients() {
                         <FormItem>
                           <FormLabel>Oppgaver</FormLabel>
                           <div className="space-y-4">
+                            <div className="text-xs text-gray-600 mb-2">
+                              DEBUG: Tasks field value: {JSON.stringify(field.value)}
+                            </div>
                             {TASK_OPTIONS.map((task) => (
                               <div key={task.value} className="space-y-3">
                                 <div className="flex items-center space-x-2">
@@ -1032,6 +1035,9 @@ export default function Clients() {
                                   <Label htmlFor={task.value} className="font-medium">{task.label}</Label>
                                   <span className="text-xs text-gray-500">
                                     ({task.frequency.join(', ')})
+                                  </span>
+                                  <span className="text-xs text-red-500 ml-2">
+                                    CHECKED: {field.value?.includes(task.value) ? 'YES' : 'NO'}
                                   </span>
                                 </div>
                                 
