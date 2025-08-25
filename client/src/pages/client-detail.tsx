@@ -491,17 +491,15 @@ export default function ClientDetail() {
           {/* Standard Task Scheduling */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg text-red-600 bg-yellow-200 p-4">🚨 OPPGAVE SCHEMALÄGGNING - NU FUNKAR DET! 🚨</CardTitle>
+              <CardTitle className="text-lg font-semibold text-gray-900">Oppgave Schemaläggning</CardTitle>
               <CardDescription>
                 Konfigurer når standardoppgaver skal utføres för denna klient
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4 border-4 border-red-500 bg-yellow-100 p-6">
-              <div className="text-center text-lg font-bold text-purple-600 mb-4">
-                DEBUG: {JSON.stringify(standardTaskSchedules, null, 2)}
-              </div>
+            <CardContent className="space-y-4">
+{/* Debug output removed for cleaner design */}
               {STANDARD_TASKS.map((task) => (
-                <div key={task.name} className="border-2 border-blue-500 rounded-lg p-4 space-y-3 bg-white">
+                <div key={task.name} className="border border-gray-200 rounded-lg p-4 space-y-3 bg-gray-50">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                       <input
@@ -523,9 +521,15 @@ export default function ClientDetail() {
                         }}
                       />
                       <label className="font-bold text-lg">{task.name}</label>
-                      <span className="text-xl font-bold text-red-500 ml-2">
-                        {standardTaskSchedules[task.name]?.enabled ? '✅ AKTIVERAD' : '❌ INAKTIV'}
-                      </span>
+                      {standardTaskSchedules[task.name]?.enabled ? (
+                        <Badge variant="default" className="ml-2 bg-green-100 text-green-800 border-green-300">
+                          Aktiv
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="ml-2">
+                          Inaktiv
+                        </Badge>
+                      )}
                     </div>
                     <div className="text-sm text-gray-500">
                       ({task.frequency.join(', ')})
