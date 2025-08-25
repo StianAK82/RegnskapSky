@@ -997,13 +997,10 @@ export default function Clients() {
                       name="tasks"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Oppgaver</FormLabel>
-                          <div className="space-y-4">
-                            <div className="text-xs text-gray-600 mb-2">
-                              DEBUG: Tasks field value: {JSON.stringify(field.value)}
-                            </div>
+                          <FormLabel className="text-lg font-bold text-green-600">🔧 OPPGAVER MED SCHEMALÄGGNING 🔧</FormLabel>
+                          <div className="space-y-4 border-4 border-green-500 p-4 bg-green-50">
                             {TASK_OPTIONS.map((task) => (
-                              <div key={task.value} className="space-y-3">
+                              <div key={task.value} className="space-y-3 bg-white p-3 rounded border">
                                 <div className="flex items-center space-x-2">
                                   <Checkbox
                                     id={task.value}
@@ -1036,8 +1033,8 @@ export default function Clients() {
                                   <span className="text-xs text-gray-500">
                                     ({task.frequency.join(', ')})
                                   </span>
-                                  <span className="text-xs text-red-500 ml-2">
-                                    CHECKED: {field.value?.includes(task.value) ? 'YES' : 'NO'}
+                                  <span className="text-lg font-bold text-red-500 ml-2">
+                                    {field.value?.includes(task.value) ? '✅ VALGT' : '❌ IKKE VALGT'}
                                   </span>
                                 </div>
                                 
