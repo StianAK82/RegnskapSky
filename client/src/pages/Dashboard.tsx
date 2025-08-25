@@ -214,15 +214,15 @@ export default function Dashboard() {
             </div>
           </Card>
 
-          {/* Documents Card */}
+          {/* Completed Activities Card */}
           <Card className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Bilag</p>
-                <p className="text-2xl font-bold">{metrics?.documentsProcessed || 0}</p>
-                <p className="text-xs text-gray-500">AI-behandlet</p>
+                <p className="text-sm font-medium text-gray-600">Fullførte aktiviteter</p>
+                <p className="text-2xl font-bold">{metrics?.activeTasks || 0}</p>
+                <p className="text-xs text-gray-500">Siste måned</p>
               </div>
-              <FileText className="h-8 w-8 text-gray-400" />
+              <CheckCircle className="h-8 w-8 text-gray-400" />
             </div>
           </Card>
         </div>
@@ -239,7 +239,7 @@ export default function Dashboard() {
                 <CardDescription className="text-gray-600">Vanlige oppgaver og handlinger</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                   <button className="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 group h-[100px]">
                     <Users className="h-6 w-6 text-gray-400 mb-2 group-hover:text-gray-600" />
                     <span className="text-xs font-medium text-gray-700 text-center leading-tight">Opprett klient</span>
@@ -256,11 +256,6 @@ export default function Dashboard() {
                   >
                     <Shield className="h-6 w-6 text-gray-400 mb-2 group-hover:text-gray-600" />
                     <span className="text-xs font-medium text-gray-700 text-center leading-tight">AML/KYC</span>
-                  </button>
-
-                  <button className="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 group h-[100px]">
-                    <CheckCircle className="h-6 w-6 text-gray-400 mb-2 group-hover:text-gray-600" />
-                    <span className="text-xs font-medium text-gray-700 text-center leading-tight">Fullførte aktiviteter</span>
                   </button>
                 </div>
               </CardContent>
