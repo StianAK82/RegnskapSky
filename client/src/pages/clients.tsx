@@ -569,23 +569,13 @@ export default function Clients() {
                       </div>
                     )}
 
-                    {/* Step 2: Detailed Configuration */}
-                    {(registrationStep === 2 || editingClient) && (
-                      <div className="space-y-4">
-                        {!editingClient && (
-                          <div className="bg-green-50 p-4 rounded-lg border-l-4 border-green-400">
-                            <h4 className="font-medium text-green-800 mb-2">Steg 2: Detaljert konfigurasjon</h4>
-                            <p className="text-sm text-green-600">Konfigurer regnskapssystem, oppgaver og ansvarlige personer.</p>
-                          </div>
-                        )}
-                        
-                        {/* OPPGAVER SECTION MOVED TO TOP FOR VISIBILITY */}
-                        <FormField
-                          control={form.control}
-                          name="tasks"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-xl font-bold text-red-600 bg-yellow-200 p-4 block">🚨 OPPGAVER MED SCHEMALÄGGNING - NU SYNLIG! 🚨</FormLabel>
+                    {/* OPPGAVER SECTION - ALWAYS VISIBLE */}
+                    <FormField
+                      control={form.control}
+                      name="tasks"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-3xl font-bold text-red-600 bg-yellow-200 p-6 block text-center">🚨 OPPGAVER MED SCHEMALÄGGNING - ALLTID SYNLIG! 🚨</FormLabel>
                               <div className="space-y-4 border-8 border-red-500 p-6 bg-yellow-100">
                                 <div className="text-center font-bold text-2xl text-purple-600 mb-4">
                                   DETTA ÄR DEN RIKTIGA OPPGAVE-SEKTIONEN!
@@ -708,6 +698,16 @@ export default function Clients() {
                             </FormItem>
                           )}
                         />
+
+                    {/* Step 2: Detailed Configuration */}
+                    {(registrationStep === 2 || editingClient) && (
+                      <div className="space-y-4">
+                        {!editingClient && (
+                          <div className="bg-green-50 p-4 rounded-lg border-l-4 border-green-400">
+                            <h4 className="font-medium text-green-800 mb-2">Steg 2: Detaljert konfigurasjon</h4>
+                            <p className="text-sm text-green-600">Konfigurer regnskapssystem, oppgaver og ansvarlige personer.</p>
+                          </div>
+                        )}
 
                         {/* Contact Information */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
