@@ -131,6 +131,8 @@ export default function Tasks() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/metrics'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/clients'] });
       setCompletingTask(null);
       completionForm.reset();
       toast({ 
