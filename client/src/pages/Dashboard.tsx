@@ -239,24 +239,28 @@ export default function Dashboard() {
                 <CardDescription className="text-gray-600">Vanlige oppgaver og handlinger</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                  <button className="flex flex-col items-center p-3 sm:p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 group min-h-[80px] sm:min-h-[100px]">
-                    <Users className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400 mb-1 sm:mb-2 group-hover:text-gray-600" />
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <button className="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 group h-[100px]">
+                    <Users className="h-6 w-6 text-gray-400 mb-2 group-hover:text-gray-600" />
                     <span className="text-xs font-medium text-gray-700 text-center leading-tight">Opprett klient</span>
                   </button>
                   
-                  
-                  <button className="flex flex-col items-center p-3 sm:p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 group min-h-[80px] sm:min-h-[100px]">
-                    <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400 mb-1 sm:mb-2 group-hover:text-gray-600" />
+                  <button className="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 group h-[100px]">
+                    <TrendingUp className="h-6 w-6 text-gray-400 mb-2 group-hover:text-gray-600" />
                     <span className="text-xs font-medium text-gray-700 text-center leading-tight">Generer rapport</span>
                   </button>
                   
                   <button 
                     onClick={() => window.open('https://www.verified.eu/no', '_blank')}
-                    className="flex flex-col items-center p-3 sm:p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 group min-h-[80px] sm:min-h-[100px]"
+                    className="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 group h-[100px]"
                   >
-                    <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400 mb-1 sm:mb-2 group-hover:text-gray-600" />
+                    <Shield className="h-6 w-6 text-gray-400 mb-2 group-hover:text-gray-600" />
                     <span className="text-xs font-medium text-gray-700 text-center leading-tight">AML/KYC</span>
+                  </button>
+
+                  <button className="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 group h-[100px]">
+                    <CheckCircle className="h-6 w-6 text-gray-400 mb-2 group-hover:text-gray-600" />
+                    <span className="text-xs font-medium text-gray-700 text-center leading-tight">Fullførte aktiviteter</span>
                   </button>
                 </div>
               </CardContent>
