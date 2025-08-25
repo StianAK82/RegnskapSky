@@ -491,21 +491,25 @@ export default function ClientDetail() {
           {/* Standard Task Scheduling */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Standard oppgaver</CardTitle>
+              <CardTitle className="text-lg text-red-600 bg-yellow-200 p-4">🚨 OPPGAVE SCHEMALÄGGNING - NU FUNKAR DET! 🚨</CardTitle>
               <CardDescription>
-                Konfigurer når standardoppgaver skal utføres for denne klienten
+                Konfigurer når standardoppgaver skal utføres för denna klient
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 border-4 border-red-500 bg-yellow-100 p-6">
+              <div className="text-center text-lg font-bold text-purple-600 mb-4">
+                DEBUG: {JSON.stringify(standardTaskSchedules, null, 2)}
+              </div>
               {STANDARD_TASKS.map((task) => (
-                <div key={task.name} className="border rounded-lg p-4 space-y-3">
+                <div key={task.name} className="border-2 border-blue-500 rounded-lg p-4 space-y-3 bg-white">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                       <input
                         type="checkbox"
-                        className="h-4 w-4 rounded border-gray-300"
+                        className="h-6 w-6 rounded border-gray-300"
                         checked={standardTaskSchedules[task.name]?.enabled || false}
                         onChange={(e) => {
+                          console.log(`Checkbox för ${task.name} ändrad till:`, e.target.checked);
                           setStandardTaskSchedules(prev => ({
                             ...prev,
                             [task.name]: {
@@ -518,7 +522,10 @@ export default function ClientDetail() {
                           }));
                         }}
                       />
-                      <label className="font-medium">{task.name}</label>
+                      <label className="font-bold text-lg">{task.name}</label>
+                      <span className="text-xl font-bold text-red-500 ml-2">
+                        {standardTaskSchedules[task.name]?.enabled ? '✅ AKTIVERAD' : '❌ INAKTIV'}
+                      </span>
                     </div>
                     <div className="text-sm text-gray-500">
                       ({task.frequency.join(', ')})
@@ -526,9 +533,12 @@ export default function ClientDetail() {
                   </div>
                   
                   {standardTaskSchedules[task.name]?.enabled && (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 ml-7">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 ml-7 p-4 bg-green-100 border-4 border-green-600 rounded-lg">
+                      <div className="col-span-full text-lg text-green-700 font-bold mb-2">
+                        🔧 SCHEMALÄGGNING FÖR {task.name} - NU SYNLIG!
+                      </div>
                       <div>
-                        <Label className="text-sm">Frekvens</Label>
+                        <Label className="text-sm font-bold">Frekvens</Label>
                         <Select 
                           value={standardTaskSchedules[task.name]?.frequency || task.frequency[0]}
                           onValueChange={(value) => {
