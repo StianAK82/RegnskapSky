@@ -394,69 +394,7 @@ export default function Dashboard() {
           <DashboardClientTasks />
         </div>
 
-        {/* Task Summary */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-gray-900">
-                <TrendingUp className="h-5 w-5 text-gray-600" />
-                Oppgaveoversikt
-              </CardTitle>
-              <CardDescription className="text-gray-600">Status på pågående arbeid</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {Array.isArray(recentClients) && recentClients.length > 0 ? recentClients.slice(0, 5).map((client: any, index: number) => (
-                  <div key={index} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                        <Users className="h-4 w-4 text-gray-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{client.name}</p>
-                        <p className="text-xs text-gray-500">Klient opprettet</p>
-                      </div>
-                    </div>
-                    <Badge className="bg-gray-100 text-gray-700 border border-gray-200 text-xs">Ny</Badge>
-                  </div>
-                )) : (
-                  <div className="text-center py-4 text-gray-500">
-                    <p>Ingen nylige aktiviteter</p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
 
-          {/* Tasks Overview */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-gray-900">
-                <CheckCircle className="h-5 w-5 text-gray-600" />
-                Oppgaver
-              </CardTitle>
-              <CardDescription className="text-gray-600">Ventende og aktive oppgaver</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                  <span className="text-sm text-gray-700">Aktive oppgaver</span>
-                  <span className="font-medium text-gray-900">{metrics?.activeTasks || 0}</span>
-                </div>
-                <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                  <span className="text-sm text-gray-700">Forsinkede oppgaver</span>
-                  <Badge className={`text-xs border ${(metrics?.overdueTasks || 0) > 0 ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-green-50 text-green-700 border-green-200'}`}>
-                    {metrics?.overdueTasks || 0}
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between py-3">
-                  <span className="text-sm text-gray-700">Timer denna uke</span>
-                  <span className="font-medium text-gray-900">{metrics?.weeklyHours || 0}t</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
       </div>
     </AppShell>
   );
