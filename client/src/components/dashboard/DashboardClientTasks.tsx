@@ -424,7 +424,6 @@ export default function DashboardClientTasks() {
                     <th className="text-left p-4 text-sm font-medium text-gray-700">Klient</th>
                     <th className="text-left p-4 text-sm font-medium text-gray-700">Oppgave</th>
                     <th className="text-left p-4 text-sm font-medium text-gray-700">Frist</th>
-                    <th className="text-left p-4 text-sm font-medium text-gray-700">Status</th>
                     <th className="text-left p-4 text-sm font-medium text-gray-700">Regnskapssystem</th>
                     <th className="text-left p-4 text-sm font-medium text-gray-700">Ansvarlig</th>
                     <th className="text-left p-4 text-sm font-medium text-gray-700 min-w-[120px]">Handlinger</th>
@@ -457,9 +456,6 @@ export default function DashboardClientTasks() {
                         <div className={`text-sm ${task.isOverdue ? 'text-red-600 font-medium' : 'text-gray-600'}`}>
                           {formatDate(task.dueDate)}
                         </div>
-                      </td>
-                      <td className="p-4">
-                        {getStatusBadge(task.status, task.isOverdue)}
                       </td>
                       <td className="p-4">
                         <AccountingSystemLink 
