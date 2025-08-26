@@ -19,6 +19,8 @@ import Timer from "@/pages/timer";
 import AIAssistant from "@/pages/ai-assistant";
 import Reports from "@/pages/reports";
 import Subscriptions from "@/pages/subscriptions";
+import Subscribe from "@/pages/subscribe";
+import AdminSubscriptions from "@/pages/AdminSubscriptions";
 import NotFound from "@/pages/not-found";
 
 function AuthenticatedRoutes() {
@@ -126,6 +128,24 @@ function AuthenticatedRoutes() {
         component={() => (
           <ProtectedRoute allowedRoles={['admin']}>
             <Subscriptions />
+          </ProtectedRoute>
+        )} 
+      />
+      
+      <Route 
+        path="/subscribe" 
+        component={() => (
+          <ProtectedRoute allowedRoles={['admin', 'ansatt']}>
+            <Subscribe />
+          </ProtectedRoute>
+        )} 
+      />
+      
+      <Route 
+        path="/admin/subscriptions" 
+        component={() => (
+          <ProtectedRoute allowedRoles={['lisensadmin']}>
+            <AdminSubscriptions />
           </ProtectedRoute>
         )} 
       />

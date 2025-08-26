@@ -949,6 +949,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Stripe subscription routes
+  // Admin route to get all subscriptions and payments
+  app.get('/api/admin/subscriptions', authenticateToken, requireRole(['lisensadmin']), async (req: AuthRequest, res) => {
+    try {
+      // Get all users with their tenants
+      const users = await storage.getAllUsersWithTenants();
+      
+      // Get Stripe subscription data for each user
+      const subscriptionsData = await Promise.all(
+        users.map(async (user) => {
+          let stripeData = null;
+          if (user.stripeCustomerId) {
+            try {
+              const customer = await stripe.customers.retrieve(user.stripeCustomerId);
+              const subscriptions = await stripe.subscriptions.list({
+                customer: user.stripeCustomerId,
+                limit: 10
+              });
+              
+              stripeData = {
+                customer,
+                subscriptions: subscriptions.data
+              };
+            } catch (error) {
+              console.error(`Error fetching Stripe data for user ${user.id}:`, error);
+            }
+          }
+          
+          return {
+            user: {
+              id: user.id,
+              email: user.email,
+              firstName: user.firstName,
+              lastName: user.lastName,
+              tenantName: user.tenantName,
+              createdAt: user.createdAt
+            },
+            stripeData
+          };
+        })
+      );
+      
+      res.json(subscriptionsData);
+    } catch (error: any) {
+      console.error('Error fetching admin subscriptions:', error);
+      res.status(500).json({ message: 'Feil ved henting av abonnementsoversikt: ' + error.message });
+    }
+  });
+
   app.post('/api/create-subscription', authenticateToken, async (req: AuthRequest, res) => {
     let user = req.user!;
 
