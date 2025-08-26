@@ -88,22 +88,30 @@ function AccountingSystemDistribution() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 gap-3">
           {distribution.map(({ system, count }) => {
             const percentage = totalClients > 0 ? Math.round((count / totalClients) * 100) : 0;
             
             return (
-              <div key={system} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <Building2 className="h-4 w-4 text-gray-500" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{system}</p>
-                    <p className="text-xs text-gray-500">{percentage}% av alle klienter</p>
+              <div 
+                key={system} 
+                className="p-4 rounded-lg border border-gray-200 bg-white hover:shadow-sm transition-all duration-200"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                      <Building2 className="h-5 w-5 text-gray-600" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-gray-900">{system}</div>
+                      <div className="text-xs text-gray-500">{percentage}% av alle klienter</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-gray-900">{count}</div>
+                    <div className="text-xs text-gray-500">klienter</div>
                   </div>
                 </div>
-                <Badge className="bg-gray-100 text-gray-700 border border-gray-200 text-sm">
-                  {count}
-                </Badge>
               </div>
             );
           })}
