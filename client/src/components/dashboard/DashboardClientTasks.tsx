@@ -1,10 +1,14 @@
 import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import { 
   Clock, 
   AlertTriangle, 
@@ -14,7 +18,8 @@ import {
   Search,
   Building2,
   Filter,
-  ArrowUpDown
+  ArrowUpDown,
+  PlayCircle
 } from "lucide-react";
 
 interface TaskWithClient {
@@ -122,6 +127,145 @@ function getStatusBadge(status: string, isOverdue: boolean) {
     default:
       return <Badge className="bg-yellow-100 text-yellow-800">Venter</Badge>;
   }
+}
+
+// Component for completing a task with time tracking
+function CompleteTaskDialog({ task }: { task: TaskWithClient }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [timeSpent, setTimeSpent] = useState('');
+  const [notes, setNotes] = useState('');
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const completeTaskMutation = useMutation({
+    mutationFn: async ({ taskId, timeSpent, notes }: { taskId: string; timeSpent: number; notes: string }) => {
+      const response = await apiRequest('PUT', `/api/tasks/${taskId}/complete`, {
+        timeSpent,
+        completionNotes: notes
+      });
+      if (!response.ok) {
+        throw new Error('Failed to complete task');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Oppgave fullført",
+        description: "Oppgaven er markert som fullført og tid er registrert"
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks/overview'] });
+      setIsOpen(false);
+      setTimeSpent('');
+      setNotes('');
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Feil",
+        description: error.message || "Kunne ikke fullføre oppgaven",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const timeNumber = parseFloat(timeSpent);
+    if (!timeNumber || timeNumber <= 0) {
+      toast({
+        title: "Ugyldig tid",
+        description: "Vennligst oppgi en gyldig tid (timer)",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    completeTaskMutation.mutate({
+      taskId: task.id,
+      timeSpent: timeNumber,
+      notes
+    });
+  };
+
+  // Don't show button if task is already completed
+  if (['completed', 'done', 'ferdig'].includes(task.status.toLowerCase())) {
+    return null;
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button
+          size="sm"
+          className="h-7 px-2 text-xs bg-green-600 hover:bg-green-700 text-white"
+          data-testid={`button-complete-task-${task.id}`}
+        >
+          <PlayCircle className="h-3 w-3 mr-1" />
+          Marker som utført
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Fullfør oppgave</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <div className="text-sm text-gray-600 mb-2">
+              <strong>Oppgave:</strong> {task.title}
+            </div>
+            <div className="text-sm text-gray-600 mb-4">
+              <strong>Klient:</strong> {task.clientName}
+            </div>
+          </div>
+          
+          <div>
+            <Label htmlFor="timeSpent">Tid brukt (timer) *</Label>
+            <Input
+              id="timeSpent"
+              type="number"
+              step="0.25"
+              min="0.25"
+              value={timeSpent}
+              onChange={(e) => setTimeSpent(e.target.value)}
+              placeholder="f.eks. 2.5"
+              required
+              data-testid="input-time-spent"
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor="notes">Notater (valgfritt)</Label>
+            <Textarea
+              id="notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Beskriv hva som ble gjort..."
+              rows={3}
+              data-testid="textarea-completion-notes"
+            />
+          </div>
+          
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsOpen(false)}
+              data-testid="button-cancel-complete"
+            >
+              Avbryt
+            </Button>
+            <Button
+              type="submit"
+              disabled={completeTaskMutation.isPending}
+              data-testid="button-submit-complete"
+            >
+              {completeTaskMutation.isPending ? 'Lagrer...' : 'Fullfør oppgave'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 export default function DashboardClientTasks() {
@@ -332,6 +476,7 @@ export default function DashboardClientTasks() {
                     <th className="text-left p-4 text-sm font-medium text-gray-700">Status</th>
                     <th className="text-left p-4 text-sm font-medium text-gray-700">Regnskapssystem</th>
                     <th className="text-left p-4 text-sm font-medium text-gray-700">Ansvarlig</th>
+                    <th className="text-left p-4 text-sm font-medium text-gray-700">Handlinger</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -375,6 +520,9 @@ export default function DashboardClientTasks() {
                         <div className="text-sm text-gray-600">
                           {task.assigneeName || 'Ikke tildelt'}
                         </div>
+                      </td>
+                      <td className="p-4">
+                        <CompleteTaskDialog task={task} />
                       </td>
                     </tr>
                   ))}
