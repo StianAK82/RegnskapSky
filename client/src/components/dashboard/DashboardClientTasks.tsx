@@ -3,513 +3,387 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { apiRequest } from "@/lib/queryClient";
 import { 
-  Users, 
   Clock, 
   AlertTriangle, 
   CheckCircle,
-  User,
   Calendar,
   ExternalLink,
+  Search,
   Building2,
-  ChevronRight
+  Filter,
+  ArrowUpDown
 } from "lucide-react";
 
-interface ClientWithSummary {
+interface TaskWithClient {
   id: string;
-  name: string;
-  orgNumber?: string;
-  email?: string;
-  phone?: string;
-  openTasksCount: number;
-  overdueTasksCount: number;
-  payrollRunDay?: number;
-  payrollRunTime?: string;
+  title: string;
+  description?: string;
+  status: string;
+  priority: string;
+  dueDate?: string;
+  clientId: string;
+  clientName: string;
+  clientOrgNumber?: string;
   accountingSystem?: string;
   accountingSystemUrl?: string;
-  engagementOwner?: {
-    id: string;
-    firstName: string;
-    lastName: string;
-  } | null;
-  recurringTasks?: Array<{
-    taskName: string;
-    frequency: string;
-    dueThisMonth?: boolean;
-  }>;
-  clientTasks?: Array<{
-    id: string;
-    taskName: string;
-    frequency: string;
-    dueDate?: string;
-    status: string;
-  }>;
+  assignedTo?: string;
+  assigneeName?: string;
+  isOverdue: boolean;
+  source: 'manual' | 'client_schedule';
 }
 
-// Component to show detailed tasks for a client
-function ClientTasksDialog({ client }: { client: ClientWithSummary }) {
-  const { data: clientTasks = [], isLoading } = useQuery({
-    queryKey: [`/api/clients/${client.id}/tasks`],
-    queryFn: async () => {
-      const token = localStorage.getItem("token");
-      if (!token) throw new Error("No authentication token");
-      
-      const response = await fetch(`/api/clients/${client.id}/tasks`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-      
-      if (!response.ok) throw new Error("Failed to fetch client tasks");
-      return response.json();
-    },
-  });
-
-  return (
-    <DialogContent className="max-w-2xl">
-      <DialogHeader>
-        <DialogTitle>Oppgaver for {client.name}</DialogTitle>
-      </DialogHeader>
-      <div className="space-y-4">
-        {isLoading ? (
-          <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
-        ) : clientTasks.length === 0 ? (
-          <p className="text-gray-500 text-center py-8">Ingen oppgaver funnet</p>
-        ) : (
-          <div className="space-y-3">
-            {clientTasks.map((task: any) => (
-              <div key={task.id} className="flex items-center justify-between p-3 border rounded-lg">
-                <div>
-                  <div className="font-medium">{task.taskName}</div>
-                  <div className="text-sm text-gray-500">
-                    {task.frequency} - {task.dueDate ? new Date(task.dueDate).toLocaleDateString('nb-NO') : 'Ingen forfallsdato'}
-                  </div>
-                </div>
-                <Badge variant={task.status === 'ferdig' ? 'default' : 'secondary'}>
-                  {task.status === 'ferdig' ? 'Fullført' : 'Åpen'}
-                </Badge>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </DialogContent>
-  );
-}
-
-export function DashboardClientTasks() {
-  const [selectedClient, setSelectedClient] = useState<ClientWithSummary | null>(null);
-  
-  // Fetch clients with task summary
-  const { data: clientsWithSummary = [], isLoading, error } = useQuery<ClientWithSummary[]>({
-    queryKey: ["/api/clients", { include: "summary" }],
-    queryFn: async () => {
-      const token = localStorage.getItem("token");
-      if (!token) throw new Error("No authentication token");
-      
-      const response = await fetch("/api/clients?include=summary", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-      
-      if (!response.ok) {
-        // Fallback to regular clients API if include=summary fails
-        console.warn("Failed to fetch clients with summary, falling back to regular clients");
-        const fallbackResponse = await fetch("/api/clients", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-        if (!fallbackResponse.ok) throw new Error("Failed to fetch clients");
-        const clients = await fallbackResponse.json();
-        
-        // Return clients with default summary values
-        return clients.map((client: any) => ({
-          ...client,
-          openTasksCount: 0,
-          overdueTasksCount: 0,
-          engagementOwner: null
-        }));
-      }
-      
-      return response.json();
-    },
-    retry: 1,
-    staleTime: 30000, // Cache for 30 seconds
-  });
-
-  if (isLoading) {
-    return (
-      <Card className="bg-white border border-gray-200/70 rounded-xl shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold">Klient Oppgaver</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center h-32">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (clientsWithSummary.length === 0) {
-    return (
-      <Card className="bg-white border border-gray-200/70 rounded-xl shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold">Klient Oppgaver</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center text-gray-500 py-8">
-            <Users className="mx-auto h-12 w-12 mb-4 text-gray-400" />
-            <p>Ingen klienter funnet</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // Sort by overdue tasks first, then by open tasks
-  const sortedClients = [...clientsWithSummary].sort((a, b) => {
-    if (a.overdueTasksCount !== b.overdueTasksCount) {
-      return b.overdueTasksCount - a.overdueTasksCount;
-    }
-    return b.openTasksCount - a.openTasksCount;
-  });
-
-  // Calculate monthly task summary
-  const monthlyTaskSummary = clientsWithSummary.reduce((acc, client) => {
-    if (client.recurringTasks) {
-      client.recurringTasks.filter(task => task.dueThisMonth).forEach(task => {
-        acc[task.taskName] = (acc[task.taskName] || 0) + 1;
-      });
-    }
-    return acc;
-  }, {} as Record<string, number>);
-
-  const totalMonthlyTasks = Object.values(monthlyTaskSummary).reduce((sum, count) => sum + count, 0);
-
-  return (
-    <div className="space-y-4">
-      {/* Monthly Tasks Summary */}
-      {totalMonthlyTasks > 0 && (
-        <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg font-semibold text-blue-800">
-              Denne måneds oppgaver - {new Date().toLocaleDateString('nb-NO', { month: 'long', year: 'numeric' })}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-              {Object.entries(monthlyTaskSummary).map(([taskName, count]) => (
-                <div key={taskName} className="text-center">
-                  <div className="text-2xl font-bold text-blue-700">{count}</div>
-                  <div className="text-sm text-blue-600">{taskName}</div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      <Card className="bg-white border border-gray-200/70 rounded-xl shadow-sm">
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle className="text-lg font-semibold">Klient Oppgaver</CardTitle>
-            <Badge variant="outline" className="text-xs">
-              {clientsWithSummary.length} klienter
-            </Badge>
-          </div>
-        </CardHeader>
-      <CardContent className="p-0">
-        {/* Desktop Table View */}
-        <div className="hidden md:block">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-100">
-                  <th className="text-left p-4 text-sm font-medium text-gray-700">Klient</th>
-                  <th className="text-left p-4 text-sm font-medium text-gray-700">Oppdragsansvarlig</th>
-                  <th className="text-center p-4 text-sm font-medium text-gray-700">Åpne oppgaver</th>
-                  <th className="text-center p-4 text-sm font-medium text-gray-700">Forfalt</th>
-                  <th className="text-left p-4 text-sm font-medium text-gray-700">Denne måneds oppgaver</th>
-                  <th className="text-left p-4 text-sm font-medium text-gray-700">Lønn</th>
-                  <th className="text-right p-4 text-sm font-medium text-gray-700">Handlinger</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortedClients.map((client, index) => (
-                  <tr 
-                    key={client.id} 
-                    className={`${index !== sortedClients.length - 1 ? 'border-b border-gray-50' : ''} hover:bg-gray-50/50 transition-colors`}
-                    data-testid={`row-client-${client.id}`}
-                  >
-                    <td className="p-4">
-                      <div>
-                        <div className="font-medium text-gray-900" data-testid={`text-client-name-${client.id}`}>
-                          {client.name}
-                        </div>
-                        {client.orgNumber && (
-                          <div className="text-sm text-gray-500">
-                            Org.nr: {client.orgNumber}
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      {client.engagementOwner ? (
-                        <div className="flex items-center text-sm">
-                          <User className="h-4 w-4 mr-2 text-gray-400" />
-                          <span data-testid={`text-engagement-owner-${client.id}`}>
-                            {client.engagementOwner.firstName} {client.engagementOwner.lastName}
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-sm text-gray-500">Ikke tildelt</span>
-                      )}
-                    </td>
-                    <td className="p-4 text-center">
-                      {client.openTasksCount > 0 ? (
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="ghost" className="h-auto p-0">
-                              <Badge variant="secondary" className="text-xs cursor-pointer hover:bg-gray-200" data-testid={`badge-open-tasks-${client.id}`}>
-                                <CheckCircle className="h-3 w-3 mr-1" />
-                                {client.openTasksCount}
-                              </Badge>
-                            </Button>
-                          </DialogTrigger>
-                          <ClientTasksDialog client={client} />
-                        </Dialog>
-                      ) : (
-                        <span className="text-sm text-gray-500">-</span>
-                      )}
-                    </td>
-                    <td className="p-4 text-center">
-                      {client.overdueTasksCount > 0 ? (
-                        <Badge variant="destructive" className="text-xs" data-testid={`badge-overdue-tasks-${client.id}`}>
-                          <AlertTriangle className="h-3 w-3 mr-1" />
-                          {client.overdueTasksCount}
-                        </Badge>
-                      ) : (
-                        <span className="text-sm text-gray-500">-</span>
-                      )}
-                    </td>
-                    <td className="p-4">
-                      {client.recurringTasks && client.recurringTasks.length > 0 ? (
-                        <div className="space-y-1">
-                          {client.recurringTasks.filter(task => task.dueThisMonth).map((task, idx) => (
-                            <Badge 
-                              key={idx}
-                              variant="outline" 
-                              className="text-xs mr-1 mb-1 bg-blue-50 text-blue-700 border-blue-300"
-                            >
-                              {task.taskName}
-                            </Badge>
-                          ))}
-                          {client.recurringTasks.filter(task => task.dueThisMonth).length === 0 && (
-                            <span className="text-sm text-gray-500">Ingen forfalt denne måneden</span>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-sm text-gray-500">Ingen oppgaver</span>
-                      )}
-                    </td>
-                    <td className="p-4">
-                      {client.payrollRunDay ? (
-                        <div className="flex items-center text-sm text-gray-600">
-                          <Calendar className="h-4 w-4 mr-2 text-gray-400" />
-                          <span>
-                            {client.payrollRunDay}. hver måned
-                            {client.payrollRunTime && ` kl ${client.payrollRunTime}`}
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-sm text-gray-500">Ikke satt</span>
-                      )}
-                    </td>
-                    <td className="p-4 text-right">
-                      <div className="flex gap-2 justify-end">
-                        {/* Accounting System Button */}
-                        {client.accountingSystem && (
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => {
-                              const url = getAccountingSystemUrl(client.accountingSystem!, client.accountingSystemUrl);
-                              if (url) window.open(url, '_blank');
-                            }}
-                            className="flex items-center gap-1"
-                            data-testid={`button-accounting-system-${client.id}`}
-                          >
-                            <Building2 className="h-3 w-3" />
-                            {client.accountingSystem}
-                            <ExternalLink className="h-3 w-3" />
-                          </Button>
-                        )}
-                        
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => window.location.href = `/clients/${client.id}`}
-                          data-testid={`button-view-client-${client.id}`}
-                        >
-                          Vis detaljer
-                          <ChevronRight className="h-3 w-3 ml-1" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Mobile Card View */}
-        <div className="md:hidden space-y-3 p-4">
-          {sortedClients.map((client) => (
-            <Card 
-              key={client.id} 
-              className="border border-gray-100 shadow-none hover:shadow-sm transition-shadow"
-              data-testid={`card-client-mobile-${client.id}`}
-            >
-              <CardContent className="p-4">
-                <div className="space-y-3">
-                  {/* Client name and org number */}
-                  <div>
-                    <div className="font-medium text-gray-900" data-testid={`text-client-name-mobile-${client.id}`}>
-                      {client.name}
-                    </div>
-                    {client.orgNumber && (
-                      <div className="text-sm text-gray-500">
-                        Org.nr: {client.orgNumber}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Task badges */}
-                  <div className="flex gap-2">
-                    {client.openTasksCount > 0 && (
-                      <Badge variant="secondary" className="text-xs" data-testid={`badge-open-tasks-mobile-${client.id}`}>
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        {client.openTasksCount} åpne
-                      </Badge>
-                    )}
-                    {client.overdueTasksCount > 0 && (
-                      <Badge variant="destructive" className="text-xs" data-testid={`badge-overdue-tasks-mobile-${client.id}`}>
-                        <AlertTriangle className="h-3 w-3 mr-1" />
-                        {client.overdueTasksCount} forfalt
-                      </Badge>
-                    )}
-                  </div>
-
-                  {/* Monthly tasks */}
-                  {client.recurringTasks && client.recurringTasks.length > 0 && (
-                    <div className="space-y-2">
-                      <div className="text-sm font-medium text-gray-700">Denne måneds oppgaver:</div>
-                      <div className="flex flex-wrap gap-1">
-                        {client.recurringTasks.filter(task => task.dueThisMonth).map((task, idx) => (
-                          <Badge 
-                            key={idx}
-                            variant="outline" 
-                            className="text-xs bg-blue-50 text-blue-700 border-blue-300"
-                          >
-                            {task.taskName}
-                          </Badge>
-                        ))}
-                        {client.recurringTasks.filter(task => task.dueThisMonth).length === 0 && (
-                          <span className="text-sm text-gray-500">Ingen forfalt denne måneden</span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Engagement owner */}
-                  {client.engagementOwner && (
-                    <div className="flex items-center text-sm text-gray-600">
-                      <User className="h-4 w-4 mr-2 text-gray-400" />
-                      <span data-testid={`text-engagement-owner-mobile-${client.id}`}>
-                        {client.engagementOwner.firstName} {client.engagementOwner.lastName}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Payroll schedule */}
-                  {client.payrollRunDay && (
-                    <div className="flex items-center text-sm text-gray-600">
-                      <Calendar className="h-4 w-4 mr-2 text-gray-400" />
-                      <span>
-                        Lønn {client.payrollRunDay}. hver måned
-                        {client.payrollRunTime && ` kl ${client.payrollRunTime}`}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Accounting system */}
-                  {client.accountingSystem && (
-                    <div>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="w-full mb-2"
-                        onClick={() => {
-                          const url = getAccountingSystemUrl(client.accountingSystem!, client.accountingSystemUrl);
-                          if (url) window.open(url, '_blank');
-                        }}
-                        data-testid={`button-accounting-system-mobile-${client.id}`}
-                      >
-                        <Building2 className="h-3 w-3 mr-2" />
-                        {client.accountingSystem}
-                        <ExternalLink className="h-3 w-3 ml-2" />
-                      </Button>
-                    </div>
-                  )}
-
-                  {/* Action button */}
-                  <div className="pt-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="w-full"
-                      onClick={() => window.location.href = `/clients/${client.id}`}
-                      data-testid={`button-view-client-mobile-${client.id}`}
-                    >
-                      Vis detaljer
-                      <ChevronRight className="h-3 w-3 ml-2" />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </CardContent>
-      </Card>
-    </div>
-  );
+interface TaskOverviewStats {
+  totalTasks: number;
+  overdueTasks: number;
+  todayTasks: number;
+  thisWeekTasks: number;
 }
 
 // Helper function to get accounting system URL
-function getAccountingSystemUrl(accountingSystem: string, customUrl?: string): string | null {
-  if (customUrl) return customUrl;
+function getAccountingSystemUrl(system?: string, customUrl?: string): string | null {
+  if (system === 'Other' && customUrl) return customUrl;
   
   const urls: Record<string, string> = {
     'Fiken': 'https://fiken.no',
     'Tripletex': 'https://tripletex.no',
     'Unimicro': 'https://unimicro.no',
     'PowerOffice': 'https://poweroffice.no',
-    'Conta': 'https://conta.no',
-    'Visma': 'https://visma.no',
-    'Mamut': 'https://mamut.com'
+    'Conta': 'https://conta.no'
   };
   
-  return urls[accountingSystem] || null;
+  return urls[system || ''] || null;
+}
+
+// Component to render accounting system link
+function AccountingSystemLink({ system, customUrl }: { system?: string; customUrl?: string }) {
+  const url = getAccountingSystemUrl(system, customUrl);
+  
+  if (!system || !url) {
+    return <span className="text-gray-400 text-sm">Ikke satt</span>;
+  }
+  
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      className="h-7 px-2 text-xs"
+      onClick={() => window.open(url, '_blank')}
+      data-testid={`button-accounting-system-${system.toLowerCase()}`}
+    >
+      <Building2 className="h-3 w-3 mr-1" />
+      {system}
+      <ExternalLink className="h-3 w-3 ml-1" />
+    </Button>
+  );
+}
+
+// Helper function to format date
+function formatDate(dateString?: string): string {
+  if (!dateString) return 'Ikke satt';
+  
+  const date = new Date(dateString);
+  const today = new Date();
+  const diffTime = date.getTime() - today.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  if (diffDays < 0) {
+    return `${Math.abs(diffDays)} dager forsinket`;
+  } else if (diffDays === 0) {
+    return 'I dag';
+  } else if (diffDays === 1) {
+    return 'I morgen';
+  } else if (diffDays <= 7) {
+    return `Om ${diffDays} dager`;
+  } else {
+    return date.toLocaleDateString('nb-NO');
+  }
+}
+
+// Helper function to get status badge
+function getStatusBadge(status: string, isOverdue: boolean) {
+  if (isOverdue && status !== 'completed' && status !== 'done') {
+    return <Badge className="bg-red-100 text-red-800">Forsinket</Badge>;
+  }
+  
+  switch (status.toLowerCase()) {
+    case 'completed':
+    case 'done':
+    case 'ferdig':
+      return <Badge className="bg-green-100 text-green-800">Ferdig</Badge>;
+    case 'in_progress':
+    case 'pågår':
+      return <Badge className="bg-blue-100 text-blue-800">Pågår</Badge>;
+    case 'pending':
+    case 'open':
+    case 'ikke_startet':
+    default:
+      return <Badge className="bg-yellow-100 text-yellow-800">Venter</Badge>;
+  }
+}
+
+export default function DashboardClientTasks() {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<'dueDate' | 'client' | 'task'>('dueDate');
+
+  // Fetch all tasks with client information
+  const { data: tasks = [], isLoading } = useQuery<TaskWithClient[]>({
+    queryKey: ['/api/tasks/overview'],
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/tasks/overview');
+      if (!response.ok) {
+        throw new Error('Failed to fetch task overview');
+      }
+      return response.json();
+    }
+  });
+
+  // Calculate statistics
+  const stats: TaskOverviewStats = React.useMemo(() => {
+    const today = new Date();
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay());
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+
+    return {
+      totalTasks: tasks.length,
+      overdueTasks: tasks.filter(task => task.isOverdue).length,
+      todayTasks: tasks.filter(task => {
+        if (!task.dueDate) return false;
+        const dueDate = new Date(task.dueDate);
+        return dueDate.toDateString() === today.toDateString();
+      }).length,
+      thisWeekTasks: tasks.filter(task => {
+        if (!task.dueDate) return false;
+        const dueDate = new Date(task.dueDate);
+        return dueDate >= startOfWeek && dueDate <= endOfWeek;
+      }).length
+    };
+  }, [tasks]);
+
+  // Filter and sort tasks
+  const filteredAndSortedTasks = React.useMemo(() => {
+    let filtered = tasks.filter(task => {
+      const matchesSearch = !searchTerm || 
+        task.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        task.title.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesStatus = statusFilter === 'all' || 
+        (statusFilter === 'overdue' && task.isOverdue) ||
+        (statusFilter === 'today' && task.dueDate && new Date(task.dueDate).toDateString() === new Date().toDateString()) ||
+        task.status.toLowerCase() === statusFilter;
+      
+      return matchesSearch && matchesStatus;
+    });
+
+    // Sort tasks
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'client':
+          return a.clientName.localeCompare(b.clientName);
+        case 'task':
+          return a.title.localeCompare(b.title);
+        case 'dueDate':
+        default:
+          if (!a.dueDate && !b.dueDate) return 0;
+          if (!a.dueDate) return 1;
+          if (!b.dueDate) return -1;
+          return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+      }
+    });
+
+    return filtered;
+  }, [tasks, searchTerm, statusFilter, sortBy]);
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex justify-center">
+            <div className="text-gray-500">Laster oppgaver...</div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-600">Totale oppgaver</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.totalTasks}</p>
+              </div>
+              <Calendar className="h-6 w-6 text-blue-500" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-600">Forsinkede</p>
+                <p className="text-2xl font-bold text-red-600">{stats.overdueTasks}</p>
+              </div>
+              <AlertTriangle className="h-6 w-6 text-red-500" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-600">I dag</p>
+                <p className="text-2xl font-bold text-orange-600">{stats.todayTasks}</p>
+              </div>
+              <Clock className="h-6 w-6 text-orange-500" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-600">Denne uken</p>
+                <p className="text-2xl font-bold text-green-600">{stats.thisWeekTasks}</p>
+              </div>
+              <CheckCircle className="h-6 w-6 text-green-500" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Filters and Search */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Søk etter klient eller oppgave..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9"
+                  data-testid="input-search-tasks"
+                />
+              </div>
+            </div>
+            
+            <div className="flex gap-2">
+              <select
+                className="px-3 py-2 border rounded-md text-sm"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                data-testid="select-status-filter"
+              >
+                <option value="all">Alle oppgaver</option>
+                <option value="overdue">Forsinkede</option>
+                <option value="today">I dag</option>
+                <option value="pending">Venter</option>
+                <option value="in_progress">Pågår</option>
+                <option value="completed">Ferdig</option>
+              </select>
+              
+              <select
+                className="px-3 py-2 border rounded-md text-sm"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                data-testid="select-sort-by"
+              >
+                <option value="dueDate">Sorter etter frist</option>
+                <option value="client">Sorter etter klient</option>
+                <option value="task">Sorter etter oppgave</option>
+              </select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Tasks List */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold">Alle oppgaver</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {filteredAndSortedTasks.length === 0 ? (
+            <div className="p-6 text-center text-gray-500">
+              Ingen oppgaver funnet
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-100">
+                    <th className="text-left p-4 text-sm font-medium text-gray-700">Klient</th>
+                    <th className="text-left p-4 text-sm font-medium text-gray-700">Oppgave</th>
+                    <th className="text-left p-4 text-sm font-medium text-gray-700">Frist</th>
+                    <th className="text-left p-4 text-sm font-medium text-gray-700">Status</th>
+                    <th className="text-left p-4 text-sm font-medium text-gray-700">Regnskapssystem</th>
+                    <th className="text-left p-4 text-sm font-medium text-gray-700">Ansvarlig</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredAndSortedTasks.map((task) => (
+                    <tr 
+                      key={task.id} 
+                      className="border-b border-gray-50 hover:bg-gray-50 transition-colors"
+                      data-testid={`row-task-${task.id}`}
+                    >
+                      <td className="p-4">
+                        <div>
+                          <div className="font-medium text-gray-900">{task.clientName}</div>
+                          {task.clientOrgNumber && (
+                            <div className="text-sm text-gray-500">Org.nr: {task.clientOrgNumber}</div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <div>
+                          <div className="font-medium text-gray-900">{task.title}</div>
+                          {task.description && (
+                            <div className="text-sm text-gray-500">{task.description}</div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <div className={`text-sm ${task.isOverdue ? 'text-red-600 font-medium' : 'text-gray-600'}`}>
+                          {formatDate(task.dueDate)}
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        {getStatusBadge(task.status, task.isOverdue)}
+                      </td>
+                      <td className="p-4">
+                        <AccountingSystemLink 
+                          system={task.accountingSystem} 
+                          customUrl={task.accountingSystemUrl}
+                        />
+                      </td>
+                      <td className="p-4">
+                        <div className="text-sm text-gray-600">
+                          {task.assigneeName || 'Ikke tildelt'}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
 }

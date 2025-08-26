@@ -441,6 +441,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/tasks/overview", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const tasksOverview = await storage.getTasksOverviewWithClients(req.user!.tenantId);
+      res.json(tasksOverview);
+    } catch (error: any) {
+      res.status(500).json({ message: "Feil ved henting av oppgaveoversikt: " + error.message });
+    }
+  });
+
   app.get("/api/tasks/today", authenticateToken, async (req: AuthRequest, res) => {
     try {
       const tasks = await storage.getTodaysTasks(req.user!.tenantId);

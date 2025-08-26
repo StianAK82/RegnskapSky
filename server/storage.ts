@@ -300,6 +300,80 @@ export class DatabaseStorage implements IStorage {
     return allTasks.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }
 
+  async getTasksOverviewWithClients(tenantId: string): Promise<any[]> {
+    try {
+      // Get all tasks with client and user information
+      const tasksWithClients = await db
+        .select({
+          id: tasks.id,
+          title: tasks.title,
+          description: tasks.description,
+          status: tasks.status,
+          priority: tasks.priority,
+          dueDate: tasks.dueDate,
+          clientId: tasks.clientId,
+          assignedTo: tasks.assignedTo,
+          createdAt: tasks.createdAt,
+          source: sql<string>`'manual'`.as('source'),
+          clientName: clients.name,
+          clientOrgNumber: clients.orgNumber,
+          accountingSystem: clients.accountingSystem,
+          accountingSystemUrl: clients.accountingSystemUrl,
+          assigneeName: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`.as('assigneeName')
+        })
+        .from(tasks)
+        .leftJoin(clients, eq(tasks.clientId, clients.id))
+        .leftJoin(users, eq(tasks.assignedTo, users.id))
+        .where(eq(tasks.tenantId, tenantId));
+
+      // Get client tasks with client and user information
+      const clientTasksWithClients = await db
+        .select({
+          id: clientTasks.id,
+          title: clientTasks.taskName,
+          description: clientTasks.description,
+          status: clientTasks.status,
+          priority: sql<string>`'medium'`.as('priority'),
+          dueDate: clientTasks.dueDate,
+          clientId: clientTasks.clientId,
+          assignedTo: clientTasks.assignedTo,
+          createdAt: clientTasks.createdAt,
+          source: sql<string>`'client_schedule'`.as('source'),
+          clientName: clients.name,
+          clientOrgNumber: clients.orgNumber,
+          accountingSystem: clients.accountingSystem,
+          accountingSystemUrl: clients.accountingSystemUrl,
+          assigneeName: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`.as('assigneeName')
+        })
+        .from(clientTasks)
+        .leftJoin(clients, eq(clientTasks.clientId, clients.id))
+        .leftJoin(users, eq(clientTasks.assignedTo, users.id))
+        .where(eq(clientTasks.tenantId, tenantId));
+
+      // Combine all tasks
+      const allTasks = [...tasksWithClients, ...clientTasksWithClients];
+
+      // Add isOverdue flag and format the response
+      const now = new Date();
+      const formattedTasks = allTasks.map(task => ({
+        ...task,
+        isOverdue: task.dueDate ? new Date(task.dueDate) < now && 
+                   !['completed', 'done', 'ferdig'].includes(task.status.toLowerCase()) : false
+      }));
+
+      // Sort by due date (soonest first)
+      return formattedTasks.sort((a, b) => {
+        if (!a.dueDate && !b.dueDate) return 0;
+        if (!a.dueDate) return 1;
+        if (!b.dueDate) return -1;
+        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+      });
+    } catch (error) {
+      console.error('Error getting tasks overview with clients:', error);
+      return [];
+    }
+  }
+
   async getTodaysTasks(tenantId: string): Promise<Task[]> {
     const today = new Date();
     const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
