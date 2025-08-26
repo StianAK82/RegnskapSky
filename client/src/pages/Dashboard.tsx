@@ -12,8 +12,117 @@ import {
   AlertTriangle, 
   CheckCircle,
   TrendingUp,
-  Shield
+  Shield,
+  Building2,
+  PieChart
 } from "lucide-react";
+
+// Component for showing client distribution by accounting system
+function AccountingSystemDistribution() {
+  const { data: clients = [], isLoading } = useQuery({
+    queryKey: ['/api/clients'],
+    queryFn: async () => {
+      const response = await fetch('/api/clients', {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      if (!response.ok) throw new Error('Failed to fetch clients');
+      return response.json();
+    },
+  });
+
+  // Calculate distribution by accounting system
+  const distribution = React.useMemo(() => {
+    const systems: Record<string, number> = {};
+    
+    clients.forEach((client: any) => {
+      const system = client.accountingSystem || 'Ikke satt';
+      systems[system] = (systems[system] || 0) + 1;
+    });
+
+    // Sort by count descending
+    return Object.entries(systems)
+      .map(([system, count]) => ({ system, count }))
+      .sort((a, b) => b.count - a.count);
+  }, [clients]);
+
+  const totalClients = clients.length;
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-gray-900">
+            <PieChart className="h-5 w-5 text-gray-600" />
+            Regnskapssystem fordeling
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="animate-pulse">
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                <div className="h-3 bg-gray-100 rounded w-1/2"></div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-gray-900">
+          <PieChart className="h-5 w-5 text-gray-600" />
+          Regnskapssystem fordeling
+        </CardTitle>
+        <CardDescription className="text-gray-600">
+          Oversikt over klienter per regnskapssystem
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-3">
+          {distribution.map(({ system, count }) => {
+            const percentage = totalClients > 0 ? Math.round((count / totalClients) * 100) : 0;
+            
+            return (
+              <div key={system} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <Building2 className="h-4 w-4 text-gray-500" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{system}</p>
+                    <p className="text-xs text-gray-500">{percentage}% av alle klienter</p>
+                  </div>
+                </div>
+                <Badge className="bg-gray-100 text-gray-700 border border-gray-200 text-sm">
+                  {count}
+                </Badge>
+              </div>
+            );
+          })}
+          
+          {totalClients === 0 && (
+            <div className="text-center py-4 text-gray-500">
+              <p>Ingen klienter registrert ennå</p>
+            </div>
+          )}
+        </div>
+        
+        {totalClients > 0 && (
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-600">Totalt antall klienter:</span>
+              <span className="font-medium text-gray-900">{totalClients}</span>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 // Component for showing completed activities (admin only)
 function CompletedActivities() {
@@ -262,6 +371,10 @@ export default function Dashboard() {
             </Card>
           </section>
 
+          {/* Accounting System Distribution */}
+          <section>
+            <AccountingSystemDistribution />
+          </section>
         </div>
 
         {/* Client Tasks Overview */}
