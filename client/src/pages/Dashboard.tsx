@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AppShell } from "@/components/layout/AppShell";
-import { DashboardClientTasks } from "@/components/dashboard/DashboardClientTasks";
+import DashboardClientTasks from "@/components/dashboard/DashboardClientTasks";
 import { 
   Users, 
   Clock, 
@@ -36,10 +36,14 @@ function AccountingSystemDistribution() {
   const distribution = React.useMemo(() => {
     const systems: Record<string, number> = {};
     
+    console.log('Accounting system distribution - clients:', clients);
+    
     clients.forEach((client: any) => {
       const system = client.accountingSystem || 'Ikke satt';
       systems[system] = (systems[system] || 0) + 1;
     });
+
+    console.log('Accounting system distribution - systems:', systems);
 
     // Sort by count descending
     return Object.entries(systems)
