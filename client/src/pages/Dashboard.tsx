@@ -348,46 +348,37 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <section className="lg:col-span-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-gray-900">
-                  <TrendingUp className="h-5 w-5 text-gray-600" />
-                  Hurtighandlinger
-                </CardTitle>
-                <CardDescription className="text-gray-600">Vanlige oppgaver og handlinger</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                  <button className="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 group h-[100px]">
-                    <Users className="h-6 w-6 text-gray-400 mb-2 group-hover:text-gray-600" />
-                    <span className="text-xs font-medium text-gray-700 text-center leading-tight">Opprett klient</span>
-                  </button>
-                  
-                  <button className="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 group h-[100px]">
-                    <TrendingUp className="h-6 w-6 text-gray-400 mb-2 group-hover:text-gray-600" />
-                    <span className="text-xs font-medium text-gray-700 text-center leading-tight">Generer rapport</span>
-                  </button>
-                  
-                  <button 
-                    onClick={() => window.open('https://www.verified.eu/no', '_blank')}
-                    className="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 group h-[100px]"
-                  >
-                    <Shield className="h-6 w-6 text-gray-400 mb-2 group-hover:text-gray-600" />
-                    <span className="text-xs font-medium text-gray-700 text-center leading-tight">AML/KYC</span>
-                  </button>
-                </div>
-              </CardContent>
-            </Card>
-          </section>
-
-          {/* Accounting System Distribution */}
-          <section>
-            <AccountingSystemDistribution />
-          </section>
-        </div>
+        {/* Hurtighandlinger */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-gray-900">
+              <TrendingUp className="h-5 w-5 text-gray-600" />
+              Hurtighandlinger
+            </CardTitle>
+            <CardDescription className="text-gray-600">Vanlige oppgaver og handlinger</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
+              <button className="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 group h-[100px]">
+                <Users className="h-6 w-6 text-gray-400 mb-2 group-hover:text-gray-600" />
+                <span className="text-xs font-medium text-gray-700 text-center leading-tight">Opprett klient</span>
+              </button>
+              
+              <button className="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 group h-[100px]">
+                <TrendingUp className="h-6 w-6 text-gray-400 mb-2 group-hover:text-gray-600" />
+                <span className="text-xs font-medium text-gray-700 text-center leading-tight">Generer rapport</span>
+              </button>
+              
+              <button 
+                onClick={() => window.open('https://www.verified.eu/no', '_blank')}
+                className="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 group h-[100px]"
+              >
+                <Shield className="h-6 w-6 text-gray-400 mb-2 group-hover:text-gray-600" />
+                <span className="text-xs font-medium text-gray-700 text-center leading-tight">AML/KYC</span>
+              </button>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Client Tasks Overview */}
         <div>
