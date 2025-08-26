@@ -427,7 +427,7 @@ export default function DashboardClientTasks() {
                     <th className="text-left p-4 text-sm font-medium text-gray-700">Status</th>
                     <th className="text-left p-4 text-sm font-medium text-gray-700">Regnskapssystem</th>
                     <th className="text-left p-4 text-sm font-medium text-gray-700">Ansvarlig</th>
-                    <th className="text-left p-4 text-sm font-medium text-gray-700">Handlinger</th>
+                    <th className="text-left p-4 text-sm font-medium text-gray-700 min-w-[120px]">Handlinger</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -472,7 +472,7 @@ export default function DashboardClientTasks() {
                           {task.assigneeName || 'Ikke tildelt'}
                         </div>
                       </td>
-                      <td className="p-4">
+                      <td className="p-4 min-w-[120px]">
                         <CompleteTaskDialog task={task} />
                       </td>
                     </tr>
