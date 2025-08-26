@@ -187,9 +187,14 @@ function CompleteTaskDialog({ task }: { task: TaskWithClient }) {
     });
   };
 
+  // Debug: Log task status
+  console.log(`Task ${task.title} has status: ${task.status}`);
+  
   // Don't show button if task is already completed
   if (['completed', 'done', 'ferdig'].includes(task.status.toLowerCase())) {
-    return null;
+    return (
+      <span className="text-xs text-gray-500">Fullført</span>
+    );
   }
 
   return (
