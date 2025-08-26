@@ -6,6 +6,8 @@ import { authenticateToken, requireRole, requireSameTenant, hashPassword, compar
 import { categorizeDocument, generateAccountingSuggestions, askAccountingQuestion, analyzeDocumentImage } from "./services/openai";
 import { sendTaskNotification, sendWelcomeEmail, sendSubscriptionNotification } from "./services/sendgrid";
 import { bronnoyundService } from "./services/bronnoyund";
+import multer from "multer";
+import * as XLSX from "xlsx";
 import { 
   insertUserSchema, insertTenantSchema, insertClientSchema, insertTaskSchema, 
   insertClientTaskSchema, insertClientResponsibleSchema, insertEmployeeSchema,
@@ -26,6 +28,24 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 });
 
 // bronnoyundService is imported as default export
+
+// Configure multer for file uploads
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel',
+      'text/csv'
+    ];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only Excel and CSV files are allowed'));
+    }
+  }
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
@@ -342,6 +362,191 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(tasks);
     } catch (error: any) {
       res.status(500).json({ message: "Feil ved henting av oppgaver: " + error.message });
+    }
+  });
+
+  // Excel template download
+  app.get("/api/clients/excel-template", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      // Create workbook with sample data
+      const workbook = XLSX.utils.book_new();
+      
+      // Define column headers
+      const headers = [
+        'Navn', 'Organisasjonsnummer', 'E-post', 'Telefon', 
+        'Adresse', 'Postnummer', 'Poststed', 'Regnskapssystem'
+      ];
+      
+      // Sample data
+      const sampleData = [
+        headers,
+        [
+          'Eksempel AS', '123456789', 'post@eksempel.no', '12345678',
+          'Eksempelgate 1', '0123', 'Oslo', 'Fiken'
+        ],
+        [
+          'Test Bedrift AS', '987654321', 'kontakt@test.no', '87654321',
+          'Testveien 2', '0456', 'Bergen', 'Tripletex'
+        ]
+      ];
+      
+      // Create worksheet
+      const worksheet = XLSX.utils.aoa_to_sheet(sampleData);
+      
+      // Set column widths
+      worksheet['!cols'] = [
+        { width: 20 }, // Navn
+        { width: 15 }, // Organisasjonsnummer
+        { width: 25 }, // E-post
+        { width: 12 }, // Telefon
+        { width: 20 }, // Adresse
+        { width: 10 }, // Postnummer
+        { width: 15 }, // Poststed
+        { width: 15 }  // Regnskapssystem
+      ];
+      
+      // Style the header row
+      const headerRange = XLSX.utils.decode_range(worksheet['!ref'] || 'A1:H1');
+      for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
+        const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+        if (!worksheet[cellAddress]) continue;
+        worksheet[cellAddress].s = {
+          font: { bold: true },
+          fill: { fgColor: { rgb: "EFEFEF" } }
+        };
+      }
+      
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Klienter");
+      
+      // Generate Excel buffer
+      const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+      
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', 'attachment; filename="klient-import-mal.xlsx"');
+      res.send(buffer);
+    } catch (error: any) {
+      console.error('Error generating Excel template:', error);
+      res.status(500).json({ message: "Feil ved generering av Excel-mal: " + error.message });
+    }
+  });
+
+  // Excel import
+  app.post("/api/clients/import-excel", authenticateToken, upload.single('file'), async (req: AuthRequest, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "Ingen fil lastet opp" });
+      }
+
+      const user = req.user!;
+      const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+      if (jsonData.length < 2) {
+        return res.status(400).json({ message: "Excel-filen må inneholde minst en rad med data i tillegg til overskrifter" });
+      }
+
+      const headers = jsonData[0] as string[];
+      const rows = jsonData.slice(1) as any[][];
+
+      // Map column indices
+      const columnMap: Record<string, number> = {};
+      headers.forEach((header, index) => {
+        const normalizedHeader = header.toLowerCase().trim();
+        if (normalizedHeader.includes('navn')) columnMap.name = index;
+        if (normalizedHeader.includes('organisasjon') || normalizedHeader.includes('orgnr')) columnMap.orgNumber = index;
+        if (normalizedHeader.includes('e-post') || normalizedHeader.includes('email')) columnMap.email = index;
+        if (normalizedHeader.includes('telefon') || normalizedHeader.includes('phone')) columnMap.phone = index;
+        if (normalizedHeader.includes('adresse') || normalizedHeader.includes('address')) columnMap.address = index;
+        if (normalizedHeader.includes('postnummer') || normalizedHeader.includes('zip')) columnMap.postalCode = index;
+        if (normalizedHeader.includes('poststed') || normalizedHeader.includes('city')) columnMap.city = index;
+        if (normalizedHeader.includes('regnskapssystem') || normalizedHeader.includes('accounting')) columnMap.accountingSystem = index;
+      });
+
+      // Validate required columns
+      const requiredColumns = ['name', 'orgNumber', 'email', 'phone'];
+      const missingColumns = requiredColumns.filter(col => columnMap[col] === undefined);
+      
+      if (missingColumns.length > 0) {
+        return res.status(400).json({ 
+          message: `Manglende påkrevde kolonner: ${missingColumns.join(', ')}`
+        });
+      }
+
+      let imported = 0;
+      let duplicates = 0;
+      const errors: string[] = [];
+
+      // Get existing clients to check for duplicates
+      const existingClients = await storage.getClientsByTenant(user.tenantId);
+      const existingOrgNumbers = new Set(existingClients.map(c => c.orgNumber).filter(Boolean));
+
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const rowNumber = i + 2; // +2 because Excel rows are 1-indexed and we skip header
+
+        try {
+          // Skip empty rows
+          if (!row || row.every(cell => !cell)) continue;
+
+          const clientData = {
+            name: row[columnMap.name]?.toString().trim(),
+            orgNumber: row[columnMap.orgNumber]?.toString().trim(),
+            email: row[columnMap.email]?.toString().trim(),
+            phone: row[columnMap.phone]?.toString().trim(),
+            address: row[columnMap.address]?.toString().trim() || '',
+            postalCode: row[columnMap.postalCode]?.toString().trim() || '',
+            city: row[columnMap.city]?.toString().trim() || '',
+            accountingSystem: row[columnMap.accountingSystem]?.toString().trim() || 'Annet',
+            tenantId: user.tenantId,
+            isActive: true
+          };
+
+          // Validate required fields
+          if (!clientData.name || !clientData.orgNumber || !clientData.email || !clientData.phone) {
+            errors.push(`Rad ${rowNumber}: Mangler påkrevde felter`);
+            continue;
+          }
+
+          // Validate organization number format (9 digits)
+          if (!/^\d{9}$/.test(clientData.orgNumber)) {
+            errors.push(`Rad ${rowNumber}: Organisasjonsnummer må være 9 siffer`);
+            continue;
+          }
+
+          // Check for duplicates
+          if (existingOrgNumbers.has(clientData.orgNumber)) {
+            duplicates++;
+            continue;
+          }
+
+          // Validate email format
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(clientData.email)) {
+            errors.push(`Rad ${rowNumber}: Ugyldig e-postformat`);
+            continue;
+          }
+
+          // Create client
+          await storage.createClient(clientData);
+          existingOrgNumbers.add(clientData.orgNumber);
+          imported++;
+
+        } catch (error: any) {
+          errors.push(`Rad ${rowNumber}: ${error.message}`);
+        }
+      }
+
+      res.json({
+        success: true,
+        imported,
+        duplicates,
+        errors: errors.slice(0, 10) // Limit to first 10 errors
+      });
+
+    } catch (error: any) {
+      console.error('Error importing Excel file:', error);
+      res.status(500).json({ message: "Feil ved import av Excel-fil: " + error.message });
     }
   });
 

@@ -19,6 +19,7 @@ import { z } from 'zod';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { Users, FileText } from 'lucide-react';
+import { ExcelImportDialog } from '@/components/clients/ExcelImportDialog';
 
 interface Client {
   id: string;
@@ -428,6 +429,7 @@ export default function Clients() {
             </div>
             
             <div className="flex items-center space-x-4">
+              <ExcelImportDialog />
             </div>
             
             <Dialog open={isCreateOpen || !!editingClient} onOpenChange={handleDialogClose}>
