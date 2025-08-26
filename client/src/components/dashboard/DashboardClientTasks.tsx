@@ -357,57 +357,6 @@ export default function DashboardClientTasks() {
 
   return (
     <div className="space-y-4">
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-600">Totale oppgaver</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalTasks}</p>
-              </div>
-              <Calendar className="h-6 w-6 text-blue-500" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-600">Forsinkede</p>
-                <p className="text-2xl font-bold text-red-600">{stats.overdueTasks}</p>
-              </div>
-              <AlertTriangle className="h-6 w-6 text-red-500" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-600">I dag</p>
-                <p className="text-2xl font-bold text-orange-600">{stats.todayTasks}</p>
-              </div>
-              <Clock className="h-6 w-6 text-orange-500" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-600">Denne uken</p>
-                <p className="text-2xl font-bold text-green-600">{stats.thisWeekTasks}</p>
-              </div>
-              <CheckCircle className="h-6 w-6 text-green-500" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
       {/* Filters and Search */}
       <Card>
         <CardContent className="p-4">
