@@ -431,17 +431,16 @@ export default function Clients() {
             <div className="flex items-center space-x-4">
               <ExcelImportDialog />
               
+              <Button 
+                onClick={handleCreateNew}
+                className="bg-primary hover:bg-blue-700"
+                data-testid="button-create-client"
+              >
+                <i className="fas fa-plus mr-2"></i>
+                Ny klient
+              </Button>
+              
               <Dialog open={isCreateOpen || !!editingClient} onOpenChange={handleDialogClose}>
-              <DialogTrigger asChild>
-                <Button 
-                  onClick={handleCreateNew}
-                  className="bg-primary hover:bg-blue-700"
-                  data-testid="button-create-client"
-                >
-                  <i className="fas fa-plus mr-2"></i>
-                  Ny klient
-                </Button>
-              </DialogTrigger>
               
               <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
