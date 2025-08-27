@@ -430,9 +430,8 @@ export default function Clients() {
             
             <div className="flex items-center space-x-4">
               <ExcelImportDialog />
-            </div>
-            
-            <Dialog open={isCreateOpen || !!editingClient} onOpenChange={handleDialogClose}>
+              
+              <Dialog open={isCreateOpen || !!editingClient} onOpenChange={handleDialogClose}>
               <DialogTrigger asChild>
                 <Button onClick={() => {
                   setEditingClient(null);
@@ -1336,6 +1335,7 @@ export default function Clients() {
                 </Form>
               </DialogContent>
             </Dialog>
+            </div>
           </div>
 
           {/* Clients List */}
