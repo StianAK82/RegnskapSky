@@ -433,13 +433,11 @@ export default function Clients() {
               
               <Dialog open={isCreateOpen || !!editingClient} onOpenChange={handleDialogClose}>
               <DialogTrigger asChild>
-                <Button onClick={() => {
-                  setEditingClient(null);
-                  setRegistrationStep(1);
-                  setCompanyData(null);
-                  form.reset();
-                  setIsCreateOpen(true);
-                }} className="bg-primary hover:bg-blue-700">
+                <Button 
+                  onClick={handleCreateNew}
+                  className="bg-primary hover:bg-blue-700"
+                  data-testid="button-create-client"
+                >
                   <i className="fas fa-plus mr-2"></i>
                   Ny klient
                 </Button>
