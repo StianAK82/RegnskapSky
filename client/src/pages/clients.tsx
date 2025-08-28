@@ -875,27 +875,23 @@ export default function Clients() {
                           />
                         </div>
 
-                        {/* OPPGAVER SECTION WITH SCHEDULING - MOVED HERE FROM ABOVE */}
+                        {/* Task Configuration Section */}
                         <div className="space-y-4">
-                          <h4 className="text-3xl font-bold text-red-600 bg-yellow-200 p-6 text-center">🚨 OPPGAVER MED SCHEMALÄGGNING - NU I STEG 2! 🚨</h4>
+                          <h4 className="font-medium text-gray-900">Oppgaver</h4>
                           <FormField
                             control={form.control}
                             name="tasks"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="text-lg font-medium">Oppgaver</FormLabel>
-                                <div className="space-y-4 border-4 border-red-500 p-4 bg-yellow-100">
-                                  <div className="text-center font-bold text-xl text-purple-600 mb-4">
-                                    DET HÄR ÄR DEN RIKTIGA OPPGAVE-SEKTIONEN MED SCHEMALÄGGNING!
-                                  </div>
+                                <FormLabel>Velg oppgaver for klienten</FormLabel>
+                                <div className="space-y-4">
                                   {TASK_OPTIONS.map((task) => (
-                                    <div key={task.value} className="space-y-3 bg-white p-4 rounded border-2 border-blue-500">
+                                    <div key={task.value} className="space-y-3 p-4 rounded border">
                                       <div className="flex items-center space-x-2">
                                         <Checkbox
                                           id={task.value}
                                           checked={field.value?.includes(task.value) || false}
                                           onCheckedChange={(checked) => {
-                                            console.log(`Checkbox för ${task.value} ändrad till:`, checked);
                                             if (checked) {
                                               field.onChange([...(field.value || []), task.value]);
                                               setTaskSchedules(prev => ({
@@ -917,17 +913,17 @@ export default function Clients() {
                                             }
                                           }}
                                         />
-                                        <Label htmlFor={task.value} className="font-bold text-lg">{task.label}</Label>
+                                        <Label htmlFor={task.value} className="font-medium">{task.label}</Label>
                                         <span className="text-xs text-gray-500">({task.frequency.join(', ')})</span>
-                                        <span className="text-xl font-bold text-red-500 ml-2">
-                                          {field.value?.includes(task.value) ? '✅ VALGT' : '❌ INTE VALGT'}
-                                        </span>
+                                        {field.value?.includes(task.value) && (
+                                          <span className="text-green-600 text-sm">✓ Inaktiv</span>
+                                        )}
                                       </div>
                                       
                                       {field.value?.includes(task.value) && (
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 ml-6 p-4 bg-green-100 rounded-lg border-4 border-green-600">
-                                          <div className="col-span-full text-lg text-green-700 font-bold mb-2">
-                                            🔧 PLANLEGGING FOR {task.label}
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 ml-6 p-4 bg-gray-50 rounded-lg border">
+                                          <div className="col-span-full text-sm text-gray-700 font-medium mb-2">
+                                            Planlegging for {task.label}
                                           </div>
                                           <div>
                                             <Label className="text-sm font-medium">Frekvens</Label>
