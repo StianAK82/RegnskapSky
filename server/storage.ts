@@ -25,6 +25,7 @@ export interface IStorage {
   getAllUsersWithTenants(): Promise<any[]>;
 
   // Tenant management
+  getAllTenants(): Promise<Tenant[]>;
   getTenant(id: string): Promise<Tenant | undefined>;
   createTenant(tenant: InsertTenant): Promise<Tenant>;
 
@@ -205,6 +206,10 @@ export class DatabaseStorage implements IStorage {
       .from(users)
       .leftJoin(tenants, eq(users.tenantId, tenants.id))
       .orderBy(desc(users.createdAt));
+  }
+
+  async getAllTenants(): Promise<Tenant[]> {
+    return await db.select().from(tenants);
   }
 
   async getTenant(id: string): Promise<Tenant | undefined> {

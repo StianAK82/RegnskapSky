@@ -49,6 +49,128 @@ const upload = multer({
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
+  // Billing routes for invoicing new customers
+  app.get('/api/billing/invoices', authenticateToken, async (req, res) => {
+    try {
+      // For now, return mock invoices - integrate with actual billing system later
+      const mockInvoices = [
+        {
+          id: '1',
+          tenantId: req.user.tenantId,
+          customerName: 'Testfirma AS',
+          customerEmail: 'test@testfirma.no',
+          amount: 799,
+          status: 'paid',
+          dueDate: new Date().toISOString(),
+          invoiceDate: new Date().toISOString(),
+          description: 'RegnskapsAI - Månedlig abonnement',
+          items: []
+        }
+      ];
+      res.json(mockInvoices);
+    } catch (error) {
+      console.error('Error fetching invoices:', error);
+      res.status(500).json({ error: 'Failed to fetch invoices' });
+    }
+  });
+
+  app.post('/api/billing/invoices', authenticateToken, async (req, res) => {
+    try {
+      const { customerName, customerEmail, amount, description, dueDate } = req.body;
+      
+      // Here you would integrate with a billing system like Stripe Billing, 
+      // Invoice Ninja, or create your own invoice management
+      const newInvoice = {
+        id: Date.now().toString(),
+        tenantId: req.user.tenantId,
+        customerName,
+        customerEmail,
+        amount,
+        status: 'draft',
+        dueDate,
+        invoiceDate: new Date().toISOString(),
+        description,
+        items: []
+      };
+
+      // TODO: Send email with invoice using SendGrid
+      console.log('Creating invoice for:', customerName, customerEmail, amount);
+      
+      res.json(newInvoice);
+    } catch (error) {
+      console.error('Error creating invoice:', error);
+      res.status(500).json({ error: 'Failed to create invoice' });
+    }
+  });
+
+  app.post('/api/billing/invoices/:id/send', authenticateToken, async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      // TODO: Send invoice email to customer
+      console.log('Sending invoice:', id);
+      
+      res.json({ message: 'Invoice sent successfully' });
+    } catch (error) {
+      console.error('Error sending invoice:', error);
+      res.status(500).json({ error: 'Failed to send invoice' });
+    }
+  });
+
+  // Owner dashboard metrics
+  app.get('/api/owner/metrics', authenticateToken, async (req, res) => {
+    try {
+      // Check if user is system owner
+      const user = req.user;
+      if (user.email !== 'stian@zaldo.no') {
+        return res.status(403).json({ error: 'Access denied - owner only' });
+      }
+
+      const tenants = await storage.getAllTenants();
+      const totalTenants = tenants.length;
+      const activeTenants = tenants.filter(t => t.isActive).length;
+      
+      // Calculate revenue (799 kr per active tenant)
+      const monthlyRevenue = activeTenants * 799;
+      const totalRevenue = monthlyRevenue; // Simplified for now
+      
+      // Mock subscription data for now
+      const subscriptions = {
+        active: activeTenants,
+        cancelled: Math.max(0, totalTenants - activeTenants),
+        trial: Math.floor(activeTenants * 0.1) // 10% in trial
+      };
+
+      // Recent signups (last 10 tenants)
+      const recentSignups = tenants
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 10)
+        .map(tenant => ({
+          id: tenant.id,
+          companyName: tenant.name,
+          email: tenant.contactEmail || 'ikke oppgitt',
+          plan: 'Standard - 799 kr/måned',
+          status: tenant.isActive ? 'active' : 'trial',
+          signupDate: tenant.createdAt,
+          revenue: 799
+        }));
+
+      const metrics = {
+        totalTenants,
+        activeTenants,
+        totalRevenue,
+        monthlyRevenue,
+        subscriptions,
+        recentSignups
+      };
+
+      res.json(metrics);
+    } catch (error) {
+      console.error('Error fetching owner metrics:', error);
+      res.status(500).json({ error: 'Failed to fetch metrics' });
+    }
+  });
+
   // Authentication routes
   app.post("/api/auth/register", async (req, res) => {
     try {

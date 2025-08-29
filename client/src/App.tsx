@@ -21,6 +21,8 @@ import Reports from "@/pages/reports";
 import Subscriptions from "@/pages/subscriptions";
 import Subscribe from "@/pages/subscribe";
 import AdminSubscriptions from "@/pages/AdminSubscriptions";
+import OwnerDashboard from "@/pages/OwnerDashboard";
+import Billing from "@/pages/Billing";
 import NotFound from "@/pages/not-found";
 
 function AuthenticatedRoutes() {
@@ -165,8 +167,24 @@ function AuthenticatedRoutes() {
           );
         }} 
       />
-
-
+      
+      <Route 
+        path="/owner/dashboard" 
+        component={() => (
+          <ProtectedRoute allowedRoles={['admin']}>
+            <OwnerDashboard />
+          </ProtectedRoute>
+        )} 
+      />
+      
+      <Route 
+        path="/billing" 
+        component={() => (
+          <ProtectedRoute allowedRoles={['admin']}>
+            <Billing />
+          </ProtectedRoute>
+        )} 
+      />
 
       <Route path="/:rest*" component={NotFound} />
     </Switch>
