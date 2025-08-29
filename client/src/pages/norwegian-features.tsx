@@ -258,7 +258,7 @@ export default function NorwegianFeatures() {
                             <span>Kjør AML-sjekk</span>
                             <div className="flex items-center ml-2 pl-2 border-l">
                               <img 
-                                src={import.meta.env.BASE_URL + 'attached_assets/Verified Logo (Blue)_1756495941883.png'} 
+                                src="/verified-logo.png" 
                                 alt="Powered by Verified" 
                                 className="h-4 w-auto"
                               />

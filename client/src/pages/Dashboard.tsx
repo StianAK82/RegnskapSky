@@ -378,7 +378,7 @@ export default function Dashboard() {
                 <span className="text-xs font-medium text-gray-700 text-center leading-tight">AML/KYC</span>
                 <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2">
                   <img 
-                    src={import.meta.env.BASE_URL + 'attached_assets/Verified Logo (Blue)_1756495941883.png'} 
+                    src="/verified-logo.png" 
                     alt="Powered by Verified" 
                     className="h-2 w-auto opacity-60 group-hover:opacity-80"
                   />
