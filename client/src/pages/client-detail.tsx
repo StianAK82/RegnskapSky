@@ -477,9 +477,17 @@ export default function ClientDetail() {
                 onClick={() => window.open('https://www.verified.eu/no', '_blank')}
                 variant="outline"
                 data-testid="button-aml-kyc"
+                className="flex items-center space-x-2"
               >
                 <ExternalLink className="mr-2 h-4 w-4" />
-                Utfør AML/KYC
+                <span>Utfør AML/KYC</span>
+                <div className="flex items-center ml-2 pl-2 border-l">
+                  <img 
+                    src={import.meta.env.BASE_URL + 'attached_assets/Verified Logo (Blue)_1756495941883.png'} 
+                    alt="Powered by Verified" 
+                    className="h-4 w-auto"
+                  />
+                </div>
               </Button>
               <Button onClick={() => setIsTaskModalOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" />

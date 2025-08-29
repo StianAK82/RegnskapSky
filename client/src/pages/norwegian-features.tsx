@@ -235,7 +235,7 @@ export default function NorwegianFeatures() {
                     </CardHeader>
                     <CardContent>
                       <Button 
-                        className="w-full"
+                        className="w-full flex items-center justify-center space-x-2"
                         disabled={!selectedClient || amlCheckMutation.isPending}
                         onClick={() => {
                           if (selectedClient) {
@@ -250,12 +250,19 @@ export default function NorwegianFeatures() {
                         {amlCheckMutation.isPending ? (
                           <>
                             <Clock className="h-4 w-4 mr-2 animate-spin" />
-                            Sjekker...
+                            <span>Sjekker...</span>
                           </>
                         ) : (
                           <>
                             <Shield className="h-4 w-4 mr-2" />
-                            Kjør AML-sjekk
+                            <span>Kjør AML-sjekk</span>
+                            <div className="flex items-center ml-2 pl-2 border-l">
+                              <img 
+                                src={import.meta.env.BASE_URL + 'attached_assets/Verified Logo (Blue)_1756495941883.png'} 
+                                alt="Powered by Verified" 
+                                className="h-4 w-auto"
+                              />
+                            </div>
                           </>
                         )}
                       </Button>

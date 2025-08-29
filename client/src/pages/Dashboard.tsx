@@ -372,10 +372,17 @@ export default function Dashboard() {
               
               <button 
                 onClick={() => window.open('https://www.verified.eu/no', '_blank')}
-                className="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 group h-[100px] w-[100px]"
+                className="flex flex-col items-center p-2 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 group h-[100px] w-[100px] relative"
               >
-                <Shield className="h-6 w-6 text-gray-400 mb-2 group-hover:text-gray-600" />
+                <Shield className="h-6 w-6 text-gray-400 mb-1 group-hover:text-gray-600" />
                 <span className="text-xs font-medium text-gray-700 text-center leading-tight">AML/KYC</span>
+                <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2">
+                  <img 
+                    src={import.meta.env.BASE_URL + 'attached_assets/Verified Logo (Blue)_1756495941883.png'} 
+                    alt="Powered by Verified" 
+                    className="h-2 w-auto opacity-60 group-hover:opacity-80"
+                  />
+                </div>
               </button>
               
               <button 
