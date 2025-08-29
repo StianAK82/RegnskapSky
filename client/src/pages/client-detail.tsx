@@ -482,11 +482,9 @@ export default function ClientDetail() {
                 <ExternalLink className="mr-2 h-4 w-4" />
                 <span>Utfør AML/KYC</span>
                 <div className="flex items-center ml-2 pl-2 border-l">
-                  <img 
-                    src="/verified-logo.png" 
-                    alt="Powered by Verified" 
-                    className="h-4 w-auto"
-                  />
+                  <span className="text-xs font-bold text-blue-600">
+                    Powered by Verified
+                  </span>
                 </div>
               </Button>
               <Button onClick={() => setIsTaskModalOpen(true)}>
