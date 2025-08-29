@@ -257,9 +257,11 @@ export default function NorwegianFeatures() {
                             <Shield className="h-4 w-4 mr-2" />
                             <span>Kjør AML-sjekk</span>
                             <div className="flex items-center ml-2 pl-2 border-l">
-                              <span className="text-xs font-bold text-blue-600">
-                                Powered by Verified
-                              </span>
+                              <img 
+                                src="/verified-logo.png" 
+                                alt="Powered by Verified" 
+                                className="h-4 w-auto"
+                              />
                             </div>
                           </>
                         )}

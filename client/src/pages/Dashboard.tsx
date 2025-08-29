@@ -377,9 +377,11 @@ export default function Dashboard() {
                 <Shield className="h-6 w-6 text-gray-400 mb-1 group-hover:text-gray-600" />
                 <span className="text-xs font-medium text-gray-700 text-center leading-tight">AML/KYC</span>
                 <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2">
-                  <div className="text-[10px] font-bold text-blue-600 opacity-70 group-hover:opacity-90">
-                    Powered by Verified
-                  </div>
+                  <img 
+                    src="/verified-logo.png" 
+                    alt="Powered by Verified" 
+                    className="h-3 w-auto opacity-70 group-hover:opacity-90"
+                  />
                 </div>
               </button>
               

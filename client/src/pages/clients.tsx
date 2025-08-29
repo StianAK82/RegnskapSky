@@ -1302,9 +1302,11 @@ function ClientListItem({ client, onEdit }: { client: any; onEdit: (client: any)
                 <i className="fas fa-shield-alt mr-1"></i>
                 AML/KYC
                 <div className="flex items-center ml-2 pl-2 border-l border-purple-300">
-                  <span className="text-xs font-bold text-blue-600">
-                    Powered by Verified
-                  </span>
+                  <img 
+                    src="/verified-logo.png" 
+                    alt="Powered by Verified" 
+                    className="h-3 w-auto"
+                  />
                 </div>
               </div>
             </Button>
