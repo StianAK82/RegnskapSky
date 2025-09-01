@@ -111,8 +111,9 @@ export interface IStorage {
 
   // Documents
   getDocumentsByClient(clientId: string): Promise<Document[]>;
-  getDocumentCountByClient(clientId: string): Promise<number>;
+  getDocumentsByTenant(tenantId: string): Promise<Document[]>;
   createDocument(document: InsertDocument): Promise<Document>;
+  getDocumentCountByClient(clientId: string): Promise<number>;
   updateDocument(id: string, updates: Partial<Document>): Promise<Document>;
 
   // Notifications
@@ -631,6 +632,15 @@ export class DatabaseStorage implements IStorage {
 
   async getDocumentsByClient(clientId: string): Promise<Document[]> {
     return db.select().from(documents).where(eq(documents.clientId, clientId)).orderBy(desc(documents.createdAt));
+  }
+
+  async getDocumentsByTenant(tenantId: string): Promise<Document[]> {
+    return db.select().from(documents).where(eq(documents.tenantId, tenantId)).orderBy(desc(documents.createdAt));
+  }
+
+  async createDocument(document: InsertDocument): Promise<Document> {
+    const [newDocument] = await db.insert(documents).values(document).returning();
+    return newDocument;
   }
 
   async getDocumentCountByClient(clientId: string): Promise<number> {

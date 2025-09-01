@@ -2452,8 +2452,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Execute the report based on specification
       const reportData = await executeReport(reportSpec, req.user!.tenantId, storage);
       
-      // Generate CSV output
-      const csvContent = generateCSV(reportData.data);
+      // This will be handled in the result section
       
       // Generate SQL/pseudocode
       const sqlPseudocode = generateSQLPseudocode(reportSpec);
@@ -2461,6 +2460,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate suggested variants
       const variants = generateReportVariants(query);
       
+      // Create CSV and Excel files
+      const csvContent = generateCSV(reportData.data);
+      const excelContent = generateExcel(reportData.data, reportSpec.title);
+      
+      // Save report as document
+      const reportDocument = await storage.createDocument({
+        tenantId: user.tenantId,
+        clientId: null, // System generated report
+        fileName: `${reportSpec.title}_${new Date().toISOString().split('T')[0]}.csv`,
+        fileType: 'text/csv',
+        fileSize: csvContent.length,
+        category: 'Rapporter',
+        processed: true,
+        uploadedBy: user.id,
+        aiSuggestions: { 
+          reportData: reportData.data.slice(0, 5), // Store sample data
+          totals: reportData.totals,
+          query: query 
+        }
+      });
+
+      console.log('Report debug - Created document:', reportDocument.id);
+
       const result = {
         title: reportSpec.title,
         description: reportSpec.description,
@@ -2468,6 +2490,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         data: reportData.data,
         totals: reportData.totals,
         csv: csvContent,
+        excel: excelContent,
+        documentId: reportDocument.id,
         sql: sqlPseudocode,
         variants: variants
       };
@@ -2476,6 +2500,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error('Error generating report:', error);
       res.status(500).json({ message: 'Failed to generate report: ' + error.message });
+    }
+  });
+
+  // Documents routes
+  app.get('/api/documents', authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const user = req.user;
+      const documents = await storage.getDocumentsByTenant(user.tenantId);
+      
+      // Add additional metadata for UI
+      const enrichedDocuments = documents.map(doc => ({
+        ...doc,
+        name: doc.fileName,
+        description: doc.category === 'Rapporter' ? 
+          `Generert rapport - ${doc.fileName}` : 
+          `Dokument - ${doc.fileName}`,
+        size: doc.fileSize || 0,
+        downloadUrl: `/api/documents/${doc.id}/download`
+      }));
+      
+      res.json(enrichedDocuments);
+    } catch (error: any) {
+      console.error('Error fetching documents:', error);
+      res.status(500).json({ message: 'Failed to fetch documents: ' + error.message });
+    }
+  });
+
+  app.get('/api/documents/:id/download', authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const user = req.user;
+      const documentId = req.params.id;
+      
+      // For now, return stored CSV content from aiSuggestions
+      // In a real implementation, you'd store files in object storage
+      const documents = await storage.getDocumentsByTenant(user.tenantId);
+      const document = documents.find(d => d.id === documentId);
+      
+      if (!document) {
+        return res.status(404).json({ message: 'Document not found' });
+      }
+      
+      // Generate CSV content from stored report data
+      let csvContent = '';
+      if (document.aiSuggestions && document.aiSuggestions.reportData) {
+        csvContent = generateCSV(document.aiSuggestions.reportData);
+      } else {
+        csvContent = 'Ingen data tilgjengelig';
+      }
+      
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="${document.fileName}"`);
+      res.send(csvContent);
+    } catch (error: any) {
+      console.error('Error downloading document:', error);
+      res.status(500).json({ message: 'Failed to download document: ' + error.message });
     }
   });
 
@@ -2512,7 +2591,17 @@ async function executeReport(spec: any, tenantId: string, storage: any) {
   console.log('Report debug - Date range:', startDate, 'to', endDate);
   console.log('Report debug - Spec grouping:', spec.gruppering);
   console.log('Report debug - First few entries:', timeEntries.slice(0, 2));
+  console.log('Report debug - timeSpent types:', timeEntries.slice(0, 2).map(e => ({ id: e.id, timeSpent: e.timeSpent, type: typeof e.timeSpent })));
+
+  // Process data for display
+  const { data, totals } = await processReportData(timeEntries, spec);
+  console.log('Report debug - Processed data:', data.slice(0, 2));
+  console.log('Report debug - Totals:', totals);
   
+  return { data, totals };
+}
+
+async function processReportData(timeEntries: any[], spec: any) {
   let data: any[] = [];
   let totals: Record<string, number> = {};
   
@@ -2529,11 +2618,11 @@ async function executeReport(spec: any, tenantId: string, storage: any) {
           'Antall registreringer': 0
         };
       }
-      acc[clientName]['Totale timer'] += entry.timeSpent || 0;
+      acc[clientName]['Totale timer'] += parseFloat(entry.timeSpent) || 0;
       if (entry.billable) {
-        acc[clientName]['Fakturerbare timer'] += entry.timeSpent || 0;
+        acc[clientName]['Fakturerbare timer'] += parseFloat(entry.timeSpent) || 0;
       } else {
-        acc[clientName]['Ikke-fakturerbare timer'] += entry.timeSpent || 0;
+        acc[clientName]['Ikke-fakturerbare timer'] += parseFloat(entry.timeSpent) || 0;
       }
       acc[clientName]['Antall registreringer'] += 1;
       return acc;
@@ -2559,11 +2648,11 @@ async function executeReport(spec: any, tenantId: string, storage: any) {
           'Antall registreringer': 0
         };
       }
-      acc[employeeName]['Totale timer'] += entry.timeSpent || 0;
+      acc[employeeName]['Totale timer'] += parseFloat(entry.timeSpent) || 0;
       if (entry.billable) {
-        acc[employeeName]['Fakturerbare timer'] += entry.timeSpent || 0;
+        acc[employeeName]['Fakturerbare timer'] += parseFloat(entry.timeSpent) || 0;
       } else {
-        acc[employeeName]['Ikke-fakturerbare timer'] += entry.timeSpent || 0;
+        acc[employeeName]['Ikke-fakturerbare timer'] += parseFloat(entry.timeSpent) || 0;
       }
       acc[employeeName]['Antall registreringer'] += 1;
       return acc;
@@ -2583,13 +2672,13 @@ async function executeReport(spec: any, tenantId: string, storage: any) {
       Ansatt: entry.userName || 'Ukjent',
       Klient: entry.clientName || 'Ukjent',
       Beskrivelse: entry.description || '',
-      Timer: entry.timeSpent || 0,
+      Timer: parseFloat(entry.timeSpent) || 0,
       Fakturerbar: entry.billable ? 'Ja' : 'Nei'
     }));
     
     totals = {
-      'Totale timer': timeEntries.reduce((sum: number, entry: any) => sum + (entry.timeSpent || 0), 0),
-      'Fakturerbare timer': timeEntries.filter((e: any) => e.billable).reduce((sum: number, entry: any) => sum + (entry.timeSpent || 0), 0),
+      'Totale timer': timeEntries.reduce((sum: number, entry: any) => sum + (parseFloat(entry.timeSpent) || 0), 0),
+      'Fakturerbare timer': timeEntries.filter((e: any) => e.billable).reduce((sum: number, entry: any) => sum + (parseFloat(entry.timeSpent) || 0), 0),
       'Totale registreringer': timeEntries.length,
       'Unike klienter': new Set(timeEntries.map((e: any) => e.clientId)).size
     };
@@ -2614,6 +2703,12 @@ function generateCSV(data: any[]): string {
   ];
   
   return csvRows.join('\n');
+}
+
+function generateExcel(data: any[], title: string): string {
+  // For now, return CSV format - in production you'd use a library like xlsx
+  const csv = generateCSV(data);
+  return `# ${title}\n# Generert: ${new Date().toLocaleDateString('nb-NO')}\n\n${csv}`;
 }
 
 function generateSQLPseudocode(spec: any): string {

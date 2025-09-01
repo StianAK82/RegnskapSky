@@ -402,7 +402,7 @@ export default function Reports() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="generator">Rapportgenerator</TabsTrigger>
-            <TabsTrigger value="templates">Malede rapporter</TabsTrigger>
+            <TabsTrigger value="templates">Rapport maler</TabsTrigger>
             <TabsTrigger value="completed-tasks">Utførte oppgaver</TabsTrigger>
             <TabsTrigger value="results">Resultater</TabsTrigger>
           </TabsList>
