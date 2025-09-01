@@ -1,0 +1,199 @@
+10The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+10The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+10The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+[NEW] Explain Console errors by using Copilot in Edge: click
+         
+         to explain an error. 
+        Learn more
+        Don't show again
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+RegnskapSky:1  The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+RegnskapSky:1  The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+RegnskapSky:1  The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+_app-d144993d7555bff9.js:38 
+      /////////////////////
+   ///////////////////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////        Curious and driven?
+  ///////////////@@@@@@@///////        Work with us!
+  ///////////////@@@@@@@///////
+  ///////////////@@@@@@@///////        https://join.replit.com/hack.with.us
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@#//////////////
+   ///////////////////////////
+      /////////////////////
+      
+29Tracking Prevention blocked access to storage for <URL>.
+_app-d144993d7555bff9.js:38 [LaunchDarkly] LaunchDarkly client initialized
+RegnskapSky:1 Banner not shown: beforeinstallpromptevent.preventDefault() called. The page must call beforeinstallpromptevent.prompt() to show the banner.
+framework-900639210b9f4544.js:1  Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+_ @ framework-900639210b9f4544.js:1
+(anonymous) @ framework-900639210b9f4544.js:1
+uD @ framework-900639210b9f4544.js:1
+uI @ framework-900639210b9f4544.js:1
+uM @ framework-900639210b9f4544.js:1
+uS @ framework-900639210b9f4544.js:1
+C @ framework-900639210b9f4544.js:1
+z @ framework-900639210b9f4544.js:1
+framework-900639210b9f4544.js:1  Unrecognized feature: 'ambient-light-sensor'.
+_ @ framework-900639210b9f4544.js:1
+(anonymous) @ framework-900639210b9f4544.js:1
+uD @ framework-900639210b9f4544.js:1
+uI @ framework-900639210b9f4544.js:1
+uM @ framework-900639210b9f4544.js:1
+uS @ framework-900639210b9f4544.js:1
+C @ framework-900639210b9f4544.js:1
+z @ framework-900639210b9f4544.js:1
+framework-900639210b9f4544.js:1  Unrecognized feature: 'battery'.
+_ @ framework-900639210b9f4544.js:1
+(anonymous) @ framework-900639210b9f4544.js:1
+uD @ framework-900639210b9f4544.js:1
+uI @ framework-900639210b9f4544.js:1
+uM @ framework-900639210b9f4544.js:1
+uS @ framework-900639210b9f4544.js:1
+C @ framework-900639210b9f4544.js:1
+z @ framework-900639210b9f4544.js:1
+framework-900639210b9f4544.js:1  Unrecognized feature: 'execution-while-not-rendered'.
+_ @ framework-900639210b9f4544.js:1
+(anonymous) @ framework-900639210b9f4544.js:1
+uD @ framework-900639210b9f4544.js:1
+uI @ framework-900639210b9f4544.js:1
+uM @ framework-900639210b9f4544.js:1
+uS @ framework-900639210b9f4544.js:1
+C @ framework-900639210b9f4544.js:1
+z @ framework-900639210b9f4544.js:1
+framework-900639210b9f4544.js:1  Unrecognized feature: 'execution-while-out-of-viewport'.
+_ @ framework-900639210b9f4544.js:1
+(anonymous) @ framework-900639210b9f4544.js:1
+uD @ framework-900639210b9f4544.js:1
+uI @ framework-900639210b9f4544.js:1
+uM @ framework-900639210b9f4544.js:1
+uS @ framework-900639210b9f4544.js:1
+C @ framework-900639210b9f4544.js:1
+z @ framework-900639210b9f4544.js:1
+framework-900639210b9f4544.js:1  Unrecognized feature: 'layout-animations'.
+_ @ framework-900639210b9f4544.js:1
+(anonymous) @ framework-900639210b9f4544.js:1
+uD @ framework-900639210b9f4544.js:1
+uI @ framework-900639210b9f4544.js:1
+uM @ framework-900639210b9f4544.js:1
+uS @ framework-900639210b9f4544.js:1
+C @ framework-900639210b9f4544.js:1
+z @ framework-900639210b9f4544.js:1
+framework-900639210b9f4544.js:1  Unrecognized feature: 'legacy-image-formats'.
+_ @ framework-900639210b9f4544.js:1
+(anonymous) @ framework-900639210b9f4544.js:1
+uD @ framework-900639210b9f4544.js:1
+uI @ framework-900639210b9f4544.js:1
+uM @ framework-900639210b9f4544.js:1
+uS @ framework-900639210b9f4544.js:1
+C @ framework-900639210b9f4544.js:1
+z @ framework-900639210b9f4544.js:1
+framework-900639210b9f4544.js:1  Unrecognized feature: 'navigation-override'.
+_ @ framework-900639210b9f4544.js:1
+(anonymous) @ framework-900639210b9f4544.js:1
+uD @ framework-900639210b9f4544.js:1
+uI @ framework-900639210b9f4544.js:1
+uM @ framework-900639210b9f4544.js:1
+uS @ framework-900639210b9f4544.js:1
+C @ framework-900639210b9f4544.js:1
+z @ framework-900639210b9f4544.js:1
+framework-900639210b9f4544.js:1  Unrecognized feature: 'oversized-images'.
+_ @ framework-900639210b9f4544.js:1
+(anonymous) @ framework-900639210b9f4544.js:1
+uD @ framework-900639210b9f4544.js:1
+uI @ framework-900639210b9f4544.js:1
+uM @ framework-900639210b9f4544.js:1
+uS @ framework-900639210b9f4544.js:1
+C @ framework-900639210b9f4544.js:1
+z @ framework-900639210b9f4544.js:1
+framework-900639210b9f4544.js:1  Unrecognized feature: 'publickey-credentials'.
+_ @ framework-900639210b9f4544.js:1
+(anonymous) @ framework-900639210b9f4544.js:1
+uD @ framework-900639210b9f4544.js:1
+uI @ framework-900639210b9f4544.js:1
+uM @ framework-900639210b9f4544.js:1
+uS @ framework-900639210b9f4544.js:1
+C @ framework-900639210b9f4544.js:1
+z @ framework-900639210b9f4544.js:1
+framework-900639210b9f4544.js:1  Unrecognized feature: 'speaker-selection'.
+_ @ framework-900639210b9f4544.js:1
+(anonymous) @ framework-900639210b9f4544.js:1
+uD @ framework-900639210b9f4544.js:1
+uI @ framework-900639210b9f4544.js:1
+uM @ framework-900639210b9f4544.js:1
+uS @ framework-900639210b9f4544.js:1
+C @ framework-900639210b9f4544.js:1
+z @ framework-900639210b9f4544.js:1
+framework-900639210b9f4544.js:1  Unrecognized feature: 'unoptimized-images'.
+_ @ framework-900639210b9f4544.js:1
+(anonymous) @ framework-900639210b9f4544.js:1
+uD @ framework-900639210b9f4544.js:1
+uI @ framework-900639210b9f4544.js:1
+uM @ framework-900639210b9f4544.js:1
+uS @ framework-900639210b9f4544.js:1
+C @ framework-900639210b9f4544.js:1
+z @ framework-900639210b9f4544.js:1
+framework-900639210b9f4544.js:1  Unrecognized feature: 'unsized-media'.
+_ @ framework-900639210b9f4544.js:1
+(anonymous) @ framework-900639210b9f4544.js:1
+uD @ framework-900639210b9f4544.js:1
+uI @ framework-900639210b9f4544.js:1
+uM @ framework-900639210b9f4544.js:1
+uS @ framework-900639210b9f4544.js:1
+C @ framework-900639210b9f4544.js:1
+z @ framework-900639210b9f4544.js:1
+framework-900639210b9f4544.js:1  Unrecognized feature: 'pointer-lock'.
+_ @ framework-900639210b9f4544.js:1
+(anonymous) @ framework-900639210b9f4544.js:1
+uD @ framework-900639210b9f4544.js:1
+uI @ framework-900639210b9f4544.js:1
+uM @ framework-900639210b9f4544.js:1
+uS @ framework-900639210b9f4544.js:1
+C @ framework-900639210b9f4544.js:1
+z @ framework-900639210b9f4544.js:1
+framework-900639210b9f4544.js:1  Allow attribute will take precedence over 'allowfullscreen'.
+_ @ framework-900639210b9f4544.js:1
+(anonymous) @ framework-900639210b9f4544.js:1
+uD @ framework-900639210b9f4544.js:1
+uI @ framework-900639210b9f4544.js:1
+uM @ framework-900639210b9f4544.js:1
+uS @ framework-900639210b9f4544.js:1
+C @ framework-900639210b9f4544.js:1
+z @ framework-900639210b9f4544.js:1
+framework-900639210b9f4544.js:1  Allow attribute will take precedence over 'allowpaymentrequest'.
+_ @ framework-900639210b9f4544.js:1
+(anonymous) @ framework-900639210b9f4544.js:1
+uD @ framework-900639210b9f4544.js:1
+uI @ framework-900639210b9f4544.js:1
+uM @ framework-900639210b9f4544.js:1
+uS @ framework-900639210b9f4544.js:1
+C @ framework-900639210b9f4544.js:1
+z @ framework-900639210b9f4544.js:1
+3524d8ab-ee2d-4a4a-8e2c-73d3bb6342d7-00-21mni5fxd8id3.riker.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar2u%3A:32  Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+3524d8ab-ee2d-4a4a-8e2c-73d3bb6342d7-00-21mni5fxd8id3.riker.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar2u%3A:32  Unrecognized feature: 'ambient-light-sensor'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar2u%3A:32  Unrecognized feature: 'battery'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar2u%3A:32  Unrecognized feature: 'execution-while-not-rendered'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar2u%3A:32  Unrecognized feature: 'execution-while-out-of-viewport'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar2u%3A:32  Unrecognized feature: 'layout-animations'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar2u%3A:32  Unrecognized feature: 'legacy-image-formats'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar2u%3A:32  Unrecognized feature: 'navigation-override'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar2u%3A:32  Unrecognized feature: 'oversized-images'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar2u%3A:32  Unrecognized feature: 'publickey-credentials'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar2u%3A:32  Unrecognized feature: 'speaker-selection'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar2u%3A:32  Unrecognized feature: 'unoptimized-images'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar2u%3A:32  Unrecognized feature: 'unsized-media'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar2u%3A:32  Allow attribute will take precedence over 'allowfullscreen'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar2u%3A:32  Allow attribute will take precedence over 'allowpaymentrequest'.
+Console.js:61 Updating assignee for task: 4b0b31f7-b376-41b3-9af8-7e7fba0b1273 to: e32646ad-cb20-422e-8b93-d0253435a8dc
+Console.js:61 Server response text: {"id":"4b0b31f7-b376-41b3-9af8-7e7fba0b1273","clientId":"66a5a351-04e7-4a42-93b8-ee6ddc850e76","tenantId":"70104b9b-1763-4158-a9b0-5c66cff9756d","taskName":"Årsoppgjør","taskType":"standard","description":null,"dueDate":"2026-07-31T00:00:00.000Z","interval":"specific_date","repeatInterval":null,"status":"ikke_startet","assignedTo":"e32646ad-cb20-422e-8b93-d0253435a8dc","createdAt":"2025-08-23T21:14:18.611Z","updatedAt":"2025-09-01T18:45:56.638Z"}
+Console.js:61 Updated task from server: {id: '4b0b31f7-b376-41b3-9af8-7e7fba0b1273', clientId: '66a5a351-04e7-4a42-93b8-ee6ddc850e76', tenantId: '70104b9b-1763-4158-a9b0-5c66cff9756d', taskName: 'Årsoppgjør', taskType: 'standard', …}
+Console.js:61 Assignment update successful, new assignedTo: e32646ad-cb20-422e-8b93-d0253435a8dc
+Console.js:61 Updating assignee for task: a484678b-2ffa-4337-b45c-2f6ea722d90b to: ab6c17ad-2df4-4648-b013-adf8ec465d91
+Console.js:61 Server response text: {"id":"a484678b-2ffa-4337-b45c-2f6ea722d90b","tenantId":"70104b9b-1763-4158-a9b0-5c66cff9756d","clientId":"66a5a351-04e7-4a42-93b8-ee6ddc850e76","assignedTo":"ab6c17ad-2df4-4648-b013-adf8ec465d91","title":"sjekk av system","description":"","priority":"medium","status":"in_progress","dueDate":null,"completedAt":null,"completionNotes":null,"timeSpent":null,"createdAt":"2025-08-23T22:11:58.354Z","updatedAt":"2025-09-01T18:46:00.807Z"}
+Console.js:61 Updated task from server: {id: 'a484678b-2ffa-4337-b45c-2f6ea722d90b', tenantId: '70104b9b-1763-4158-a9b0-5c66cff9756d', clientId: '66a5a351-04e7-4a42-93b8-ee6ddc850e76', assignedTo: 'ab6c17ad-2df4-4648-b013-adf8ec465d91', title: 'sjekk av system', …}
+Console.js:61 Assignment update successful, new assignedTo: ab6c17ad-2df4-4648-b013-adf8ec465d91
