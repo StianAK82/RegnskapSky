@@ -1059,8 +1059,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/tasks/:id", authenticateToken, async (req: AuthRequest, res) => {
     try {
       console.log('PATCH request for task:', req.params.id, 'with data:', req.body);
-      const updatedTask = await storage.updateTask(req.params.id, req.body);
-      console.log('Task updated successfully:', updatedTask);
+      
+      // Try to update regular task first
+      let updatedTask;
+      try {
+        updatedTask = await storage.updateTask(req.params.id, req.body);
+        console.log('Regular task updated successfully:', updatedTask);
+      } catch (regularTaskError) {
+        // If regular task update fails, try client task
+        console.log('Regular task update failed, trying client task:', regularTaskError);
+        try {
+          updatedTask = await storage.updateClientTask(req.params.id, req.body);
+          console.log('Client task updated successfully:', updatedTask);
+        } catch (clientTaskError) {
+          console.error('Both task updates failed:', { regularTaskError, clientTaskError });
+          throw new Error('Task not found in either table');
+        }
+      }
+      
+      if (!updatedTask) {
+        throw new Error('No task was updated');
+      }
       
       // Ensure we return the updated task as JSON
       res.status(200).json(updatedTask);

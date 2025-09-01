@@ -1,0 +1,64 @@
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+RegnskapSky:1  The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+RegnskapSky:1  The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+_app-89b00da4215c6bda.js:38 [LaunchDarkly] LaunchDarkly client initialized
+29Tracking Prevention blocked access to storage for <URL>.
+RegnskapSky:1 Banner not shown: beforeinstallpromptevent.preventDefault() called. The page must call beforeinstallpromptevent.prompt() to show the banner.
+framework-a8b1790b874f6931.js:1  Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+_ @ framework-a8b1790b874f6931.js:1
+framework-a8b1790b874f6931.js:1  Unrecognized feature: 'ambient-light-sensor'.
+_ @ framework-a8b1790b874f6931.js:1
+framework-a8b1790b874f6931.js:1  Unrecognized feature: 'battery'.
+_ @ framework-a8b1790b874f6931.js:1
+framework-a8b1790b874f6931.js:1  Unrecognized feature: 'execution-while-not-rendered'.
+_ @ framework-a8b1790b874f6931.js:1
+framework-a8b1790b874f6931.js:1  Unrecognized feature: 'execution-while-out-of-viewport'.
+_ @ framework-a8b1790b874f6931.js:1
+framework-a8b1790b874f6931.js:1  Unrecognized feature: 'layout-animations'.
+_ @ framework-a8b1790b874f6931.js:1
+framework-a8b1790b874f6931.js:1  Unrecognized feature: 'legacy-image-formats'.
+_ @ framework-a8b1790b874f6931.js:1
+framework-a8b1790b874f6931.js:1  Unrecognized feature: 'navigation-override'.
+_ @ framework-a8b1790b874f6931.js:1
+framework-a8b1790b874f6931.js:1  Unrecognized feature: 'oversized-images'.
+_ @ framework-a8b1790b874f6931.js:1
+framework-a8b1790b874f6931.js:1  Unrecognized feature: 'publickey-credentials'.
+_ @ framework-a8b1790b874f6931.js:1
+framework-a8b1790b874f6931.js:1  Unrecognized feature: 'speaker-selection'.
+_ @ framework-a8b1790b874f6931.js:1
+framework-a8b1790b874f6931.js:1  Unrecognized feature: 'unoptimized-images'.
+_ @ framework-a8b1790b874f6931.js:1
+framework-a8b1790b874f6931.js:1  Unrecognized feature: 'unsized-media'.
+_ @ framework-a8b1790b874f6931.js:1
+framework-a8b1790b874f6931.js:1  Unrecognized feature: 'pointer-lock'.
+_ @ framework-a8b1790b874f6931.js:1
+framework-a8b1790b874f6931.js:1  Allow attribute will take precedence over 'allowfullscreen'.
+_ @ framework-a8b1790b874f6931.js:1
+framework-a8b1790b874f6931.js:1  Allow attribute will take precedence over 'allowpaymentrequest'.
+_ @ framework-a8b1790b874f6931.js:1
+framework-a8b1790b874f6931.js:1  Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+_ @ framework-a8b1790b874f6931.js:1
+workspace_iframe.html?initialPath=%2F&id=%3Arl5%3A:32  Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+workspace_iframe.html?initialPath=%2F&id=%3Arl5%3A:32  Unrecognized feature: 'ambient-light-sensor'.
+workspace_iframe.html?initialPath=%2F&id=%3Arl5%3A:32  Unrecognized feature: 'battery'.
+workspace_iframe.html?initialPath=%2F&id=%3Arl5%3A:32  Unrecognized feature: 'execution-while-not-rendered'.
+workspace_iframe.html?initialPath=%2F&id=%3Arl5%3A:32  Unrecognized feature: 'execution-while-out-of-viewport'.
+workspace_iframe.html?initialPath=%2F&id=%3Arl5%3A:32  Unrecognized feature: 'layout-animations'.
+workspace_iframe.html?initialPath=%2F&id=%3Arl5%3A:32  Unrecognized feature: 'legacy-image-formats'.
+workspace_iframe.html?initialPath=%2F&id=%3Arl5%3A:32  Unrecognized feature: 'navigation-override'.
+workspace_iframe.html?initialPath=%2F&id=%3Arl5%3A:32  Unrecognized feature: 'oversized-images'.
+workspace_iframe.html?initialPath=%2F&id=%3Arl5%3A:32  Unrecognized feature: 'publickey-credentials'.
+workspace_iframe.html?initialPath=%2F&id=%3Arl5%3A:32  Unrecognized feature: 'speaker-selection'.
+workspace_iframe.html?initialPath=%2F&id=%3Arl5%3A:32  Unrecognized feature: 'unoptimized-images'.
+workspace_iframe.html?initialPath=%2F&id=%3Arl5%3A:32  Unrecognized feature: 'unsized-media'.
+workspace_iframe.html?initialPath=%2F&id=%3Arl5%3A:32  Allow attribute will take precedence over 'allowfullscreen'.
+workspace_iframe.html?initialPath=%2F&id=%3Arl5%3A:32  Allow attribute will take precedence over 'allowpaymentrequest'.
+Console.js:61 Updating assignee for task: 4b0b31f7-b376-41b3-9af8-7e7fba0b1273 to: 5fb10147-0289-4285-8544-c9b5004236bf
+Console.js:61 Server response text: 
+Console.js:61  Failed to update assignee: Error: Empty response from server
+    at Object.mutationFn (index-Vz9GU0TB.js:257:4414)
+Mt.forEach.n.<computed> @ Console.js:61
+[NEW] Explain Console errors by using Copilot in Edge: click
+         
+         to explain an error. 
+        Learn more
