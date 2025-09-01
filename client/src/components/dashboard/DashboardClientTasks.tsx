@@ -411,6 +411,7 @@ export default function DashboardClientTasks() {
   const [currentTimeEntry, setCurrentTimeEntry] = useState<any>(null);
 
   const handleStartTask = (task: TaskWithClient) => {
+    console.log('Starting task:', task.title);
     // Set up for time entry modal
     setSelectedTask(task);
     setCurrentTimeEntry({ 
@@ -422,6 +423,7 @@ export default function DashboardClientTasks() {
       startTime: new Date().toISOString()
     });
     setShowTimeModal(true);
+    console.log('Time modal should be open:', true);
   };
 
   // Fetch all tasks with client information
@@ -758,7 +760,12 @@ function TimeEntryModal({ isOpen, onClose, timeEntry }: {
     saveTimeEntryMutation.mutate({ timeSpent, description });
   };
 
-  if (!timeEntry) return null;
+  if (!timeEntry) {
+    console.log('TimeEntryModal: No timeEntry, returning null');
+    return null;
+  }
+
+  console.log('TimeEntryModal: Rendering modal with isOpen:', isOpen, 'timeEntry:', timeEntry);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
