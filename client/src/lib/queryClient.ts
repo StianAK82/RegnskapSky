@@ -19,7 +19,7 @@ export async function apiRequest(
     headers["Content-Type"] = "application/json";
   }
   
-  if (token && token !== 'null') {
+  if (token && token !== 'null' && token !== 'undefined') {
     headers["Authorization"] = `Bearer ${token}`;
   }
 
@@ -57,7 +57,7 @@ export const getQueryFn: <T>(options: {
     const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
     const headers: Record<string, string> = {};
     
-    if (token && token !== 'null') {
+    if (token && token !== 'null' && token !== 'undefined') {
       headers["Authorization"] = `Bearer ${token}`;
     }
 

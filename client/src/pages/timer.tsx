@@ -41,32 +41,39 @@ export default function Timer() {
       if (dateFrom) params.append('startDate', dateFrom);
       if (dateTo) params.append('endDate', dateTo);
       
+      const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
       const response = await fetch(`/api/time-entries?${params}`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${token}`,
         },
       });
-      return response.json();
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch time entries');
+      }
+      
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
     },
   });
 
   // Filter time entries based on selected filters
-  const filteredEntries = timeEntries?.filter(entry => {
+  const filteredEntries = Array.isArray(timeEntries) ? timeEntries.filter(entry => {
     const clientMatch = filterClient === 'all' || entry.clientId === filterClient;
     const employeeMatch = filterEmployee === 'all' || entry.userId === filterEmployee;
     const descriptionMatch = searchDescription === '' || 
       entry.description.toLowerCase().includes(searchDescription.toLowerCase());
     
     return clientMatch && employeeMatch && descriptionMatch;
-  }) || [];
+  }) : [];
 
   // Get unique clients and employees for filter dropdowns
   const uniqueClients = Array.from(
-    new Set(timeEntries?.map(entry => ({ id: entry.clientId, name: entry.clientName })) || [])
+    new Set(Array.isArray(timeEntries) ? timeEntries.map(entry => ({ id: entry.clientId, name: entry.clientName })) : [])
   ).filter(client => client.name);
 
   const uniqueEmployees = Array.from(
-    new Set(timeEntries?.map(entry => ({ id: entry.userId, name: entry.userName })) || [])
+    new Set(Array.isArray(timeEntries) ? timeEntries.map(entry => ({ id: entry.userId, name: entry.userName })) : [])
   ).filter(employee => employee.name);
 
   // Calculate totals
