@@ -364,7 +364,7 @@ export default function Dashboard() {
             <CardDescription className="text-gray-600">Vanlige oppgaver og handlinger</CardDescription>
           </CardHeader>
           <CardContent className="flex justify-center">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-md">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 max-w-md">
               <button className="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 group h-[100px] w-[100px]">
                 <Users className="h-6 w-6 text-gray-400 mb-2 group-hover:text-gray-600" />
                 <span className="text-xs font-medium text-gray-700 text-center leading-tight">Opprett klient</span>
@@ -385,7 +385,7 @@ export default function Dashboard() {
                   <img 
                     src="/verified-logo.png" 
                     alt="Powered by Verified" 
-                    className="h-3 w-auto opacity-70 group-hover:opacity-90"
+                    className="h-4 w-auto opacity-70 group-hover:opacity-90"
                   />
                 </div>
               </button>
