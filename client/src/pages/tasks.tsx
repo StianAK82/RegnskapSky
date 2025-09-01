@@ -677,7 +677,7 @@ export default function Tasks() {
                               data-testid={`button-complete-task-${task.id}`}
                             >
                               <i className="fas fa-check mr-1"></i>
-                              Marker som utført
+                              Utfør oppgave
                             </Button>
                           )}
                         </div>
@@ -698,7 +698,7 @@ export default function Tasks() {
           }}>
             <DialogContent className="max-w-md">
               <DialogHeader>
-                <DialogTitle>Marker oppgave som fullført</DialogTitle>
+                <DialogTitle>Utfør oppgave og registrer tid</DialogTitle>
               </DialogHeader>
               
               {completingTask && (
@@ -770,7 +770,7 @@ export default function Tasks() {
                       disabled={completeMutation.isPending}
                       data-testid="button-confirm-completion"
                     >
-                      {completeMutation.isPending ? 'Lagrer...' : 'Marker som fullført'}
+                      {completeMutation.isPending ? 'Lagrer og fullfører...' : 'Registrer tid og fullfør oppgave'}
                     </Button>
                   </div>
                 </form>

@@ -691,26 +691,23 @@ function TimeEntryModal({ isOpen, onClose, timeEntry }: {
 
   const saveTimeEntryMutation = useMutation({
     mutationFn: async ({ timeSpent, description }: { timeSpent: string; description: string }) => {
-      const response = await apiRequest('POST', '/api/time-entries', {
-        clientId: timeEntry.clientId,
-        taskId: timeEntry.taskId,
-        description,
+      // Mark the task as completed - this endpoint already creates the time entry automatically
+      const completeResponse = await apiRequest('PUT', `/api/tasks/${timeEntry.taskId}/complete`, {
         timeSpent: parseFloat(timeSpent),
-        date: new Date().toISOString().split('T')[0],
-        billable: true
+        completionNotes: description
       });
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Feil ved lagring: ${errorText}`);
+      if (!completeResponse.ok) {
+        const errorText = await completeResponse.text();
+        throw new Error(`Feil ved fullføring av oppgave: ${errorText}`);
       }
       
-      return response.json();
+      return await completeResponse.json();
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       toast({
-        title: 'Tid registrert',
-        description: `${timeSpent} timer registrert for ${timeEntry?.clientName}`,
+        title: 'Oppgave fullført',
+        description: `${timeSpent} timer registrert og oppgaven er markert som fullført`,
       });
       
       // Clear form and close modal
@@ -718,15 +715,19 @@ function TimeEntryModal({ isOpen, onClose, timeEntry }: {
       setDescription('');
       onClose();
       
-      // Refresh related queries
+      // Refresh all related queries to update UI
       queryClient.invalidateQueries({ queryKey: ['/api/time-entries'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/metrics'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks/overview'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks/completed'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/clients'] });
     },
     onError: (error: any) => {
-      console.error('Time entry error:', error);
+      console.error('Time entry and task completion error:', error);
       toast({
         title: 'Feil',
-        description: error.message || 'Kunne ikke registrere tid',
+        description: error.message || 'Kunne ikke registrere tid og fullføre oppgave',
         variant: 'destructive'
       });
     }
@@ -819,7 +820,7 @@ function TimeEntryModal({ isOpen, onClose, timeEntry }: {
               disabled={saveTimeEntryMutation.isPending}
               data-testid="button-save-time"
             >
-              {saveTimeEntryMutation.isPending ? 'Lagrer...' : 'Lagre tid'}
+              {saveTimeEntryMutation.isPending ? 'Lagrer og fullfører...' : 'Registrer tid og fullfør oppgave'}
             </Button>
           </div>
         </form>
