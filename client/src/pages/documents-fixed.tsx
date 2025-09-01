@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 
 export default function DocumentsFixed() {
+  console.log('=== DOCUMENTS FIXED COMPONENT LOADED ===');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [viewingDocument, setViewingDocument] = useState<any>(null);
@@ -17,7 +18,7 @@ export default function DocumentsFixed() {
 
   const { data: documents = [], isLoading } = useQuery({
     queryKey: ['/api/documents'],
-  });
+  }) as { data: any[], isLoading: boolean };
 
   // NEW FUNCTION - Direct server fetch with employee details
   const handleViewDocument = async (document: any) => {
@@ -75,7 +76,7 @@ export default function DocumentsFixed() {
     return matchesSearch && matchesCategory;
   });
 
-  const categories = [...new Set(documents.map((doc: any) => doc.category).filter(Boolean))];
+  const categories = Array.from(new Set(documents.map((doc: any) => doc.category).filter(Boolean)));
 
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';

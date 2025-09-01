@@ -2618,7 +2618,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // View document data endpoint
-  app.get('/api/documents/:id/view', authenticateToken, async (req: any, res) => {
+  app.get('/api/documents/:id/view', authenticateToken, async (req: any, res: any) => {
     try {
       console.log('=== DOCUMENT VIEW ENDPOINT HIT ===');
       const documentId = req.params.id;
@@ -2655,10 +2655,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!documentData || (Array.isArray(documentData) && documentData.length === 0)) {
         console.log('REGENERATING data from ALL time entries with employee names...');
         // Get all time entries and employees and clients for detailed report
-        const tenantId = req.user!.tenantId;
+        const tenantId = (req as any).user?.tenantId;
         const allTimeEntries = await storage.getTimeEntriesWithFilters({ tenantId });
-        const employees = await storage.getEmployees({ tenantId });
-        const clients = await storage.getClients({ tenantId });
+        console.log('Found time entries:', allTimeEntries.length);
         
         // Simple grouping by client for demonstration
         const grouped = allTimeEntries.reduce((acc: any, entry: any) => {
