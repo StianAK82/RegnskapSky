@@ -31,15 +31,7 @@ export default function Documents() {
     return matchesSearch && matchesCategory;
   });
 
-  // DEBUG LOGGING
-  console.log('DOCUMENTS DEBUG:');
-  console.log('- Total documents:', documents.length);
-  console.log('- Filtered documents:', filteredDocuments.length);
-  console.log('- Search term:', searchTerm);
-  console.log('- Selected category:', selectedCategory);
-  console.log('- isLoading:', isLoading);
-  console.log('- First document:', filteredDocuments[0]);
-  console.log('- Should show table:', !isLoading && filteredDocuments.length > 0);
+
 
   const categories = ['Rapporter', 'Kontrakter', 'Fakturaer', 'Bilag', 'Andre'];
 
@@ -295,22 +287,19 @@ export default function Documents() {
                 </p>
               </div>
             ) : (
-              <div style={{ border: '2px solid #3B82F6', borderRadius: '8px', padding: '16px', backgroundColor: '#f0f9ff' }}>
-                <h3 style={{ margin: '0 0 16px 0', color: '#1e40af', fontSize: '16px', fontWeight: 'bold' }}>
-                  🔍 HTML TEST VERSJON - Midlertidig for å teste knapp-problemet ({filteredDocuments.length} dokumenter)
-                </h3>
+              <div className="rounded-md border">
+
                 <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'white', border: '1px solid #e5e7eb' }}>
                   <thead>
                     <tr style={{ backgroundColor: '#f3f4f6' }}>
                       <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb', fontWeight: 'bold' }}>Dokument</th>
                       <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb', fontWeight: 'bold' }}>Kategori</th>
                       <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb', fontWeight: 'bold' }}>Størrelse</th>
-                      <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb', fontWeight: 'bold' }}>TEST KNAPP</th>
+                      <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb', fontWeight: 'bold' }}>Handlinger</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredDocuments.map((document: any) => {
-                      console.log('HTML TEST - Rendering document row:', document.name);
                       return (
                         <tr key={document.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
                           <td style={{ padding: '12px' }}>
@@ -337,33 +326,91 @@ export default function Documents() {
                           </td>
                           <td style={{ padding: '12px' }}>
                             <button
-                              onClick={() => {
-                                console.log('HTML TEST - Button clicked for:', document.name);
-                                alert('HTML TEST KNAPP FUNGERER! Document: ' + document.name);
-                                handleViewDocument(document);
-                              }}
+                              onClick={() => handleViewDocument(document)}
+                              title="Vis rapport på skjermen"
                               style={{
                                 backgroundColor: '#3B82F6',
                                 color: 'white',
-                                padding: '12px 24px',
-                                borderRadius: '8px',
-                                border: '2px solid #1d4ed8',
+                                padding: '8px 16px',
+                                borderRadius: '6px',
+                                border: 'none',
                                 cursor: 'pointer',
-                                fontSize: '14px',
-                                fontWeight: 'bold',
+                                fontSize: '12px',
+                                fontWeight: '500',
                                 marginRight: '8px',
-                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                transition: 'all 0.2s'
                               }}
                               onMouseOver={(e) => {
                                 (e.target as HTMLElement).style.backgroundColor = '#2563EB';
-                                (e.target as HTMLElement).style.transform = 'scale(1.05)';
+                                (e.target as HTMLElement).style.transform = 'scale(1.02)';
                               }}
                               onMouseOut={(e) => {
                                 (e.target as HTMLElement).style.backgroundColor = '#3B82F6';
                                 (e.target as HTMLElement).style.transform = 'scale(1)';
                               }}
                             >
-                              👁️ HTML TEST VIS RAPPORT
+                              👁️ Vis rapport
+                            </button>
+                            
+                            <button
+                              onClick={() => handleDownload(document)}
+                              title="Last ned som CSV"
+                              style={{
+                                backgroundColor: '#6b7280',
+                                color: 'white',
+                                padding: '8px 12px',
+                                borderRadius: '4px',
+                                border: 'none',
+                                cursor: 'pointer',
+                                fontSize: '12px',
+                                marginRight: '4px',
+                                transition: 'all 0.2s'
+                              }}
+                              onMouseOver={(e) => (e.target as HTMLElement).style.backgroundColor = '#4b5563'}
+                              onMouseOut={(e) => (e.target as HTMLElement).style.backgroundColor = '#6b7280'}
+                            >
+                              📥 CSV
+                            </button>
+                            
+                            {document.category === 'Rapporter' && (
+                              <button
+                                onClick={() => handleDownloadExcel(document)}
+                                title="Last ned som Excel"
+                                style={{
+                                  backgroundColor: '#059669',
+                                  color: 'white',
+                                  padding: '8px 12px',
+                                  borderRadius: '4px',
+                                  border: 'none',
+                                  cursor: 'pointer',
+                                  fontSize: '12px',
+                                  marginRight: '4px',
+                                  transition: 'all 0.2s'
+                                }}
+                                onMouseOver={(e) => (e.target as HTMLElement).style.backgroundColor = '#047857'}
+                                onMouseOut={(e) => (e.target as HTMLElement).style.backgroundColor = '#059669'}
+                              >
+                                📊 Excel
+                              </button>
+                            )}
+                            
+                            <button
+                              onClick={() => handleDelete(document)}
+                              title="Slett dokument"
+                              style={{
+                                backgroundColor: '#dc2626',
+                                color: 'white',
+                                padding: '8px 12px',
+                                borderRadius: '4px',
+                                border: 'none',
+                                cursor: 'pointer',
+                                fontSize: '12px',
+                                transition: 'all 0.2s'
+                              }}
+                              onMouseOver={(e) => (e.target as HTMLElement).style.backgroundColor = '#b91c1c'}
+                              onMouseOut={(e) => (e.target as HTMLElement).style.backgroundColor = '#dc2626'}
+                            >
+                              🗑️ Slett
                             </button>
                           </td>
                         </tr>
