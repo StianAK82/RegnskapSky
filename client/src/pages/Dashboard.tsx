@@ -23,9 +23,10 @@ function AccountingSystemDistribution() {
   const { data: clients = [], isLoading } = useQuery({
     queryKey: ['/api/clients'],
     queryFn: async () => {
+      const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
       const response = await fetch('/api/clients', {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          Authorization: `Bearer ${token}`,
         },
       });
       if (!response.ok) throw new Error('Failed to fetch clients');
@@ -39,10 +40,12 @@ function AccountingSystemDistribution() {
     
     console.log('Accounting system distribution - clients:', clients);
     
-    clients.forEach((client: any) => {
-      const system = client.accountingSystem || 'Ikke satt';
-      systems[system] = (systems[system] || 0) + 1;
-    });
+    if (Array.isArray(clients)) {
+      clients.forEach((client: any) => {
+        const system = client.accountingSystem || 'Ikke satt';
+        systems[system] = (systems[system] || 0) + 1;
+      });
+    }
 
     console.log('Accounting system distribution - systems:', systems);
 
@@ -52,7 +55,7 @@ function AccountingSystemDistribution() {
       .sort((a, b) => b.count - a.count);
   }, [clients]);
 
-  const totalClients = clients.length;
+  const totalClients = Array.isArray(clients) ? clients.length : 0;
 
   if (isLoading) {
     return (
@@ -142,9 +145,10 @@ function CompletedActivities() {
   const { data: completedTasks = [], isLoading } = useQuery({
     queryKey: ['/api/tasks', { status: 'completed', limit: 10 }],
     queryFn: async () => {
+      const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
       const response = await fetch('/api/tasks?status=completed&limit=10', {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          Authorization: `Bearer ${token}`,
         },
       });
       if (!response.ok) throw new Error('Failed to fetch completed tasks');
@@ -155,9 +159,10 @@ function CompletedActivities() {
   const { data: users = [] } = useQuery({
     queryKey: ['/api/users'],
     queryFn: async () => {
+      const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
       const response = await fetch('/api/users', {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          Authorization: `Bearer ${token}`,
         },
       });
       if (!response.ok) throw new Error('Failed to fetch users');
@@ -199,9 +204,9 @@ function CompletedActivities() {
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          {completedTasks.length > 0 ? (
+          {Array.isArray(completedTasks) && completedTasks.length > 0 ? (
             completedTasks.map((task: any) => {
-              const assignedUser = users.find((u: any) => u.id === task.assignedTo);
+              const assignedUser = Array.isArray(users) ? users.find((u: any) => u.id === task.assignedTo) : null;
               return (
                 <div key={task.id} className="border-b border-gray-100 last:border-0 pb-3 last:pb-0">
                   <div className="font-medium text-sm text-gray-900">{task.title}</div>
@@ -262,8 +267,8 @@ export default function Dashboard() {
   });
 
   // Group tasks by client
-  const clientTaskSummary = recentClients.map(client => {
-    const clientTasks = allTasks.filter(task => task.clientId === client.id);
+  const clientTaskSummary = Array.isArray(recentClients) ? recentClients.map(client => {
+    const clientTasks = Array.isArray(allTasks) ? allTasks.filter(task => task.clientId === client.id) : [];
     const pendingTasks = clientTasks.filter(task => task.status !== 'ferdig').length;
     const overdueTasks = clientTasks.filter(task => 
       task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'ferdig'
@@ -275,7 +280,7 @@ export default function Dashboard() {
       pendingTasks,
       overdueTasks
     };
-  });
+  }) : [];
 
   if (metricsLoading) {
     return (

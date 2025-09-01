@@ -12,7 +12,7 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
   const headers: Record<string, string> = {};
   
   if (data) {
@@ -37,6 +37,7 @@ export async function apiRequest(
     if (errorText.includes('Invalid token') || errorText.includes('expired')) {
       console.log('Token expired, clearing auth data');
       localStorage.removeItem('token');
+      localStorage.removeItem('auth_token');
       localStorage.removeItem('user');
       window.location.href = '/login';
       throw new Error('Token expired - redirecting to login');
@@ -53,7 +54,7 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
     const headers: Record<string, string> = {};
     
     if (token && token !== 'null') {
@@ -73,6 +74,7 @@ export const getQueryFn: <T>(options: {
       if (errorText.includes('Invalid token') || errorText.includes('expired')) {
         console.log('Token expired, clearing auth data');
         localStorage.removeItem('token');
+        localStorage.removeItem('auth_token');
         localStorage.removeItem('user');
         window.location.href = '/login';
         return null;
