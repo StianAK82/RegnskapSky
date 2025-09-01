@@ -72,6 +72,17 @@ export interface IStorage {
 
   // Enhanced time tracking with filters
   getTimeEntriesWithFilters(filters: any): Promise<any[]>;
+  
+  // Task completion and completed tasks
+  completeTask(taskId: string, timeSpent: number, completionNotes: string, userId: string): Promise<Task>;
+  getCompletedTasks(filters: {
+    startDate?: string;
+    endDate?: string;
+    clientId?: string;
+    employeeId?: string;
+    userId: string;
+    userRole: string;
+  }): Promise<Task[]>;
 
   // Enhanced RBAC methods
   getAssignedClients(userId: string, role: string): Promise<Client[]>;
@@ -1109,6 +1120,89 @@ export class DatabaseStorage implements IStorage {
     }
 
     return created;
+  }
+
+  // Task completion and completed tasks methods
+  async completeTask(taskId: string, timeSpent: number, completionNotes: string, userId: string): Promise<Task> {
+    const now = new Date();
+    
+    // Update task as completed
+    const [completedTask] = await db
+      .update(tasks)
+      .set({
+        status: 'completed',
+        completedAt: now,
+        timeSpent,
+        completionNotes,
+        updatedAt: now
+      })
+      .where(eq(tasks.id, taskId))
+      .returning();
+
+    // Create time entry for the task completion
+    if (completedTask.clientId) {
+      await db.insert(timeEntries).values({
+        tenantId: completedTask.tenantId,
+        userId: userId,
+        clientId: completedTask.clientId,
+        taskId: taskId,
+        taskType: 'task',
+        description: `Fullført oppgave: ${completedTask.title}`,
+        timeSpent: timeSpent.toString(),
+        date: now,
+        billable: true
+      });
+    }
+
+    return completedTask;
+  }
+
+  async getCompletedTasks(filters: {
+    startDate?: string;
+    endDate?: string;
+    clientId?: string;
+    employeeId?: string;
+    userId: string;
+    userRole: string;
+  }): Promise<Task[]> {
+    const conditions = [eq(tasks.status, 'completed')];
+    
+    // Get user's tenant
+    const user = await this.getUser(filters.userId);
+    if (!user) return [];
+    
+    conditions.push(eq(tasks.tenantId, user.tenantId));
+
+    // Role-based filtering: non-admin users only see their own tasks
+    if (filters.userRole !== 'admin' && filters.userRole !== 'oppdragsansvarlig') {
+      conditions.push(eq(tasks.assignedTo, filters.userId));
+    }
+
+    // Filter by date range if provided
+    if (filters.startDate) {
+      conditions.push(gte(tasks.completedAt, new Date(filters.startDate)));
+    }
+    if (filters.endDate) {
+      const endDate = new Date(filters.endDate);
+      endDate.setHours(23, 59, 59, 999); // End of day
+      conditions.push(lte(tasks.completedAt, endDate));
+    }
+
+    // Filter by client if provided
+    if (filters.clientId) {
+      conditions.push(eq(tasks.clientId, filters.clientId));
+    }
+
+    // Filter by employee if provided
+    if (filters.employeeId) {
+      conditions.push(eq(tasks.assignedTo, filters.employeeId));
+    }
+
+    return await db
+      .select()
+      .from(tasks)
+      .where(and(...conditions))
+      .orderBy(desc(tasks.completedAt));
   }
 
   // Calendar integration placeholder

@@ -16,6 +16,237 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { FileSpreadsheet, Download, Filter, Play, Settings } from 'lucide-react';
 
+// Component for completed tasks report
+function CompletedTasksReport() {
+  const [selectedClient, setSelectedClient] = useState<string>('all');
+  const [selectedEmployee, setSelectedEmployee] = useState<string>('all');
+  const [startDate, setStartDate] = useState<string>(() => {
+    const date = new Date();
+    date.setDate(date.getDate() - 30);
+    return date.toISOString().split('T')[0];
+  });
+  const [endDate, setEndDate] = useState<string>(() => {
+    return new Date().toISOString().split('T')[0];
+  });
+
+  const { data: completedTasks = [], isLoading } = useQuery({
+    queryKey: ['/api/tasks/completed', startDate, endDate, selectedClient, selectedEmployee],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        startDate,
+        endDate,
+        ...(selectedClient !== 'all' && { clientId: selectedClient }),
+        ...(selectedEmployee !== 'all' && { employeeId: selectedEmployee })
+      });
+      const response = await apiRequest('GET', `/api/tasks/completed?${params}`);
+      return response.json();
+    }
+  });
+
+  const { data: clients = [] } = useQuery({
+    queryKey: ['/api/clients'],
+    queryFn: () => apiRequest('GET', '/api/clients').then(res => res.json())
+  });
+
+  const { data: employees = [] } = useQuery({
+    queryKey: ['/api/employees'],
+    queryFn: () => apiRequest('GET', '/api/employees').then(res => res.json())
+  });
+
+  const totalTimeSpent = completedTasks.reduce((sum: number, task: any) => sum + (task.timeSpent || 0), 0);
+  const averageTimePerTask = completedTasks.length > 0 ? totalTimeSpent / completedTasks.length : 0;
+
+  const handleDownloadCSV = () => {
+    const headers = ['Oppgave', 'Beskrivelse', 'Klient', 'Ansvarlig', 'Fullført dato', 'Timer brukt', 'Notater'];
+    const csvContent = [
+      headers.join(','),
+      ...completedTasks.map((task: any) => [
+        `"${task.title}"`,
+        `"${task.description || ''}"`,
+        `"${clients.find((c: any) => c.id === task.clientId)?.name || 'Ikke angitt'}"`,
+        `"${employees.find((e: any) => e.id === task.assignedTo)?.firstName} ${employees.find((e: any) => e.id === task.assignedTo)?.lastName || 'Ikke angitt'}"`,
+        `"${new Date(task.completedAt).toLocaleDateString('nb-NO')}"`,
+        task.timeSpent || 0,
+        `"${task.completionNotes || ''}"`
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `utforte_oppgaver_${startDate}_til_${endDate}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Filters */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Filter utførte oppgaver</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Fra dato</label>
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Til dato</label>
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Klient</label>
+              <Select value={selectedClient} onValueChange={setSelectedClient}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Alle klienter</SelectItem>
+                  {clients.map((client: any) => (
+                    <SelectItem key={client.id} value={client.id}>
+                      {client.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Ansatt</label>
+              <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Alle ansatte</SelectItem>
+                  {employees.map((employee: any) => (
+                    <SelectItem key={employee.id} value={employee.id}>
+                      {employee.firstName} {employee.lastName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Summary Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-2xl font-bold text-green-600">{completedTasks.length}</div>
+            <p className="text-gray-600">Utførte oppgaver</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-2xl font-bold text-blue-600">{totalTimeSpent.toFixed(1)}t</div>
+            <p className="text-gray-600">Totalt timer brukt</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-2xl font-bold text-purple-600">{averageTimePerTask.toFixed(1)}t</div>
+            <p className="text-gray-600">Gjennomsnitt per oppgave</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Tasks List */}
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <CardTitle>Utførte oppgaver</CardTitle>
+            <Button onClick={handleDownloadCSV} variant="outline">
+              <i className="fas fa-download mr-2"></i>
+              Last ned CSV
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="animate-pulse border rounded p-4">
+                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                </div>
+              ))}
+            </div>
+          ) : completedTasks.length === 0 ? (
+            <div className="text-center py-8">
+              <i className="fas fa-tasks text-4xl text-gray-400 mb-4"></i>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Ingen utførte oppgaver</h3>
+              <p className="text-gray-500">Ingen oppgaver ble fullført i den valgte perioden</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {completedTasks.map((task: any) => {
+                const client = clients.find((c: any) => c.id === task.clientId);
+                const employee = employees.find((e: any) => e.id === task.assignedTo);
+                
+                return (
+                  <div key={task.id} className="border rounded-lg p-4 hover:bg-gray-50">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900">{task.title}</h3>
+                        {task.description && (
+                          <p className="text-gray-600 mt-1">{task.description}</p>
+                        )}
+                        <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
+                          {client && (
+                            <span>
+                              <i className="fas fa-building mr-1"></i>
+                              {client.name}
+                            </span>
+                          )}
+                          {employee && (
+                            <span>
+                              <i className="fas fa-user mr-1"></i>
+                              {employee.firstName} {employee.lastName}
+                            </span>
+                          )}
+                          <span>
+                            <i className="fas fa-clock mr-1"></i>
+                            {task.timeSpent || 0} timer
+                          </span>
+                          <span>
+                            <i className="fas fa-calendar mr-1"></i>
+                            {new Date(task.completedAt).toLocaleDateString('nb-NO')}
+                          </span>
+                        </div>
+                        {task.completionNotes && (
+                          <div className="mt-2 p-2 bg-blue-50 rounded text-sm">
+                            <strong>Notater:</strong> {task.completionNotes}
+                          </div>
+                        )}
+                      </div>
+                      <Badge className="bg-green-100 text-green-800">Fullført</Badge>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 interface ReportSpec {
   id: string;
   title: string;
@@ -169,9 +400,10 @@ export default function Reports() {
     <AppShell title="Rapporter" subtitle="Generer og analyser rapporter fra systemdata">
       <div className="space-y-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="generator">Rapportgenerator</TabsTrigger>
             <TabsTrigger value="templates">Malede rapporter</TabsTrigger>
+            <TabsTrigger value="completed-tasks">Utførte oppgaver</TabsTrigger>
             <TabsTrigger value="results">Resultater</TabsTrigger>
           </TabsList>
 
@@ -284,6 +516,11 @@ export default function Reports() {
                 </Card>
               ))}
             </div>
+          </TabsContent>
+
+          {/* Completed Tasks Tab */}
+          <TabsContent value="completed-tasks" className="space-y-6">
+            <CompletedTasksReport />
           </TabsContent>
 
           {/* Results Tab */}

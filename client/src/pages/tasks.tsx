@@ -54,22 +54,66 @@ const completionSchema = z.object({
 type TaskFormData = z.infer<typeof taskSchema>;
 type CompletionFormData = z.infer<typeof completionSchema>;
 
+interface Employee {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: string;
+}
+
 export default function Tasks() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [completingTask, setCompletingTask] = useState<Task | null>(null);
-  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<string>('active'); // Changed default to 'active' to hide completed
   const [filterPriority, setFilterPriority] = useState<string>('all');
+  const [showCompleted, setShowCompleted] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
-  const { data: tasks, isLoading } = useQuery<Task[]>({
+  const isAdmin = user?.role === 'admin' || user?.role === 'oppdragsansvarlig';
+
+  const { data: allTasks, isLoading } = useQuery<Task[]>({
     queryKey: ['/api/tasks'],
   });
 
   const { data: clients } = useQuery<Client[]>({
     queryKey: ['/api/clients'],
   });
+
+  const { data: employees } = useQuery<Employee[]>({
+    queryKey: ['/api/employees'],
+  });
+
+  // Filter tasks based on user role and visibility settings
+  const tasks = allTasks?.filter(task => {
+    // Role-based filtering: non-admin users only see their own tasks
+    if (!isAdmin && task.assignedTo && task.assignedTo !== user?.id) {
+      return false;
+    }
+    
+    // Status filtering
+    if (!showCompleted && task.status === 'completed') {
+      return false;
+    }
+    
+    if (filterStatus !== 'all') {
+      if (filterStatus === 'active' && task.status === 'completed') {
+        return false;
+      }
+      if (filterStatus !== 'active' && filterStatus !== task.status) {
+        return false;
+      }
+    }
+    
+    // Priority filtering
+    if (filterPriority !== 'all' && task.priority !== filterPriority) {
+      return false;
+    }
+    
+    return true;
+  }) || [];
 
   const createMutation = useMutation({
     mutationFn: async (data: TaskFormData) => {
@@ -145,6 +189,27 @@ export default function Tasks() {
         title: 'Feil ved fullføring av oppgave',
         description: error.message || 'Kunne ikke fullføre oppgave',
         variant: 'destructive'
+      });
+    },
+  });
+
+  const assignTaskMutation = useMutation({
+    mutationFn: async ({ taskId, assignedTo }: { taskId: string; assignedTo: string }) => {
+      const response = await apiRequest('PUT', `/api/tasks/${taskId}`, { assignedTo });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+      toast({
+        title: 'Oppgave tildelt',
+        description: 'Oppgaven har blitt tildelt',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Feil',
+        description: error.message || 'Kunne ikke tildele oppgaven',
+        variant: 'destructive',
       });
     },
   });
@@ -283,12 +348,13 @@ export default function Tasks() {
 
         {/* Filters and Actions */}
           <div className="flex justify-between items-center mb-6">
-            <div className="flex space-x-4">
+            <div className="flex space-x-4 items-center">
               <Select value={filterStatus} onValueChange={setFilterStatus}>
                 <SelectTrigger className="w-40">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="active">Aktive</SelectItem>
                   <SelectItem value="all">Alle statuser</SelectItem>
                   <SelectItem value="pending">Venter</SelectItem>
                   <SelectItem value="in_progress">Pågår</SelectItem>
@@ -308,9 +374,23 @@ export default function Tasks() {
                   <SelectItem value="low">Lav</SelectItem>
                 </SelectContent>
               </Select>
+              
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="show-completed"
+                  checked={showCompleted}
+                  onChange={(e) => setShowCompleted(e.target.checked)}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  data-testid="checkbox-show-completed"
+                />
+                <label htmlFor="show-completed" className="text-sm text-gray-700">
+                  Vis fullførte
+                </label>
+              </div>
             </div>
             
-            {canCreateEdit && (
+            {isAdmin && (
               <Dialog open={isCreateOpen || !!editingTask} onOpenChange={(open) => {
                 if (!open) {
                   setIsCreateOpen(false);
@@ -545,15 +625,40 @@ export default function Tasks() {
                               </span>
                             )}
                             
-                            <span>
-                              <i className="fas fa-user mr-1"></i>
-                              {task.assignedTo === user?.id ? 'Meg' : task.assignedTo || 'Ikke tildelt'}
-                            </span>
+                            {isAdmin ? (
+                              <div className="flex items-center space-x-2">
+                                <i className="fas fa-user mr-1"></i>
+                                <span className="text-sm">Ansvarlig:</span>
+                                <Select 
+                                  value={task.assignedTo || ''} 
+                                  onValueChange={(value) => assignTaskMutation.mutate({ taskId: task.id, assignedTo: value })}
+                                >
+                                  <SelectTrigger className="w-32 h-6 text-xs">
+                                    <SelectValue placeholder="Velg ansvarlig" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="">Ikke tildelt</SelectItem>
+                                    {employees?.map((employee) => (
+                                      <SelectItem key={employee.id} value={employee.id}>
+                                        {employee.firstName} {employee.lastName}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            ) : (
+                              <span>
+                                <i className="fas fa-user mr-1"></i>
+                                {task.assignedTo === user?.id ? 'Meg' : 
+                                 employees?.find(e => e.id === task.assignedTo)?.firstName + ' ' + 
+                                 employees?.find(e => e.id === task.assignedTo)?.lastName || 'Ikke tildelt'}
+                              </span>
+                            )}
                           </div>
                         </div>
                         
-                        {canCreateEdit && (
-                          <div className="flex space-x-2">
+                        <div className="flex space-x-2">
+                          {isAdmin && (
                             <Button
                               variant="outline"
                               size="sm"
@@ -562,20 +667,20 @@ export default function Tasks() {
                               <i className="fas fa-edit mr-1"></i>
                               Rediger
                             </Button>
-                            {task.status !== 'completed' && (
-                              <Button
-                                variant="default"
-                                size="sm"
-                                className="bg-green-600 hover:bg-green-700"
-                                onClick={() => handleMarkComplete(task)}
-                                data-testid={`button-complete-task-${task.id}`}
-                              >
-                                <i className="fas fa-check mr-1"></i>
-                                Marker som klar
-                              </Button>
-                            )}
-                          </div>
-                        )}
+                          )}
+                          {task.status !== 'completed' && (task.assignedTo === user?.id || isAdmin) && (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              className="bg-green-600 hover:bg-green-700"
+                              onClick={() => handleMarkComplete(task)}
+                              data-testid={`button-complete-task-${task.id}`}
+                            >
+                              <i className="fas fa-check mr-1"></i>
+                              Marker som utført
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </CardContent>
                   </Card>

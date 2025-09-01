@@ -1127,6 +1127,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get completed tasks with filters
+  app.get('/api/tasks/completed', authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const { startDate, endDate, clientId, employeeId } = req.query;
+      const tasks = await storage.getCompletedTasks({
+        startDate: startDate as string,
+        endDate: endDate as string,
+        clientId: clientId as string,
+        employeeId: employeeId as string,
+        userId: req.user!.id,
+        userRole: req.user!.role
+      });
+      res.json(tasks);
+    } catch (error) {
+      console.error('Error getting completed tasks:', error);
+      res.status(500).json({ message: 'Failed to get completed tasks' });
+    }
+  });
+
   // Client Responsibles management
   app.get("/api/clients/:clientId/responsibles", authenticateToken, async (req: AuthRequest, res) => {
     try {
