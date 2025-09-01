@@ -22,6 +22,7 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUserPassword(userId: string, hashedPassword: string): Promise<User>;
+  updateUser2FA(userId: string, secret: string, backupCodes: string[]): Promise<User>;
   updateUser2FABackupCodes(userId: string, backupCodes: string[]): Promise<User>;
   updateUserStripeInfo(userId: string, customerId: string, subscriptionId?: string): Promise<User>;
   getAllUsersWithTenants(): Promise<any[]>;
@@ -183,6 +184,20 @@ export class DatabaseStorage implements IStorage {
       .update(users)
       .set({ 
         password: hashedPassword,
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
+  }
+
+  async updateUser2FA(userId: string, secret: string, backupCodes: string[]): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ 
+        twoFactorSecret: secret,
+        twoFactorEnabled: true,
+        twoFactorBackupCodes: backupCodes,
         updatedAt: new Date()
       })
       .where(eq(users.id, userId))

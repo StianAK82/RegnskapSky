@@ -18,6 +18,7 @@ export default function Setup2FA() {
     lastName: '',
     tenantName: '',
   });
+  const [isExisting, setIsExisting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const [, navigate] = useLocation();
@@ -40,6 +41,14 @@ export default function Setup2FA() {
       if (response.ok) {
         setQrCode(data.qrCode);
         setSecret(data.secret);
+        setIsExisting(data.isExisting);
+        if (data.isExisting) {
+          setUserInfo(prev => ({
+            ...prev,
+            firstName: data.firstName || '',
+            lastName: data.lastName || ''
+          }));
+        }
         setStep(2);
       } else {
         toast({
@@ -72,6 +81,11 @@ export default function Setup2FA() {
         body: JSON.stringify({
           email: userInfo.email,
           token: verificationCode,
+          secret: secret,
+          firstName: userInfo.firstName,
+          lastName: userInfo.lastName,
+          tenantName: userInfo.tenantName,
+          isExisting: isExisting,
         }),
       });
 
@@ -123,12 +137,28 @@ export default function Setup2FA() {
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold">Sett opp 2-faktor autentisering</CardTitle>
             <p className="text-gray-600">
-              Opprett konto med sikker 2FA-innlogging
+              Opprett ny konto eller aktiver 2FA for eksisterende konto
             </p>
           </CardHeader>
 
           <CardContent>
             <form onSubmit={handleUserInfoSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="email">E-post</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  value={userInfo.email}
+                  onChange={handleInputChange}
+                  placeholder="Skriv din e-postadresse først"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Hvis du har eksisterende konto vil 2FA bli lagt til. Ellers opprettes ny konto.
+                </p>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="firstName">Fornavn</Label>
@@ -136,9 +166,9 @@ export default function Setup2FA() {
                     id="firstName"
                     name="firstName"
                     type="text"
-                    required
                     value={userInfo.firstName}
                     onChange={handleInputChange}
+                    placeholder="Kun for nye kontoer"
                   />
                 </div>
                 <div>
@@ -147,9 +177,9 @@ export default function Setup2FA() {
                     id="lastName"
                     name="lastName"
                     type="text"
-                    required
                     value={userInfo.lastName}
                     onChange={handleInputChange}
+                    placeholder="Kun for nye kontoer"
                   />
                 </div>
               </div>
@@ -160,21 +190,9 @@ export default function Setup2FA() {
                   id="tenantName"
                   name="tenantName"
                   type="text"
-                  required
                   value={userInfo.tenantName}
                   onChange={handleInputChange}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="email">E-post</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  required
-                  value={userInfo.email}
-                  onChange={handleInputChange}
+                  placeholder="Kun for nye kontoer"
                 />
               </div>
 

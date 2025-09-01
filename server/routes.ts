@@ -68,24 +68,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Setup 2FA for new user
+  // Setup 2FA for new or existing user
   app.post('/api/auth/setup-2fa', async (req, res) => {
     try {
       const { email, firstName, lastName, tenantName } = req.body;
       
-      if (!email || !firstName || !lastName || !tenantName) {
-        return res.status(400).json({ message: 'Alle felter er påkrevd' });
+      if (!email) {
+        return res.status(400).json({ message: 'E-post er påkrevd' });
       }
 
       // Check if user already exists
       const existingUser = await storage.getUserByEmail(email);
+      
+      let userEmail = email;
+      let isExisting = false;
+
       if (existingUser) {
-        return res.status(400).json({ message: 'Bruker eksisterer allerede' });
+        // For existing users, just set up 2FA
+        userEmail = existingUser.email;
+        isExisting = true;
+      } else {
+        // For new users, require all fields
+        if (!firstName || !lastName || !tenantName) {
+          return res.status(400).json({ message: 'Alle felter er påkrevd for nye brukere' });
+        }
       }
 
       // Generate secret for 2FA
       const secret = speakeasy.generateSecret({
-        name: `RegnskapsAI (${email})`,
+        name: `RegnskapsAI (${userEmail})`,
         issuer: 'RegnskapsAI',
         length: 32,
       });
@@ -93,16 +104,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate QR code
       const qrCodeDataURL = await qrcode.toDataURL(secret.otpauth_url!);
 
-      // Store temporary user data in session or cache (for now, we'll proceed directly)
-      // In production, you'd want to store this temporarily until verification
+      // Store secret temporarily (in session or temporary storage)
+      // For simplicity, we'll include it in response
       
       res.json({
         secret: secret.base32,
         qrCode: qrCodeDataURL,
-        email,
-        firstName,
-        lastName,
-        tenantName
+        email: userEmail,
+        firstName: firstName || (existingUser?.firstName),
+        lastName: lastName || (existingUser?.lastName),
+        tenantName: tenantName,
+        isExisting
       });
     } catch (error) {
       console.error('Error setting up 2FA:', error);
@@ -110,25 +122,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Verify 2FA and create user
+  // Verify 2FA and create/update user
   app.post('/api/auth/verify-2fa', async (req, res) => {
     try {
-      const { email, token } = req.body;
+      const { email, token, secret, firstName, lastName, tenantName, isExisting } = req.body;
       
-      if (!email || !token) {
-        return res.status(400).json({ message: 'E-post og token er påkrevd' });
+      if (!email || !token || !secret) {
+        return res.status(400).json({ message: 'E-post, token og secret er påkrevd' });
       }
 
-      // In a real implementation, you'd retrieve the secret from temporary storage
-      // For now, we'll use a simplified approach
-      
+      // Verify the token against the secret
+      const isValid = speakeasy.totp.verify({
+        secret: secret,
+        encoding: 'base32',
+        token: token,
+        window: 2
+      });
+
+      if (!isValid) {
+        return res.status(400).json({ message: 'Ugyldig kode' });
+      }
+
       // Generate backup codes
       const backupCodes = Array.from({ length: 8 }, () => 
         Math.random().toString(36).substring(2, 8).toUpperCase()
       );
 
+      if (isExisting) {
+        // Update existing user with 2FA
+        const existingUser = await storage.getUserByEmail(email);
+        if (existingUser) {
+          await storage.updateUser2FA(existingUser.id, secret, backupCodes);
+        }
+      } else {
+        // Create new user with 2FA
+        if (!firstName || !lastName || !tenantName) {
+          return res.status(400).json({ message: 'Alle felter er påkrevd for nye brukere' });
+        }
+
+        // Create tenant first
+        const tenant = await storage.createTenant({
+          name: tenantName,
+          email: email,
+          isActive: true
+        });
+
+        // Create user
+        await storage.createUser({
+          email: email,
+          username: email,
+          firstName: firstName,
+          lastName: lastName,
+          role: 'admin',
+          tenantId: tenant.id,
+          twoFactorSecret: secret,
+          twoFactorEnabled: true,
+          twoFactorBackupCodes: backupCodes,
+          isActive: true
+        });
+      }
+
       res.json({
-        message: '2FA verifisert',
+        message: '2FA verifisert og aktivert',
         backupCodes
       });
     } catch (error) {
