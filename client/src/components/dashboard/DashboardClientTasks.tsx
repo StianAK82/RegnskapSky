@@ -313,15 +313,15 @@ function AssigneeDropdown({ task }: { task: TaskWithClient }) {
 
   return (
     <Select 
-      value={task.assignedTo || ""} 
-      onValueChange={(value) => updateAssigneeMutation.mutate(value)}
+      value={task.assignedTo || "unassigned"} 
+      onValueChange={(value) => updateAssigneeMutation.mutate(value === "unassigned" ? "" : value)}
       disabled={updateAssigneeMutation.isPending}
     >
       <SelectTrigger className="w-full text-sm">
         <SelectValue placeholder="Ikke tildelt" />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="">Ingen tildelt</SelectItem>
+        <SelectItem value="unassigned">Ingen tildelt</SelectItem>
         {employees.map((employee: any) => (
           <SelectItem key={employee.id} value={employee.id}>
             {employee.firstName} {employee.lastName}
@@ -416,7 +416,6 @@ export default function DashboardClientTasks() {
                          taskStatus === 'utført';
       
       if (isCompleted) {
-        console.log('Filtering out completed task:', task.title, 'with status:', task.status);
         return false;
       }
       
