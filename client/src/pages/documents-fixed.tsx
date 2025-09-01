@@ -10,7 +10,6 @@ import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 
 export default function DocumentsFixed() {
-  console.log('=== DOCUMENTS FIXED COMPONENT LOADED ===');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [viewingDocument, setViewingDocument] = useState<any>(null);
@@ -20,10 +19,8 @@ export default function DocumentsFixed() {
     queryKey: ['/api/documents'],
   }) as { data: any[], isLoading: boolean };
 
-  // NEW FUNCTION - Direct server fetch with employee details
+  // Direct server fetch for original report data
   const handleViewDocument = async (document: any) => {
-    console.log('=== FIXED FUNCTION CALLED ===');
-    console.log('Document:', document.name, 'ID:', document.id);
     
     // Always fetch fresh data from server
     const authToken = localStorage.getItem('auth_token') || localStorage.getItem('token');
@@ -33,7 +30,6 @@ export default function DocumentsFixed() {
     }
     
     try {
-      console.log('CALLING SERVER /api/documents/' + document.id + '/view');
       const response = await fetch(`/api/documents/${document.id}/view`, {
         headers: {
           'Authorization': `Bearer ${authToken}`,
@@ -43,7 +39,6 @@ export default function DocumentsFixed() {
       
       if (response.ok) {
         const serverData = await response.json();
-        console.log('SUCCESS - Server data:', serverData);
         
         setViewingDocument({
           ...document,
@@ -51,9 +46,6 @@ export default function DocumentsFixed() {
         });
         
       } else {
-        console.error('Server error:', response.status);
-        const errorText = await response.text();
-        console.error('Error details:', errorText);
         
         setViewingDocument({
           ...document,
@@ -61,7 +53,6 @@ export default function DocumentsFixed() {
         });
       }
     } catch (error) {
-      console.error('Network error:', error);
       setViewingDocument({
         ...document,
         data: [{ Klient: 'Nettverksfeil - kunne ikke koble til server', 'Totale timer': 0, 'Fakturerbare timer': 0 }]
