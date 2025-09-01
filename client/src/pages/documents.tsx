@@ -316,13 +316,12 @@ export default function Documents() {
                           {document.createdAt ? new Date(document.createdAt).toLocaleDateString('nb-NO') : 'Ukjent'}
                         </TableCell>
                         <TableCell>
-                          <div className="flex gap-2">
+                          <div className="flex gap-1">
                             <Button
-                              variant="outline"
                               size="sm"
                               onClick={() => handleViewDocument(document)}
                               title="Vis dokument på skjermen"
-                              className="bg-blue-100 text-blue-700 border-blue-300 hover:bg-blue-200"
+                              style={{backgroundColor: '#3B82F6', color: 'white', marginRight: '4px'}}
                             >
                               👁️ Vis
                             </Button>
