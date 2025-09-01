@@ -47,140 +47,56 @@ export default function Documents() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const handleDownload = async (document: any) => {
-    try {
-      const authToken = localStorage.getItem('auth_token');
-      const token = localStorage.getItem('token'); 
-      const finalToken = authToken || token;
-      
-      if (!finalToken) {
-        toast({
-          title: "Ikke innlogget",
-          description: "Du må være innlogget for å laste ned dokumenter",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      console.log('Starting download with POST fetch...');
-      console.log('Token being sent:', finalToken.substring(0, 20) + '...');
-
-      // First test that POST works at all
-      try {
-        console.log('Testing POST functionality...');
-        const testResponse = await fetch('/api/test-post', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: 'test=value'
-        });
-        const testResult = await testResponse.json();
-        console.log('POST test result:', testResult);
-      } catch (testError) {
-        console.error('POST test failed:', testError);
-      }
-
-      // Use fetch with POST to send token in body
-      const response = await fetch(`/api/documents/${document.id}/download`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Cache-Control': 'no-cache',
-        },
-        body: `token=${encodeURIComponent(finalToken)}`,
-        cache: 'no-cache'
-      });
-
-      console.log('Download response status:', response.status);
-      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Download failed: ${response.status} - ${errorText}`);
-      }
-
-      // Handle the file download
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = document.fileName || 'document.csv';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-      
+  const handleDownload = (document: any) => {
+    const authToken = localStorage.getItem('auth_token');
+    const token = localStorage.getItem('token'); 
+    const finalToken = authToken || token;
+    
+    if (!finalToken) {
       toast({
-        title: "Nedlasting fullført",
-        description: "Dokumentet ble lastet ned",
-      });
-    } catch (error) {
-      console.error('Download error:', error);
-      toast({
-        title: "Nedlasting feilet",
-        description: error instanceof Error ? error.message : "Kunne ikke laste ned dokumentet",
+        title: "Ikke innlogget",
+        description: "Du må være innlogget for å laste ned dokumenter",
         variant: "destructive",
       });
+      return;
     }
+
+    console.log('Direct download with token in URL...');
+    
+    // Use window.open with token in URL - this bypasses all fetch/POST complications
+    const downloadUrl = `/api/documents/${document.id}/download?token=${encodeURIComponent(finalToken)}`;
+    window.open(downloadUrl, '_blank');
+    
+    toast({
+      title: "Nedlasting startet",
+      description: "Dokumentet blir lastet ned",
+    });
   };
 
-  const handleDownloadExcel = async (document: any) => {
-    try {
-      const authToken = localStorage.getItem('auth_token');
-      const token = localStorage.getItem('token'); 
-      const finalToken = authToken || token;
+  const handleDownloadExcel = (document: any) => {
+    const authToken = localStorage.getItem('auth_token');
+    const token = localStorage.getItem('token'); 
+    const finalToken = authToken || token;
 
-      if (!finalToken) {
-        toast({
-          title: "Ikke innlogget",
-          description: "Du må være innlogget for å laste ned dokumenter",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      console.log('Starting Excel download with POST fetch...');
-
-      // Use fetch with POST to send token and format in body
-      const response = await fetch(`/api/documents/${document.id}/download`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: `token=${encodeURIComponent(finalToken)}&format=excel`
-      });
-
-      console.log('Excel download response status:', response.status);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Excel download failed: ${response.status} - ${errorText}`);
-      }
-
-      // Handle the file download
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = document.fileName?.replace('.csv', '.xlsx') || 'document.xlsx';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-      
+    if (!finalToken) {
       toast({
-        title: "Excel nedlasting fullført",
-        description: "Excel-filen ble lastet ned",
-      });
-    } catch (error) {
-      console.error('Excel download error:', error);
-      toast({
-        title: "Excel nedlasting feilet",
-        description: error instanceof Error ? error.message : "Kunne ikke laste ned Excel-filen",
+        title: "Ikke innlogget",
+        description: "Du må være innlogget for å laste ned dokumenter",
         variant: "destructive",
       });
+      return;
     }
+
+    console.log('Direct Excel download with token in URL...');
+
+    // Use window.open with token and format in URL
+    const downloadUrl = `/api/documents/${document.id}/download?format=excel&token=${encodeURIComponent(finalToken)}`;
+    window.open(downloadUrl, '_blank');
+    
+    toast({
+      title: "Excel nedlasting startet",
+      description: "Excel-filen blir lastet ned",
+    });
   };
 
   // Delete document mutation
