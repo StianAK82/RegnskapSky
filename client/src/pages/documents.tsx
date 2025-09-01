@@ -326,38 +326,86 @@ export default function Documents() {
                           </td>
                           <td style={{ padding: '12px' }}>
                             <button
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                console.log('BUTTON CLICKED - Document:', document.name);
-                                alert('KNAPP FUNGERER! Document: ' + document.name);
-                                handleViewDocument(document);
-                              }}
+                              onClick={() => handleViewDocument(document)}
                               title="Vis rapport på skjermen"
+                              style={{
+                                backgroundColor: '#3B82F6',
+                                color: 'white',
+                                padding: '8px 16px',
+                                borderRadius: '6px',
+                                border: 'none',
+                                cursor: 'pointer',
+                                fontSize: '12px',
+                                fontWeight: '500',
+                                marginRight: '8px',
+                                transition: 'all 0.2s'
+                              }}
+                              onMouseOver={(e) => (e.target as HTMLElement).style.backgroundColor = '#2563EB'}
+                              onMouseOut={(e) => (e.target as HTMLElement).style.backgroundColor = '#3B82F6'}
+                            >
+                              👁️ Vis rapport
+                            </button>
+                            
+                            <button
+                              onClick={() => handleDownload(document)}
+                              title="Last ned som CSV"
+                              style={{
+                                backgroundColor: '#6b7280',
+                                color: 'white',
+                                padding: '8px 12px',
+                                borderRadius: '4px',
+                                border: 'none',
+                                cursor: 'pointer',
+                                fontSize: '12px',
+                                marginRight: '4px',
+                                transition: 'all 0.2s'
+                              }}
+                              onMouseOver={(e) => (e.target as HTMLElement).style.backgroundColor = '#4b5563'}
+                              onMouseOut={(e) => (e.target as HTMLElement).style.backgroundColor = '#6b7280'}
+                            >
+                              📥 CSV
+                            </button>
+                            
+                            {document.category === 'Rapporter' && (
+                              <button
+                                onClick={() => handleDownloadExcel(document)}
+                                title="Last ned som Excel"
+                                style={{
+                                  backgroundColor: '#059669',
+                                  color: 'white',
+                                  padding: '8px 12px',
+                                  borderRadius: '4px',
+                                  border: 'none',
+                                  cursor: 'pointer',
+                                  fontSize: '12px',
+                                  marginRight: '4px',
+                                  transition: 'all 0.2s'
+                                }}
+                                onMouseOver={(e) => (e.target as HTMLElement).style.backgroundColor = '#047857'}
+                                onMouseOut={(e) => (e.target as HTMLElement).style.backgroundColor = '#059669'}
+                              >
+                                📊 Excel
+                              </button>
+                            )}
+                            
+                            <button
+                              onClick={() => handleDelete(document)}
+                              title="Slett dokument"
                               style={{
                                 backgroundColor: '#dc2626',
                                 color: 'white',
-                                padding: '12px 20px',
-                                borderRadius: '8px',
-                                border: '3px solid #991b1b',
+                                padding: '8px 12px',
+                                borderRadius: '4px',
+                                border: 'none',
                                 cursor: 'pointer',
-                                fontSize: '14px',
-                                fontWeight: 'bold',
-                                marginRight: '8px',
-                                boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
-                                zIndex: 1000,
-                                position: 'relative'
+                                fontSize: '12px',
+                                transition: 'all 0.2s'
                               }}
+                              onMouseOver={(e) => (e.target as HTMLElement).style.backgroundColor = '#b91c1c'}
+                              onMouseOut={(e) => (e.target as HTMLElement).style.backgroundColor = '#dc2626'}
                             >
-                              🔴 TEST KNAPP
+                              🗑️ Slett
                             </button>
-                            <span style={{ 
-                              color: '#666', 
-                              fontSize: '12px',
-                              marginLeft: '16px' 
-                            }}>
-                              (Andre knapper midlertidig fjernet for testing)
-                            </span>
                           </td>
                         </tr>
                       );
