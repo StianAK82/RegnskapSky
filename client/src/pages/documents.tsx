@@ -133,7 +133,9 @@ export default function Documents() {
 
   const handleViewDocument = async (document: any) => {
     console.log('handleViewDocument clicked for:', document.name);
-    console.log('Document object:', document);
+    console.log('Full document object with all fields:', JSON.stringify(document, null, 2));
+    console.log('aiSuggestions field:', document.aiSuggestions);
+    console.log('data field:', document.data);
     
     // Parse the actual document data - check aiSuggestions first (new format)
     let documentData = [];

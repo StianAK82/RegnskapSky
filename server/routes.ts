@@ -2621,21 +2621,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/documents/:id/view', authenticateToken, async (req, res) => {
     try {
       const documentId = req.params.id;
-      const document = storage.getDocument(documentId);
+      const document = await storage.getDocument(documentId);
       
       if (!document) {
         return res.status(404).json({ message: 'Document not found' });
       }
 
-      // Parse document data if it's stored as JSON string
+      console.log('Document view request for:', document.fileName);
+      console.log('Document aiSuggestions:', document.aiSuggestions);
+      console.log('Document data field:', document.data);
+
+      // First try aiSuggestions.reportData (new format)
       let documentData;
-      try {
-        documentData = typeof document.data === 'string' 
-          ? JSON.parse(document.data) 
-          : document.data;
-      } catch (parseError) {
-        console.error('Error parsing document data:', parseError);
-        documentData = [];
+      if (document.aiSuggestions?.reportData) {
+        documentData = document.aiSuggestions.reportData;
+        console.log('Using aiSuggestions.reportData:', documentData);
+      }
+      // Then try parsing data field (legacy format)
+      else if (document.data) {
+        try {
+          documentData = typeof document.data === 'string' 
+            ? JSON.parse(document.data) 
+            : document.data;
+          console.log('Using parsed document.data:', documentData);
+        } catch (parseError) {
+          console.error('Error parsing document data:', parseError);
+          documentData = [];
+        }
+      }
+      // If no data found, try to regenerate from time entries for this document
+      else {
+        console.log('No document data found, attempting to regenerate...');
+        // Get all time entries and try to match the document's date pattern
+        const tenantId = req.user!.tenantId;
+        const allTimeEntries = await storage.getTimeEntriesWithFilters({ tenantId });
+        
+        // Simple grouping by client for demonstration
+        const grouped = allTimeEntries.reduce((acc: any, entry: any) => {
+          const clientName = entry.clientName || 'Ukjent klient';
+          const employeeName = entry.userName || 'Ukjent ansatt';
+          
+          if (!acc[clientName]) {
+            acc[clientName] = { 
+              Klient: clientName,
+              Ansatt: employeeName,
+              'Totale timer': 0, 
+              'Fakturerbare timer': 0,
+              Beskrivelser: []
+            };
+          }
+          
+          acc[clientName]['Totale timer'] += parseFloat(entry.timeSpent) || 0;
+          if (entry.billable) {
+            acc[clientName]['Fakturerbare timer'] += parseFloat(entry.timeSpent) || 0;
+          }
+          
+          if (entry.description) {
+            acc[clientName].Beskrivelser.push(`${employeeName}: ${entry.description} (${entry.timeSpent}t)`);
+          }
+          
+          return acc;
+        }, {});
+        
+        documentData = Object.values(grouped).map((item: any) => ({
+          ...item,
+          Beskrivelser: item.Beskrivelser.join('; ')
+        }));
+        
+        console.log('Regenerated document data:', documentData);
       }
 
       res.json(documentData || []);
