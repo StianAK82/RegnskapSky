@@ -153,13 +153,13 @@ function CompletedTasksReport() {
         </Card>
         <Card>
           <CardContent className="p-6">
-            <div className="text-2xl font-bold text-blue-600">{totalTimeSpent.toFixed(1)}t</div>
+            <div className="text-2xl font-bold text-blue-600">{(typeof totalTimeSpent === 'number' ? totalTimeSpent : 0).toFixed(1)}t</div>
             <p className="text-gray-600">Totalt timer brukt</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-6">
-            <div className="text-2xl font-bold text-purple-600">{averageTimePerTask.toFixed(1)}t</div>
+            <div className="text-2xl font-bold text-purple-600">{(typeof averageTimePerTask === 'number' ? averageTimePerTask : 0).toFixed(1)}t</div>
             <p className="text-gray-600">Gjennomsnitt per oppgave</p>
           </CardContent>
         </Card>
