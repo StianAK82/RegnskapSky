@@ -77,6 +77,7 @@ export default function Login() {
 
       if (response.ok) {
         localStorage.setItem('auth_token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
         toast({
           title: 'Pålogget',
           description: 'Du er nå pålogget',

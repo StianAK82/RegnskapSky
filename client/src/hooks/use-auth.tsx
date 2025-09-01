@@ -11,21 +11,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
-      const storedToken = localStorage.getItem('token');
+      // Check for both token keys for compatibility
+      const storedToken = localStorage.getItem('auth_token') || localStorage.getItem('token');
       const storedUser = localStorage.getItem('user');
       
-      if (storedToken && storedUser && storedToken !== 'null' && storedUser !== 'null') {
+      if (storedToken && storedToken !== 'null') {
         setToken(storedToken);
-        const parsedUser = JSON.parse(storedUser);
-        setUser(parsedUser);
+        
+        if (storedUser && storedUser !== 'null') {
+          const parsedUser = JSON.parse(storedUser);
+          setUser(parsedUser);
+        } else {
+          // If we have token but no user, fetch user data
+          fetchUserFromToken(storedToken);
+        }
       }
     } catch (error) {
       console.error('Error loading stored auth data:', error);
       localStorage.removeItem('token');
+      localStorage.removeItem('auth_token');
       localStorage.removeItem('user');
     }
     setIsLoading(false);
   }, []);
+
+  const fetchUserFromToken = async (authToken: string) => {
+    try {
+      const response = await fetch('/api/auth/me', {
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      });
+      
+      if (response.ok) {
+        const userData = await response.json();
+        setUser(userData);
+        localStorage.setItem('user', JSON.stringify(userData));
+      } else {
+        // Token is invalid, clear it
+        localStorage.removeItem('token');
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('user');
+        setToken(null);
+      }
+    } catch (error) {
+      console.error('Error fetching user from token:', error);
+      localStorage.removeItem('token');
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('user');
+      setToken(null);
+    }
+  };
 
   const login = async (email: string, password: string) => {
     try {
@@ -60,6 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setToken(null);
     localStorage.removeItem('token');
+    localStorage.removeItem('auth_token');
     localStorage.removeItem('user');
   };
 
