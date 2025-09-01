@@ -411,10 +411,9 @@ export default function DashboardClientTasks() {
   const [currentTimeEntry, setCurrentTimeEntry] = useState<any>(null);
 
   const handleStartTask = (task: TaskWithClient) => {
-    console.log('NEW VERSION: Starting task:', task.title);
-    console.log('NEW VERSION: Setting up time entry modal');
+    console.log('Starting task:', task.title);
     
-    // Set up for time entry modal - NEW VERSION
+    // Set up for time entry modal
     setSelectedTask(task);
     const newTimeEntry = { 
       taskId: task.id,
@@ -425,10 +424,8 @@ export default function DashboardClientTasks() {
       startTime: new Date().toISOString()
     };
     
-    console.log('NEW VERSION: Time entry data:', newTimeEntry);
     setCurrentTimeEntry(newTimeEntry);
     setShowTimeModal(true);
-    console.log('NEW VERSION: Modal state set to true');
   };
 
   // Fetch all tasks with client information
@@ -650,13 +647,12 @@ export default function DashboardClientTasks() {
                           size="sm"
                           className="bg-green-600 hover:bg-green-700 text-white"
                           onClick={() => {
-                            console.log('NEW VERSION: Button clicked for task:', task.title);
-                            console.log('NEW VERSION: About to call handleStartTask');
+                            console.log('Button clicked for task:', task.title);
                             handleStartTask(task);
                           }}
                           data-testid={`button-start-task-${task.id}`}
                         >
-                          🚀 Start oppgave
+                          Registrer timer
                         </Button>
                       </td>
                     </tr>
@@ -770,11 +766,8 @@ function TimeEntryModal({ isOpen, onClose, timeEntry }: {
   };
 
   if (!timeEntry) {
-    console.log('TimeEntryModal: No timeEntry, returning null');
     return null;
   }
-
-  console.log('TimeEntryModal: Rendering modal with isOpen:', isOpen, 'timeEntry:', timeEntry);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
