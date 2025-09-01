@@ -49,41 +49,10 @@ export default function Documents() {
 
   const handleDownload = async (document: any) => {
     try {
-      const token = localStorage.getItem('token');
-      console.log('Download attempt:', {
-        documentId: document.id,
-        hasToken: !!token,
-        tokenStart: token ? token.substring(0, 20) + '...' : 'none'
-      });
+      // Use apiRequest which automatically includes auth headers
+      const response = await apiRequest('GET', `/api/documents/${document.id}/download`);
       
-      if (!token) {
-        toast({
-          title: "Ikke innlogget",
-          description: "Du må være innlogget for å laste ned dokumenter",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const response = await fetch(`/api/documents/${document.id}/download`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      console.log('Download response:', {
-        status: response.status,
-        headers: Object.fromEntries(response.headers.entries())
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Download failed:', errorText);
-        throw new Error(`Failed to download document: ${response.status} - ${errorText}`);
-      }
-
+      // Check if it's a blob response
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -110,35 +79,9 @@ export default function Documents() {
 
   const handleDownloadExcel = async (document: any) => {
     try {
-      const token = localStorage.getItem('token');
-      console.log('Excel download attempt:', {
-        documentId: document.id,
-        hasToken: !!token
-      });
+      // Use apiRequest which automatically includes auth headers
+      const response = await apiRequest('GET', `/api/documents/${document.id}/download?format=excel`);
       
-      if (!token) {
-        toast({
-          title: "Ikke innlogget",
-          description: "Du må være innlogget for å laste ned dokumenter",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const response = await fetch(`/api/documents/${document.id}/download?format=excel`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Excel download failed:', errorText);
-        throw new Error(`Failed to download Excel: ${response.status} - ${errorText}`);
-      }
-
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -160,6 +103,32 @@ export default function Documents() {
         description: error instanceof Error ? error.message : "Kunne ikke laste ned Excel-filen",
         variant: "destructive",
       });
+    }
+  };
+
+  // Delete document mutation
+  const deleteDocumentMutation = useMutation({
+    mutationFn: (documentId: string) => 
+      apiRequest('DELETE', `/api/documents/${documentId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/documents'] });
+      toast({
+        title: "Dokument slettet",
+        description: "Dokumentet ble slettet",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Feil ved sletting",
+        description: error.message || "Kunne ikke slette dokumentet",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleDelete = (document: any) => {
+    if (confirm(`Er du sikker på at du vil slette "${document.name}"?`)) {
+      deleteDocumentMutation.mutate(document.id);
     }
   };
 
@@ -323,6 +292,15 @@ export default function Documents() {
                                 📊
                               </Button>
                             )}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDelete(document)}
+                              title="Slett dokument"
+                              className="text-red-600"
+                            >
+                              🗑️
+                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>

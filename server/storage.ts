@@ -651,6 +651,10 @@ export class DatabaseStorage implements IStorage {
     return result.count;
   }
 
+  async deleteDocument(id: string): Promise<void> {
+    await db.delete(documents).where(eq(documents.id, id));
+  }
+
   async updateDocument(id: string, updates: Partial<Document>): Promise<Document> {
     const [document] = await db
       .update(documents)

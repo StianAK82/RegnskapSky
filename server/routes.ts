@@ -2570,6 +2570,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete document endpoint
+  app.delete('/api/documents/:id', authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const user = req.user;
+      const documentId = req.params.id;
+      
+      // Get document to verify ownership/tenant
+      const documents = await storage.getDocumentsByTenant(user.tenantId);
+      const document = documents.find(d => d.id === documentId);
+      
+      if (!document) {
+        return res.status(404).json({ message: 'Document not found' });
+      }
+      
+      // Delete document (you'll need to implement deleteDocument in storage)
+      await storage.deleteDocument(documentId);
+      
+      res.json({ message: 'Document deleted successfully' });
+    } catch (error: any) {
+      console.error('Error deleting document:', error);
+      res.status(500).json({ message: 'Failed to delete document: ' + error.message });
+    }
+  });
+
   return httpServer;
 }
 
