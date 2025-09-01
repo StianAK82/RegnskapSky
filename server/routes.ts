@@ -2651,12 +2651,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           documentData = [];
         }
       }
-      // If no data found, try to regenerate from time entries for this document
-      else {
-        console.log('No document data found, attempting to regenerate...');
-        // Get all time entries and try to match the document's date pattern
+      // If no existing data found, regenerate from ALL time entries with employee details
+      if (!documentData || (Array.isArray(documentData) && documentData.length === 0)) {
+        console.log('REGENERATING data from ALL time entries with employee names...');
+        // Get all time entries and employees and clients for detailed report
         const tenantId = req.user!.tenantId;
         const allTimeEntries = await storage.getTimeEntriesWithFilters({ tenantId });
+        const employees = await storage.getEmployees({ tenantId });
+        const clients = await storage.getClients({ tenantId });
         
         // Simple grouping by client for demonstration
         const grouped = allTimeEntries.reduce((acc: any, entry: any) => {

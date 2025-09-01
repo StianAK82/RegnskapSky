@@ -131,21 +131,68 @@ export default function Documents() {
     }
   };
 
-  const handleViewDocument = async (document: any) => {
-    console.log('=== NEW DOCUMENT VIEW DEBUG START ===');
-    console.log('UPDATED handleViewDocument clicked for:', document.name);
-    console.log('Document ID:', document.id);
-    console.log('Full document object:', document);
-    alert('UPDATED FUNCTION CALLED - Document: ' + document.name);
+  const handleViewDocumentNew = async (document: any) => {
+    console.log('=== SERVER FETCH DOCUMENT DATA START ===');
+    console.log('Document name:', document.name, 'ID:', document.id);
     
-    // Force return early to test if new function is running
-    setViewingDocument({
-      ...document,
-      data: [
-        { Klient: 'UPDATED TEST - Dette er ny funksjon!', 'Totale timer': 99, 'Fakturerbare timer': 88 }
-      ]
-    });
-    return;
+    // ALWAYS fetch fresh data from server with employee details
+    const authToken = localStorage.getItem('auth_token') || localStorage.getItem('token');
+    if (!authToken) {
+      console.error('No auth token found');
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/documents/${document.id}/view`, {
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const serverData = await response.json();
+        console.log('SUCCESS - Server returned data:', serverData);
+        
+        if (Array.isArray(serverData) && serverData.length > 0) {
+          setViewingDocument({
+            ...document,
+            data: serverData
+          });
+          console.log('DISPLAY - Using server data with employee details');
+        } else {
+          console.log('FALLBACK - Server returned empty, using test data');
+          setViewingDocument({
+            ...document,
+            data: [
+              { Klient: 'Ingen data fra server - viser testdata', 'Totale timer': 0, 'Fakturerbare timer': 0 }
+            ]
+          });
+        }
+      } else {
+        const errorText = await response.text();
+        console.error('Server error:', response.status, errorText);
+        setViewingDocument({
+          ...document,
+          data: [
+            { Klient: `Server-feil ${response.status}`, 'Totale timer': 0, 'Fakturerbare timer': 0 }
+          ]
+        });
+      }
+    } catch (error) {
+      console.error('Fetch error:', error);
+      setViewingDocument({
+        ...document,
+        data: [
+          { Klient: 'Nettverksfeil - kunne ikke hente data', 'Totale timer': 0, 'Fakturerbare timer': 0 }
+        ]
+      });
+    }
+  };
+
+  // Keep old function for fallback but redirect to new one
+  const handleViewDocument = async (document: any) => {
+    return handleViewDocumentNew(document);
     
     // Parse the actual document data - check aiSuggestions first (new format)
     let documentData = [];
