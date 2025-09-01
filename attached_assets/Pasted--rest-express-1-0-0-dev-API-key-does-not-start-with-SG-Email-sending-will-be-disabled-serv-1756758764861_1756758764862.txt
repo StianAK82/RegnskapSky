@@ -1,0 +1,285 @@
+
+> rest-express@1.0.0 dev
+API key does not start with "SG.". Email sending will be disabled.
+serving on port 5000
+Auth check: {
+  hasAuthHeader: true,
+  hasToken: true,
+  tokenStart: 'eyJhbGciOiJIUzI1NiIs...',
+  url: '/api/dashboard/metrics'
+}
+Auth check: {
+  hasAuthHeader: true,
+  hasToken: true,
+  tokenStart: 'eyJhbGciOiJIUzI1NiIs...',
+  url: '/api/clients'
+}
+Auth check: {
+  hasAuthHeader: true,
+  hasToken: true,
+  tokenStart: 'eyJhbGciOiJIUzI1NiIs...',
+  url: '/api/tasks'
+}
+Token verified for user: stian@zaldo.no
+Token verified for user: stian@zaldo.no
+Token verified for user: stian@zaldo.no
+GET /api/clients 304 in 138ms :: [{"id":"c862337b-7e7d-42e8-9c55-6b21a9e2420f",…
+GET /api/tasks 304 in 169ms :: [{"id":"6fab6bcb-c702-4182-a7c1-600f00c56852","t…
+GET /api/dashboard/metrics 200 in 305ms :: {"totalClients":11,"activeTasks":4,"…
+Auth check: {
+  hasAuthHeader: true,
+  hasToken: true,
+  tokenStart: 'eyJhbGciOiJIUzI1NiIs...',
+  url: '/api/tasks/overview'
+}
+Token verified for user: stian@zaldo.no
+GET /api/tasks/overview 304 in 70ms :: [{"id":"b71a1b7c-6c10-441c-b46a-f46abf4d…
+Auth check: {
+  hasAuthHeader: true,
+  hasToken: true,
+  tokenStart: 'eyJhbGciOiJIUzI1NiIs...',
+  url: '/api/employees'
+}
+Token verified for user: stian@zaldo.no
+GET /api/employees 304 in 48ms :: [{"id":"ab6c17ad-2df4-4648-b013-adf8ec465d91"…
+Auth check: {
+  hasAuthHeader: true,
+  hasToken: true,
+  tokenStart: 'eyJhbGciOiJIUzI1NiIs...',
+  url: '/api/tasks/594ee981-927e-4d12-ba24-ed366a90bac2'
+}
+Token verified for user: stian@zaldo.no
+PATCH request for task: 594ee981-927e-4d12-ba24-ed366a90bac2 with data: { assignedTo: 'ab6c17ad-2df4-4648-b013-adf8ec465d91' }
+Regular task update failed, trying client task: Task with id 594ee981-927e-4d12-ba24-ed366a90bac2 not found in tasks table
+Client task updated successfully: {
+  id: '594ee981-927e-4d12-ba24-ed366a90bac2',
+  clientId: 'abfc9b22-00de-47f8-a0ff-b9844ce61d42',
+  tenantId: '70104b9b-1763-4158-a9b0-5c66cff9756d',
+  taskName: 'Bokføring',
+  taskType: 'standard',
+  description: 'Ukentlig bokføring',
+  dueDate: null,
+  interval: null,
+  repeatInterval: 'ukentlig',
+  status: 'ikke_startet',
+  assignedTo: 'ab6c17ad-2df4-4648-b013-adf8ec465d91',
+  createdAt: 2025-08-25T12:26:08.878Z,
+  updatedAt: 2025-09-01T20:25:14.478Z
+}
+PATCH /api/tasks/594ee981-927e-4d12-ba24-ed366a90bac2 200 in 160ms :: {"id":"59…
+Auth check: {
+  hasAuthHeader: true,
+  hasToken: true,
+  tokenStart: 'eyJhbGciOiJIUzI1NiIs...',
+  url: '/api/tasks/overview'
+}
+Auth check: {
+  hasAuthHeader: true,
+  hasToken: true,
+  tokenStart: 'eyJhbGciOiJIUzI1NiIs...',
+  url: '/api/tasks'
+}
+Token verified for user: stian@zaldo.no
+GET /api/tasks/overview 200 in 78ms :: [{"id":"b71a1b7c-6c10-441c-b46a-f46abf4d…
+Token verified for user: stian@zaldo.no
+GET /api/tasks 200 in 152ms :: [{"id":"6fab6bcb-c702-4182-a7c1-600f00c56852","t…
+Auth check: {
+  hasAuthHeader: true,
+  hasToken: true,
+  tokenStart: 'eyJhbGciOiJIUzI1NiIs...',
+  url: '/api/tasks/6fab6bcb-c702-4182-a7c1-600f00c56852'
+}
+Token verified for user: stian@zaldo.no
+PATCH request for task: 6fab6bcb-c702-4182-a7c1-600f00c56852 with data: { assignedTo: 'ab6c17ad-2df4-4648-b013-adf8ec465d91' }
+Regular task update failed, trying client task: Task with id 6fab6bcb-c702-4182-a7c1-600f00c56852 not found in tasks table
+Client task updated successfully: {
+  id: '6fab6bcb-c702-4182-a7c1-600f00c56852',
+  clientId: 'abfc9b22-00de-47f8-a0ff-b9844ce61d42',
+  tenantId: '70104b9b-1763-4158-a9b0-5c66cff9756d',
+  taskName: 'Lønn',
+  taskType: 'standard',
+  description: 'Månedlig lønn',
+  dueDate: null,
+  interval: null,
+  repeatInterval: 'månedlig',
+  status: 'ikke_startet',
+  assignedTo: 'ab6c17ad-2df4-4648-b013-adf8ec465d91',
+  createdAt: 2025-08-27T08:05:47.953Z,
+  updatedAt: 2025-09-01T20:25:16.674Z
+}
+PATCH /api/tasks/6fab6bcb-c702-4182-a7c1-600f00c56852 200 in 78ms :: {"id":"6fa…
+Auth check: {
+  hasAuthHeader: true,
+  hasToken: true,
+  tokenStart: 'eyJhbGciOiJIUzI1NiIs...',
+  url: '/api/tasks/overview'
+}
+Auth check: {
+  hasAuthHeader: true,
+  hasToken: true,
+  tokenStart: 'eyJhbGciOiJIUzI1NiIs...',
+  url: '/api/tasks'
+}
+Token verified for user: stian@zaldo.no
+Token verified for user: stian@zaldo.no
+GET /api/tasks 200 in 68ms :: [{"id":"6fab6bcb-c702-4182-a7c1-600f00c56852","ti…
+GET /api/tasks/overview 200 in 74ms :: [{"id":"b71a1b7c-6c10-441c-b46a-f46abf4d…
+Auth check: {
+  hasAuthHeader: true,
+  hasToken: true,
+  tokenStart: 'eyJhbGciOiJIUzI1NiIs...',
+  url: '/api/tasks/594ee981-927e-4d12-ba24-ed366a90bac2'
+}
+Token verified for user: stian@zaldo.no
+PATCH request for task: 594ee981-927e-4d12-ba24-ed366a90bac2 with data: { assignedTo: 'c5db0c2e-0298-4410-8820-0acb75a03b34' }
+Regular task update failed, trying client task: Task with id 594ee981-927e-4d12-ba24-ed366a90bac2 not found in tasks table
+Client task updated successfully: {
+  id: '594ee981-927e-4d12-ba24-ed366a90bac2',
+  clientId: 'abfc9b22-00de-47f8-a0ff-b9844ce61d42',
+  tenantId: '70104b9b-1763-4158-a9b0-5c66cff9756d',
+  taskName: 'Bokføring',
+  taskType: 'standard',
+  description: 'Ukentlig bokføring',
+  dueDate: null,
+  interval: null,
+  repeatInterval: 'ukentlig',
+  status: 'ikke_startet',
+  assignedTo: 'c5db0c2e-0298-4410-8820-0acb75a03b34',
+  createdAt: 2025-08-25T12:26:08.878Z,
+  updatedAt: 2025-09-01T20:25:19.775Z
+}
+PATCH /api/tasks/594ee981-927e-4d12-ba24-ed366a90bac2 200 in 82ms :: {"id":"594…
+Auth check: {
+  hasAuthHeader: true,
+  hasToken: true,
+  tokenStart: 'eyJhbGciOiJIUzI1NiIs...',
+  url: '/api/tasks/overview'
+}
+Auth check: {
+  hasAuthHeader: true,
+  hasToken: true,
+  tokenStart: 'eyJhbGciOiJIUzI1NiIs...',
+  url: '/api/tasks'
+}
+Token verified for user: stian@zaldo.no
+Token verified for user: stian@zaldo.no
+GET /api/tasks/overview 200 in 71ms :: [{"id":"b71a1b7c-6c10-441c-b46a-f46abf4d…
+GET /api/tasks 200 in 75ms :: [{"id":"6fab6bcb-c702-4182-a7c1-600f00c56852","ti…
+Auth check: {
+  hasAuthHeader: true,
+  hasToken: true,
+  tokenStart: 'eyJhbGciOiJIUzI1NiIs...',
+  url: '/api/tasks/61ab99a5-f110-497a-a417-7d0e08624bae'
+}
+Token verified for user: stian@zaldo.no
+PATCH request for task: 61ab99a5-f110-497a-a417-7d0e08624bae with data: { assignedTo: 'ab6c17ad-2df4-4648-b013-adf8ec465d91' }
+Regular task update failed, trying client task: Task with id 61ab99a5-f110-497a-a417-7d0e08624bae not found in tasks table
+Client task updated successfully: {
+  id: '61ab99a5-f110-497a-a417-7d0e08624bae',
+  clientId: 'abfc9b22-00de-47f8-a0ff-b9844ce61d42',
+  tenantId: '70104b9b-1763-4158-a9b0-5c66cff9756d',
+  taskName: 'MVA',
+  taskType: 'standard',
+  description: 'Månedlig mva',
+  dueDate: null,
+  interval: null,
+  repeatInterval: 'månedlig',
+  status: 'ikke_startet',
+  assignedTo: 'ab6c17ad-2df4-4648-b013-adf8ec465d91',
+  createdAt: 2025-08-25T12:26:10.890Z,
+  updatedAt: 2025-09-01T20:25:25.099Z
+}
+PATCH /api/tasks/61ab99a5-f110-497a-a417-7d0e08624bae 200 in 69ms :: {"id":"61a…
+Auth check: {
+  hasAuthHeader: true,
+  hasToken: true,
+  tokenStart: 'eyJhbGciOiJIUzI1NiIs...',
+  url: '/api/tasks/overview'
+}
+Auth check: {
+  hasAuthHeader: true,
+  hasToken: true,
+  tokenStart: 'eyJhbGciOiJIUzI1NiIs...',
+  url: '/api/tasks'
+}
+Token verified for user: stian@zaldo.no
+Token verified for user: stian@zaldo.no
+GET /api/tasks/overview 200 in 74ms :: [{"id":"b71a1b7c-6c10-441c-b46a-f46abf4d…
+GET /api/tasks 200 in 73ms :: [{"id":"6fab6bcb-c702-4182-a7c1-600f00c56852","ti…
+Auth check: {
+  hasAuthHeader: true,
+  hasToken: true,
+  tokenStart: 'eyJhbGciOiJIUzI1NiIs...',
+  url: '/api/documents'
+}
+Token verified for user: stian@zaldo.no
+GET /api/documents 200 in 123ms :: [{"id":"23087471-ead1-42d4-96d8-931dbbd996d9…
+Download endpoint - Debug info: {
+  hasQueryToken: false,
+  hasHeaderToken: false,
+  queryKeys: [],
+  headerKeys: [
+    'host',
+    'user-agent',
+    'accept',
+    'accept-encoding',
+    'accept-language',
+    'cookie',
+    'referer',
+    'sec-ch-ua',
+    'sec-ch-ua-mobile',
+    'sec-ch-ua-platform',
+    'sec-fetch-dest',
+    'sec-fetch-mode',
+    'sec-fetch-site',
+    'sec-fetch-user',
+    'upgrade-insecure-requests',
+    'x-forwarded-for',
+    'x-forwarded-proto',
+    'x-replit-user-bio',
+    'x-replit-user-id',
+    'x-replit-user-name',
+    'x-replit-user-profile-image',
+    'x-replit-user-roles',
+    'x-replit-user-teams',
+    'x-replit-user-url'
+  ],
+  url: '/api/documents/23087471-ead1-42d4-96d8-931dbbd996d9/download',
+  method: 'GET'
+}
+Download endpoint - No token found
+GET /api/documents/23087471-ead1-42d4-96d8-931dbbd996d9/download 401 in 2ms :: …
+Download endpoint - Debug info: {
+  hasQueryToken: false,
+  hasHeaderToken: false,
+  queryKeys: [],
+  headerKeys: [
+    'host',
+    'user-agent',
+    'accept',
+    'accept-encoding',
+    'accept-language',
+    'cookie',
+    'referer',
+    'sec-ch-ua',
+    'sec-ch-ua-mobile',
+    'sec-ch-ua-platform',
+    'sec-fetch-dest',
+    'sec-fetch-mode',
+    'sec-fetch-site',
+    'sec-fetch-user',
+    'upgrade-insecure-requests',
+    'x-forwarded-for',
+    'x-forwarded-proto',
+    'x-replit-user-bio',
+    'x-replit-user-id',
+    'x-replit-user-name',
+    'x-replit-user-profile-image',
+    'x-replit-user-roles',
+    'x-replit-user-teams',
+    'x-replit-user-url'
+  ],
+  url: '/api/documents/e463351d-765e-41eb-9919-c84db7f68e58/download',
+  method: 'GET'
+}
+Download endpoint - No token found

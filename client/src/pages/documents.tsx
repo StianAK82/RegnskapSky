@@ -49,16 +49,9 @@ export default function Documents() {
 
   const handleDownload = async (document: any) => {
     try {
-      // Use simple redirect approach with token in URL
       const authToken = localStorage.getItem('auth_token');
       const token = localStorage.getItem('token'); 
       const finalToken = authToken || token;
-      
-      console.log('Client download debug:', {
-        authToken: authToken ? 'exists' : 'missing',
-        token: token ? 'exists' : 'missing',
-        finalToken: finalToken ? finalToken.substring(0, 20) + '...' : 'none'
-      });
       
       if (!finalToken) {
         toast({
@@ -69,13 +62,23 @@ export default function Documents() {
         return;
       }
 
-      // Create download URL with token as query parameter
-      const downloadUrl = `/api/documents/${document.id}/download?token=${encodeURIComponent(finalToken)}`;
-      
-      console.log('Download URL:', downloadUrl.substring(0, 100) + '...');
-      
-      // Use window.location to trigger download
-      window.location.href = downloadUrl;
+      // Create a hidden form to POST the token securely
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = `/api/documents/${document.id}/download`;
+      form.style.display = 'none';
+
+      // Add token as form data
+      const tokenInput = document.createElement('input');
+      tokenInput.type = 'hidden';
+      tokenInput.name = 'token';
+      tokenInput.value = finalToken;
+      form.appendChild(tokenInput);
+
+      // Add to DOM, submit, then remove
+      document.body.appendChild(form);
+      form.submit();
+      document.body.removeChild(form);
       
       toast({
         title: "Nedlasting startet",
@@ -93,7 +96,6 @@ export default function Documents() {
 
   const handleDownloadExcel = async (document: any) => {
     try {
-      // Use simple redirect approach with token in URL
       const authToken = localStorage.getItem('auth_token');
       const token = localStorage.getItem('token'); 
       const finalToken = authToken || token;
@@ -107,11 +109,30 @@ export default function Documents() {
         return;
       }
 
-      // Create Excel download URL with token as query parameter
-      const downloadUrl = `/api/documents/${document.id}/download?format=excel&token=${encodeURIComponent(finalToken)}`;
-      
-      // Use window.location to trigger download
-      window.location.href = downloadUrl;
+      // Create a hidden form to POST the token securely
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = `/api/documents/${document.id}/download`;
+      form.style.display = 'none';
+
+      // Add token as form data
+      const tokenInput = document.createElement('input');
+      tokenInput.type = 'hidden';
+      tokenInput.name = 'token';
+      tokenInput.value = finalToken;
+      form.appendChild(tokenInput);
+
+      // Add format parameter for Excel
+      const formatInput = document.createElement('input');
+      formatInput.type = 'hidden';
+      formatInput.name = 'format';
+      formatInput.value = 'excel';
+      form.appendChild(formatInput);
+
+      // Add to DOM, submit, then remove
+      document.body.appendChild(form);
+      form.submit();
+      document.body.removeChild(form);
       
       toast({
         title: "Excel nedlasting startet",

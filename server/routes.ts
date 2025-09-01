@@ -2527,20 +2527,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/documents/:id/download', async (req, res) => {
+  // Handle both GET and POST for downloads (POST for secure token transmission)
+  const downloadHandler = async (req: any, res: any) => {
     try {
-      // Check for token in query params or Authorization header
+      // Check for token in query params, POST body, or Authorization header
       const tokenFromQuery = req.query.token as string;
+      const tokenFromBody = req.body?.token as string;
       const tokenFromHeader = req.headers.authorization?.replace('Bearer ', '');
-      const token = tokenFromQuery || tokenFromHeader;
+      const token = tokenFromBody || tokenFromQuery || tokenFromHeader;
 
       console.log('Download endpoint - Debug info:', {
         hasQueryToken: !!tokenFromQuery,
+        hasBodyToken: !!tokenFromBody,
         hasHeaderToken: !!tokenFromHeader,
-        queryKeys: Object.keys(req.query),
-        headerKeys: Object.keys(req.headers),
-        url: req.url,
-        method: req.method
+        method: req.method,
+        url: req.url
       });
 
       if (!token) {
@@ -2576,7 +2577,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (document.aiSuggestions && document.aiSuggestions.reportData) {
         csvContent = generateCSV(document.aiSuggestions.reportData);
         // Also generate Excel if requested
-        if (document.fileName?.includes('.xlsx') || req.query.format === 'excel') {
+        const format = req.query.format as string || req.body?.format as string;
+        if (document.fileName?.includes('.xlsx') || format === 'excel') {
           excelContent = generateExcel(document.aiSuggestions.reportData, document.fileName?.replace('.csv', ''));
         }
       } else {
@@ -2596,7 +2598,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Error downloading document:', error);
       res.status(500).json({ message: 'Failed to download document: ' + error.message });
     }
-  });
+  };
+
+  // Register both GET and POST handlers for downloads
+  app.get('/api/documents/:id/download', downloadHandler);
+  app.post('/api/documents/:id/download', downloadHandler);
 
   // Test endpoint to verify token is working
   app.get('/api/documents/:id/test', authenticateToken, async (req: AuthRequest, res) => {
