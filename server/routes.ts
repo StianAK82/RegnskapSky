@@ -2515,7 +2515,7 @@ async function executeReport(spec: any, tenantId: string, storage: any) {
   if (spec.gruppering.includes('klient') || spec.gruppering.includes('client')) {
     // Group by client
     const grouped = timeEntries.reduce((acc: any, entry: any) => {
-      const clientName = entry.client?.name || 'Ukjent klient';
+      const clientName = entry.clientName || 'Ukjent klient';
       if (!acc[clientName]) {
         acc[clientName] = { 
           Klient: clientName, 
@@ -2545,7 +2545,7 @@ async function executeReport(spec: any, tenantId: string, storage: any) {
   } else if (spec.gruppering.includes('ansatt') || spec.gruppering.includes('employee')) {
     // Group by employee
     const grouped = timeEntries.reduce((acc: any, entry: any) => {
-      const employeeName = entry.user ? `${entry.user.firstName} ${entry.user.lastName}` : 'Ukjent ansatt';
+      const employeeName = entry.userName || 'Ukjent ansatt';
       if (!acc[employeeName]) {
         acc[employeeName] = { 
           Ansatt: employeeName, 
@@ -2576,8 +2576,8 @@ async function executeReport(spec: any, tenantId: string, storage: any) {
     // Default detailed view
     data = timeEntries.map((entry: any) => ({
       Dato: new Date(entry.date).toLocaleDateString('no-NO'),
-      Ansatt: entry.user ? `${entry.user.firstName} ${entry.user.lastName}` : 'Ukjent',
-      Klient: entry.client?.name || 'Ukjent',
+      Ansatt: entry.userName || 'Ukjent',
+      Klient: entry.clientName || 'Ukjent',
       Beskrivelse: entry.description || '',
       Timer: entry.timeSpent || 0,
       Fakturerbar: entry.billable ? 'Ja' : 'Nei'
