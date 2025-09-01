@@ -293,13 +293,20 @@ function AssigneeDropdown({ task }: { task: TaskWithClient }) {
       if (!response.ok) {
         throw new Error('Failed to update assignee');
       }
-      return response.json();
+      // Handle empty response or non-JSON response
+      const text = await response.text();
+      try {
+        return text ? JSON.parse(text) : {};
+      } catch {
+        return {};
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/tasks/overview'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
       toast({
         title: "Oppgave oppdatert",
-        description: "Oppdragsansvarlig er endret",
+        description: "Ansvarlig er endret",
       });
     },
     onError: (error: any) => {
