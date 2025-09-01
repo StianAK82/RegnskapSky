@@ -17,6 +17,8 @@ export default function Documents() {
   const [viewingDocument, setViewingDocument] = useState<any>(null);
   const { toast } = useToast();
 
+  console.log('Documents component rendering, viewingDocument:', !!viewingDocument);
+
   const { data: documents = [], isLoading } = useQuery({
     queryKey: ['/api/documents'],
     queryFn: () => apiRequest('GET', '/api/documents').then(res => res.json())
@@ -295,8 +297,10 @@ export default function Documents() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredDocuments.map((document: any) => (
-                      <TableRow key={document.id}>
+                    {filteredDocuments.map((document: any) => {
+                      console.log('Rendering document row:', document.name);
+                      return (
+                        <TableRow key={document.id}>
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <span className="text-2xl">{getDocumentIcon(document.category)}</span>
@@ -317,14 +321,23 @@ export default function Documents() {
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-1">
-                            <Button
-                              size="sm"
+                            <button
                               onClick={() => handleViewDocument(document)}
                               title="Vis dokument på skjermen"
-                              style={{backgroundColor: '#3B82F6', color: 'white', marginRight: '4px'}}
+                              style={{
+                                backgroundColor: '#3B82F6', 
+                                color: 'white', 
+                                padding: '6px 12px',
+                                borderRadius: '6px',
+                                border: 'none',
+                                cursor: 'pointer',
+                                fontSize: '12px',
+                                fontWeight: '500',
+                                marginRight: '4px'
+                              }}
                             >
-                              👁️ Vis
-                            </Button>
+                              👁️ TEST VIS
+                            </button>
                             <Button
                               variant="outline"
                               size="sm"
@@ -356,7 +369,7 @@ export default function Documents() {
                           </div>
                         </TableCell>
                       </TableRow>
-                    ))}
+                    )})
                   </TableBody>
                 </Table>
               </div>
