@@ -408,10 +408,20 @@ export default function DashboardClientTasks() {
   const [sortBy, setSortBy] = useState<'dueDate' | 'client' | 'task'>('dueDate');
   const [selectedTask, setSelectedTask] = useState<TaskWithClient | null>(null);
   const [showTimeModal, setShowTimeModal] = useState(false);
+  const [currentTimeEntry, setCurrentTimeEntry] = useState<any>(null);
 
   const handleStartTask = (task: TaskWithClient) => {
-    // TODO: Implement time registration modal
-    alert(`Starter tidsregistrering for oppgave: ${task.title}`);
+    // Set up for time entry modal
+    setSelectedTask(task);
+    setCurrentTimeEntry({ 
+      taskId: task.id,
+      taskTitle: task.title,
+      clientId: task.clientId,
+      clientName: task.clientName,
+      description: `Arbeid på oppgave: ${task.title}`,
+      startTime: new Date().toISOString()
+    });
+    setShowTimeModal(true);
   };
 
   // Fetch all tasks with client information
@@ -647,7 +657,173 @@ export default function DashboardClientTasks() {
         </CardContent>
       </Card>
 
-
+      {/* Time Entry Modal */}
+      <TimeEntryModal 
+        isOpen={showTimeModal}
+        onClose={() => {
+          setShowTimeModal(false);
+          setCurrentTimeEntry(null);
+          setSelectedTask(null);
+        }}
+        timeEntry={currentTimeEntry}
+      />
     </div>
+  );
+}
+
+// Time Entry Modal Component
+function TimeEntryModal({ isOpen, onClose, timeEntry }: {
+  isOpen: boolean;
+  onClose: () => void;
+  timeEntry: any;
+}) {
+  const [timeSpent, setTimeSpent] = useState('');
+  const [description, setDescription] = useState('');
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Initialize description from timeEntry
+  React.useEffect(() => {
+    if (timeEntry?.description) {
+      setDescription(timeEntry.description);
+    }
+  }, [timeEntry]);
+
+  const saveTimeEntryMutation = useMutation({
+    mutationFn: async ({ timeSpent, description }: { timeSpent: string; description: string }) => {
+      const response = await apiRequest('POST', '/api/time-entries', {
+        clientId: timeEntry.clientId,
+        taskId: timeEntry.taskId,
+        description,
+        timeSpent: parseFloat(timeSpent),
+        date: new Date().toISOString().split('T')[0],
+        billable: true
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Feil ved lagring: ${errorText}`);
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Tid registrert',
+        description: `${timeSpent} timer registrert for ${timeEntry?.clientName}`,
+      });
+      
+      // Clear form and close modal
+      setTimeSpent('');
+      setDescription('');
+      onClose();
+      
+      // Refresh related queries
+      queryClient.invalidateQueries({ queryKey: ['/api/time-entries'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/metrics'] });
+    },
+    onError: (error: any) => {
+      console.error('Time entry error:', error);
+      toast({
+        title: 'Feil',
+        description: error.message || 'Kunne ikke registrere tid',
+        variant: 'destructive'
+      });
+    }
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const timeNumber = parseFloat(timeSpent);
+    if (!timeNumber || timeNumber <= 0) {
+      toast({
+        title: 'Ugyldig tid',
+        description: 'Vennligst oppgi en gyldig tid (timer)',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (!description.trim()) {
+      toast({
+        title: 'Manglende beskrivelse',
+        description: 'Vennligst oppgi en beskrivelse av arbeidet',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    saveTimeEntryMutation.mutate({ timeSpent, description });
+  };
+
+  if (!timeEntry) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Registrer arbeidstid</DialogTitle>
+        </DialogHeader>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <div className="text-sm text-gray-600 mb-2">
+              <strong>Oppgave:</strong> {timeEntry.taskTitle}
+            </div>
+            <div className="text-sm text-gray-600 mb-4">
+              <strong>Klient:</strong> {timeEntry.clientName}
+            </div>
+          </div>
+          
+          <div>
+            <Label htmlFor="timeSpent">Tid brukt (timer) *</Label>
+            <Input
+              id="timeSpent"
+              type="number"
+              step="0.25"
+              min="0.25"
+              placeholder="f.eks. 2.5"
+              value={timeSpent}
+              onChange={(e) => setTimeSpent(e.target.value)}
+              required
+              data-testid="input-time-spent"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="description">Beskrivelse av arbeid *</Label>
+            <Textarea
+              id="description"
+              placeholder="Beskriv arbeidet som ble utført..."
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="min-h-[80px]"
+              required
+              data-testid="textarea-description"
+            />
+          </div>
+
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={saveTimeEntryMutation.isPending}
+            >
+              Avbryt
+            </Button>
+            <Button
+              type="submit"
+              className="bg-green-600 hover:bg-green-700"
+              disabled={saveTimeEntryMutation.isPending}
+              data-testid="button-save-time"
+            >
+              {saveTimeEntryMutation.isPending ? 'Lagrer...' : 'Lagre tid'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
