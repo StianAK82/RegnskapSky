@@ -158,28 +158,38 @@ export default function Documents() {
         }
         console.log('Using document.data:', documentData);
       }
-      // Fetch from server if no data found locally
+      // ALWAYS fetch from server to get latest data with employee details
       else {
-        console.log('No local data found, fetching from server...');
-        const authToken = localStorage.getItem('auth_token') || localStorage.getItem('token');
-        if (authToken) {
-          try {
-            const response = await fetch(`/api/documents/${document.id}/view`, {
-              headers: {
-                'Authorization': `Bearer ${authToken}`,
-                'Content-Type': 'application/json'
-              }
-            });
-            if (response.ok) {
-              const serverData = await response.json();
-              documentData = Array.isArray(serverData) ? serverData : [serverData];
-              console.log('Fetched data from server:', serverData);
-            } else {
-              console.error('Server response not ok:', response.status, response.statusText);
+        console.log('FORCING server fetch for latest employee data...');
+      }
+      
+      // Force server fetch regardless of local data to get detailed employee info
+      console.log('Fetching detailed data from server...');
+      const authToken = localStorage.getItem('auth_token') || localStorage.getItem('token');
+      if (authToken) {
+        try {
+          const response = await fetch(`/api/documents/${document.id}/view`, {
+            headers: {
+              'Authorization': `Bearer ${authToken}`,
+              'Content-Type': 'application/json'
             }
-          } catch (error) {
-            console.error('Error fetching from server:', error);
+          });
+          if (response.ok) {
+            const serverData = await response.json();
+            console.log('SERVER RESPONSE:', serverData);
+            if (serverData && Array.isArray(serverData) && serverData.length > 0) {
+              documentData = serverData;
+              console.log('Using server data with employee details:', documentData);
+            } else {
+              console.log('Server returned empty data, using local if available');
+            }
+          } else {
+            console.error('Server response not ok:', response.status, response.statusText);
+            const errorText = await response.text();
+            console.error('Server error details:', errorText);
           }
+        } catch (error) {
+          console.error('Error fetching from server:', error);
         }
       }
     } catch (error) {
