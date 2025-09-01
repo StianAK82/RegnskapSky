@@ -135,11 +135,18 @@ export default function Documents() {
     console.log('handleViewDocument clicked for:', document.name);
     console.log('Document object:', document);
     
-    // Parse the actual document data if it exists
+    // Parse the actual document data - check aiSuggestions first (new format)
     let documentData = [];
     try {
-      if (document.data) {
-        // If data is a string, parse it as JSON
+      // First check if aiSuggestions contains reportData (new format)
+      if (document.aiSuggestions?.reportData) {
+        documentData = Array.isArray(document.aiSuggestions.reportData) 
+          ? document.aiSuggestions.reportData 
+          : [document.aiSuggestions.reportData];
+        console.log('Using aiSuggestions.reportData:', documentData);
+      }
+      // Check if there's data field (legacy format) 
+      else if (document.data) {
         if (typeof document.data === 'string') {
           documentData = JSON.parse(document.data);
         } else if (Array.isArray(document.data)) {
@@ -147,22 +154,26 @@ export default function Documents() {
         } else {
           documentData = [document.data];
         }
-        console.log('Parsed document data:', documentData);
-      } else {
-        console.log('No document.data found, trying to fetch from server...');
-        // Fallback: try to fetch data from server
+        console.log('Using document.data:', documentData);
+      }
+      // Fetch from server if no data found locally
+      else {
+        console.log('No local data found, fetching from server...');
         const authToken = localStorage.getItem('auth_token') || localStorage.getItem('token');
         if (authToken) {
           try {
             const response = await fetch(`/api/documents/${document.id}/view`, {
               headers: {
-                'Authorization': `Bearer ${authToken}`
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json'
               }
             });
             if (response.ok) {
               const serverData = await response.json();
               documentData = Array.isArray(serverData) ? serverData : [serverData];
-              console.log('Fetched data from server:', documentData);
+              console.log('Fetched data from server:', serverData);
+            } else {
+              console.error('Server response not ok:', response.status, response.statusText);
             }
           } catch (error) {
             console.error('Error fetching from server:', error);
@@ -178,41 +189,7 @@ export default function Documents() {
       ...document,
       data: documentData
     });
-    
-    return; // Remove this line and the code below for now
-    
-    try {
-      const authToken = localStorage.getItem('auth_token');
-      const token = localStorage.getItem('token'); 
-      const finalToken = authToken || token;
-      
-      if (!finalToken) {
-        toast({
-          title: "Ikke innlogget",
-          description: "Du må være innlogget for å se dokumenter",
-          variant: "destructive",
-        });
-        return;
-      }
 
-      const response = await apiRequest('GET', `/api/documents/${document.id}/view`, {
-        headers: {
-          'Authorization': `Bearer ${finalToken}`
-        }
-      });
-      
-      const documentData = await response.json();
-      setViewingDocument({
-        ...document,
-        data: documentData
-      });
-    } catch (error) {
-      toast({
-        title: "Kunne ikke vise rapport",
-        description: "Feil ved henting av rapportdata",
-        variant: "destructive",
-      });
-    }
   };
 
   return (
