@@ -54,6 +54,12 @@ export default function Documents() {
       const token = localStorage.getItem('token'); 
       const finalToken = authToken || token;
       
+      console.log('Client download debug:', {
+        authToken: authToken ? 'exists' : 'missing',
+        token: token ? 'exists' : 'missing',
+        finalToken: finalToken ? finalToken.substring(0, 20) + '...' : 'none'
+      });
+      
       if (!finalToken) {
         toast({
           title: "Ikke innlogget",
@@ -65,6 +71,8 @@ export default function Documents() {
 
       // Create download URL with token as query parameter
       const downloadUrl = `/api/documents/${document.id}/download?token=${encodeURIComponent(finalToken)}`;
+      
+      console.log('Download URL:', downloadUrl.substring(0, 100) + '...');
       
       // Use window.location to trigger download
       window.location.href = downloadUrl;

@@ -2534,7 +2534,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tokenFromHeader = req.headers.authorization?.replace('Bearer ', '');
       const token = tokenFromQuery || tokenFromHeader;
 
+      console.log('Download endpoint - Debug info:', {
+        hasQueryToken: !!tokenFromQuery,
+        hasHeaderToken: !!tokenFromHeader,
+        queryKeys: Object.keys(req.query),
+        headerKeys: Object.keys(req.headers),
+        url: req.url,
+        method: req.method
+      });
+
       if (!token) {
+        console.log('Download endpoint - No token found');
         return res.status(401).json({ message: 'No token provided' });
       }
 
