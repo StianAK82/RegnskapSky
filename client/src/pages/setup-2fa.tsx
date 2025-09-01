@@ -236,10 +236,14 @@ export default function Setup2FA() {
 
           <CardContent className="space-y-4">
             <div className="text-center">
-              <div 
-                className="mx-auto mb-4 bg-white p-4 rounded-lg inline-block"
-                dangerouslySetInnerHTML={{ __html: qrCode }}
-              />
+              <div className="mx-auto mb-4 bg-white p-4 rounded-lg inline-block">
+                <img 
+                  src={qrCode} 
+                  alt="QR Code for 2FA setup" 
+                  className="mx-auto"
+                  style={{ maxWidth: '200px', height: 'auto' }}
+                />
+              </div>
               <p className="text-sm text-gray-600 mb-4">
                 Kan ikke scanne? Skriv inn denne koden manuelt:
               </p>
