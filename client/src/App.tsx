@@ -20,6 +20,7 @@ import Timer from "@/pages/timer";
 import AIAssistant from "@/pages/ai-assistant";
 import Reports from "@/pages/reports";
 import Documents from "@/pages/documents";
+import DocumentsSimple from "@/pages/documents-simple";
 import Subscriptions from "@/pages/subscriptions";
 import Subscribe from "@/pages/subscribe";
 import AdminSubscriptions from "@/pages/AdminSubscriptions";
@@ -133,6 +134,15 @@ function AuthenticatedRoutes() {
         component={() => (
           <ProtectedRoute allowedRoles={['admin', 'ansatt']}>
             <Documents />
+          </ProtectedRoute>
+        )} 
+      />
+      
+      <Route 
+        path="/documents-test" 
+        component={() => (
+          <ProtectedRoute allowedRoles={['admin', 'ansatt']}>
+            <DocumentsSimple />
           </ProtectedRoute>
         )} 
       />
