@@ -630,14 +630,14 @@ export default function Tasks() {
                                 <i className="fas fa-user mr-1"></i>
                                 <span className="text-sm">Ansvarlig:</span>
                                 <Select 
-                                  value={task.assignedTo || ''} 
-                                  onValueChange={(value) => assignTaskMutation.mutate({ taskId: task.id, assignedTo: value })}
+                                  value={task.assignedTo || 'unassigned'} 
+                                  onValueChange={(value) => assignTaskMutation.mutate({ taskId: task.id, assignedTo: value === 'unassigned' ? '' : value })}
                                 >
                                   <SelectTrigger className="w-32 h-6 text-xs">
                                     <SelectValue placeholder="Velg ansvarlig" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="">Ikke tildelt</SelectItem>
+                                    <SelectItem value="unassigned">Ikke tildelt</SelectItem>
                                     {employees?.map((employee) => (
                                       <SelectItem key={employee.id} value={employee.id}>
                                         {employee.firstName} {employee.lastName}
