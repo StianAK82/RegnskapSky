@@ -2617,6 +2617,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ success: true, receivedBody: req.body });
   });
 
+  // View document data endpoint
+  app.get('/api/documents/:id/view', authenticateToken, async (req, res) => {
+    try {
+      const documentId = req.params.id;
+      const document = storage.getDocument(documentId);
+      
+      if (!document) {
+        return res.status(404).json({ message: 'Document not found' });
+      }
+
+      // Parse document data if it's stored as JSON string
+      let documentData;
+      try {
+        documentData = typeof document.data === 'string' 
+          ? JSON.parse(document.data) 
+          : document.data;
+      } catch (parseError) {
+        console.error('Error parsing document data:', parseError);
+        documentData = [];
+      }
+
+      res.json(documentData || []);
+    } catch (error) {
+      console.error('Error viewing document:', error);
+      res.status(500).json({ message: 'Failed to view document: ' + error.message });
+    }
+  });
+
   // Test endpoint to verify token is working
   app.get('/api/documents/:id/test', authenticateToken, async (req: AuthRequest, res) => {
     try {

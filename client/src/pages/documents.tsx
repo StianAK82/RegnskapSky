@@ -8,11 +8,13 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
-import { FileText, Download, Upload, Search, Filter } from 'lucide-react';
+import { FileText, Download, Upload, Search, Filter, Eye } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 export default function Documents() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [viewingDocument, setViewingDocument] = useState<any>(null);
   const { toast } = useToast();
 
   const { data: documents = [], isLoading } = useQuery({
@@ -122,6 +124,41 @@ export default function Documents() {
   const handleDelete = (document: any) => {
     if (confirm(`Er du sikker på at du vil slette "${document.name}"?`)) {
       deleteDocumentMutation.mutate(document.id);
+    }
+  };
+
+  const handleViewDocument = async (document: any) => {
+    try {
+      const authToken = localStorage.getItem('auth_token');
+      const token = localStorage.getItem('token'); 
+      const finalToken = authToken || token;
+      
+      if (!finalToken) {
+        toast({
+          title: "Ikke innlogget",
+          description: "Du må være innlogget for å se dokumenter",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const response = await apiRequest('GET', `/api/documents/${document.id}/view`, {
+        headers: {
+          'Authorization': `Bearer ${finalToken}`
+        }
+      });
+      
+      const documentData = await response.json();
+      setViewingDocument({
+        ...document,
+        data: documentData
+      });
+    } catch (error) {
+      toast({
+        title: "Kunne ikke vise rapport",
+        description: "Feil ved henting av rapportdata",
+        variant: "destructive",
+      });
     }
   };
 
@@ -266,6 +303,17 @@ export default function Documents() {
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-2">
+                            {document.category === 'Rapporter' && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleViewDocument(document)}
+                                title="Vis rapport på skjermen"
+                                className="text-blue-600"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            )}
                             <Button
                               variant="outline"
                               size="sm"
@@ -304,6 +352,71 @@ export default function Documents() {
             )}
           </CardContent>
         </Card>
+        {/* Rapport visningsmodal */}
+        {viewingDocument && (
+          <Dialog open={!!viewingDocument} onOpenChange={() => setViewingDocument(null)}>
+            <DialogContent className="max-w-6xl max-h-[90vh] overflow-auto">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  {viewingDocument.name}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="mt-4">
+                {viewingDocument.data ? (
+                  <div className="space-y-4">
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h3 className="font-semibold mb-2">Rapport informasjon:</h3>
+                      <p><strong>Navn:</strong> {viewingDocument.name}</p>
+                      <p><strong>Beskrivelse:</strong> {viewingDocument.description}</p>
+                      <p><strong>Opprettet:</strong> {new Date(viewingDocument.createdAt).toLocaleDateString('nb-NO')}</p>
+                    </div>
+                    
+                    {/* Vis rapportdata som tabell */}
+                    {Array.isArray(viewingDocument.data) && viewingDocument.data.length > 0 ? (
+                      <div className="border rounded-lg overflow-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              {Object.keys(viewingDocument.data[0]).map((key) => (
+                                <TableHead key={key} className="font-semibold">
+                                  {key}
+                                </TableHead>
+                              ))}
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {viewingDocument.data.map((row: any, index: number) => (
+                              <TableRow key={index}>
+                                {Object.values(row).map((value: any, cellIndex: number) => (
+                                  <TableCell key={cellIndex}>
+                                    {typeof value === 'number' 
+                                      ? value.toLocaleString('nb-NO', { minimumFractionDigits: 2 })
+                                      : String(value || '-')
+                                    }
+                                  </TableCell>
+                                ))}
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <p className="text-gray-500">Ingen data funnet i rapporten</p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+                    <p>Laster rapport...</p>
+                  </div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
     </AppShell>
   );
