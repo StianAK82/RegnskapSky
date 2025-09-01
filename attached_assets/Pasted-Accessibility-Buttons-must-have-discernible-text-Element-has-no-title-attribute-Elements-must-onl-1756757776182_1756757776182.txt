@@ -1,0 +1,48 @@
+Accessibility
+Buttons must have discernible text: Element has no title attribute
+Elements must only use allowed ARIA attributes: ARIA attribute is not allowed: aria-expanded="false"
+<span class=" useView_view__C2mnv Text_text__T_hn_ Text_multiline__ICkLz" aria-expanded="false" style="--Text--font-family: inherit; --Text--font-size: var(--font-size-default); --Text--line-height: var(--line-height-default); --Text--color: var(--foreground-dimmer);">
+Open in Elements
+Request
+https://replit.com/@stian10/RegnskapSky
+Further Reading
+Learn more about this axe rule at Deque University
+Learn why this is important and how to fix it on webhint.io
+<span class=" useView_view__C2mnv css-ini2qx Text_text__T_hn_ Text_singleLine__lXpWA" aria-expanded="false" style="--Text--font-family: inherit; --Text--font-size: var(--font-size-small); --Text--line-height: var(--line-height-small);">
+Open in Elements
+Request
+https://replit.com/@stian10/RegnskapSky
+Further Reading
+Learn more about this axe rule at Deque University
+Learn why this is important and how to fix it on webhint.io
+<div class=" useView_view__C2mnv" aria-expanded="false">
+Open in Elements
+Request
+https://replit.com/@stian10/RegnskapSky
+Further Reading
+Learn more about this axe rule at Deque University
+Learn why this is important and how to fix it on webhint.io
+Form elements must have labels: Element has no title attribute Element has no placeholder attribute
+ARIA input fields must have an accessible name: Element has no title attribute
+Frames must have an accessible name: Element has no title attribute
+Compatibility
+'content-type' header charset value should be 'utf-8'.
+'div[autocapitalize]' is not supported by Safari.
+'iframe[allowpaymentrequest]' is not supported by Firefox 83+, Safari.
+'input[autocapitalize]' is not supported by Safari.
+'meta[name=theme-color]' is not supported by Firefox.
+'scrollbar-width' is not supported by Safari.
+'textarea[autocapitalize]' is not supported by Safari.
+Performance
+A 'cache-control' header is missing or empty.
+'visibility' changes to this property will trigger: 'Layout', which can impact performance when used inside @keyframes.
+A 'cache-control' header contains directives which are not recommended: 'no-store'
+Security
+A 'set-cookie' header doesn't have the 'secure' directive.
+Response should include 'x-content-type-options' header.
+A 'set-cookie' header doesn't have the 'httponly' directive.
+Content Security Policy of your site blocks some resources
+Response should not include disallowed headers: x-powered-by
+The 'X-Frame-Options' header should not be used. A similar effect, with more consistent support and stronger checks, can be achieved with the 'Content-Security-Policy' header and 'frame-ancestors' directive.
+Other
+A form field element should ha

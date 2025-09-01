@@ -70,6 +70,34 @@ export default function Documents() {
         return;
       }
 
+      // First test that the token works with a test endpoint
+      console.log('Testing token first...');
+      const testResponse = await fetch(`/api/documents/${document.id}/test`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${finalToken}`,
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include'
+      });
+
+      console.log('Test response:', testResponse.status);
+      if (!testResponse.ok) {
+        const testError = await testResponse.text();
+        console.error('Token test failed:', testError);
+        toast({
+          title: "Auth test feilet",
+          description: `Token virker ikke: ${testResponse.status}`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const testData = await testResponse.json();
+      console.log('Test successful:', testData);
+
+      // Now try the actual download
+      console.log('Starting actual download...');
       const response = await fetch(`/api/documents/${document.id}/download`, {
         method: 'GET',
         headers: {

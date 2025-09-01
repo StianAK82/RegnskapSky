@@ -2570,6 +2570,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test endpoint to verify token is working
+  app.get('/api/documents/:id/test', authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const user = req.user;
+      const documentId = req.params.id;
+      
+      res.json({ 
+        success: true, 
+        message: 'Token verified successfully',
+        user: { id: user.id, email: user.email },
+        documentId: documentId
+      });
+    } catch (error: any) {
+      console.error('Test endpoint error:', error);
+      res.status(500).json({ message: 'Test failed: ' + error.message });
+    }
+  });
+
   // Delete document endpoint
   app.delete('/api/documents/:id', authenticateToken, async (req: AuthRequest, res) => {
     try {
