@@ -129,6 +129,7 @@ export default function Documents() {
 
   const handleViewDocument = async (document: any) => {
     console.log('handleViewDocument clicked for:', document.name);
+    alert('Vis dokument knappen fungerer! Document: ' + document.name);
     
     // First test - just show dialog with dummy data
     setViewingDocument({
@@ -321,9 +322,9 @@ export default function Documents() {
                               size="sm"
                               onClick={() => handleViewDocument(document)}
                               title="Vis dokument på skjermen"
-                              className="text-blue-600"
+                              className="bg-blue-100 text-blue-700 border-blue-300 hover:bg-blue-200"
                             >
-                              <Eye className="h-4 w-4" />
+                              👁️ Vis
                             </Button>
                             <Button
                               variant="outline"
