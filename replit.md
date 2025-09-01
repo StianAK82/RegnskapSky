@@ -96,6 +96,21 @@ Preferred communication style: Simple, everyday language.
   - Integration with existing time tracking and client management systems
 - **Result**: Full-featured report generator matching specification requirements with professional UI and comprehensive functionality
 
+### Task Management UI Improvements
+- **Date**: September 1, 2025
+- **Feature**: Enhanced task management interface with streamlined workflow
+- **Changes Made**:
+  - Removed "Utført" button from task overview to reduce clutter
+  - Implemented editable assignee dropdown in "Oppdragsansvarlig" column
+  - Added hover tooltips over tasks showing brief descriptions of work to be done
+  - Added grayed-out text styling for payroll tasks when they shouldn't be run
+- **Technical Implementation**:
+  - Created AssigneeDropdown component with real-time employee data
+  - Implemented getTaskTooltipContent function for task-specific descriptions
+  - Added shouldRunPayroll business logic for conditional text styling
+  - Integrated mutation handling for assignee updates with toast notifications
+- **User Experience**: Cleaner interface with direct editing capabilities and helpful task descriptions on hover
+
 ### Complete System Optimization 
 - **Date**: August 23, 2025
 - **Issue**: Select component errors, LSP diagnostics, and authentication problems preventing employee/client creation

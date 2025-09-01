@@ -4,10 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Clock, 
@@ -270,6 +271,98 @@ function CompleteTaskDialog({ task }: { task: TaskWithClient }) {
   );
 }
 
+// AssigneeDropdown component for editing task assignee
+function AssigneeDropdown({ task }: { task: TaskWithClient }) {
+  const { toast } = useToast();
+  
+  // Fetch employees for the dropdown
+  const { data: employees = [] } = useQuery({
+    queryKey: ['/api/employees'],
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/employees');
+      if (!response.ok) throw new Error('Failed to fetch employees');
+      return response.json();
+    }
+  });
+
+  const updateAssigneeMutation = useMutation({
+    mutationFn: async (newAssigneeId: string) => {
+      const response = await apiRequest('PATCH', `/api/tasks/${task.id}`, {
+        assignedTo: newAssigneeId || null
+      });
+      if (!response.ok) {
+        throw new Error('Failed to update assignee');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks/overview'] });
+      toast({
+        title: "Oppgave oppdatert",
+        description: "Oppdragsansvarlig er endret",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Feil",
+        description: "Kunne ikke oppdatere oppdragsansvarlig",
+        variant: "destructive",
+      });
+    }
+  });
+
+  return (
+    <Select 
+      value={task.assignedTo || ""} 
+      onValueChange={(value) => updateAssigneeMutation.mutate(value)}
+      disabled={updateAssigneeMutation.isPending}
+    >
+      <SelectTrigger className="w-full text-sm">
+        <SelectValue placeholder="Ikke tildelt" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="">Ingen tildelt</SelectItem>
+        {employees.map((employee: any) => (
+          <SelectItem key={employee.id} value={employee.id}>
+            {employee.firstName} {employee.lastName}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+// Helper function to determine if payroll should run
+function shouldRunPayroll(task: TaskWithClient): boolean {
+  // This should be determined by business logic - for now, return true
+  // In practice, this might check client settings, current period, etc.
+  return true;
+}
+
+// Task tooltip content based on task type
+function getTaskTooltipContent(task: TaskWithClient): string {
+  const taskTitle = task.title.toLowerCase();
+  
+  if (taskTitle.includes('bokføring')) {
+    return 'Registrer bilag, kontering av transaksjoner, avstemming av konti';
+  } else if (taskTitle.includes('lønn')) {
+    if (!shouldRunPayroll(task)) {
+      return 'Lønn skal ikke kjøres denne måneden';
+    }
+    return 'Behandle lønn, beregne skatt og avgifter, rapportere til Altinn';
+  } else if (taskTitle.includes('mva')) {
+    return 'Utarbeide MVA-oppgave, kontroller og rapporter til Skatteetaten';
+  } else if (taskTitle.includes('årsoppgjør')) {
+    return 'Utarbeide årsregnskap, noter og revisjon';
+  } else if (taskTitle.includes('aksjonærregister')) {
+    return 'Oppdatere aksjonærregister hos Brønnøysundregistrene';
+  } else if (taskTitle.includes('skattemelding')) {
+    return 'Utarbeide og levere skattemelding til Skatteetaten';
+  }
+  
+  return task.description || 'Beskrivelse ikke tilgjengelig';
+}
+
 export default function DashboardClientTasks() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -425,8 +518,7 @@ export default function DashboardClientTasks() {
                     <th className="text-left p-4 text-sm font-medium text-gray-700">Oppgave</th>
                     <th className="text-left p-4 text-sm font-medium text-gray-700">Frist</th>
                     <th className="text-left p-4 text-sm font-medium text-gray-700">Regnskapssystem</th>
-                    <th className="text-left p-4 text-sm font-medium text-gray-700">Ansvarlig</th>
-                    <th className="text-left p-4 text-sm font-medium text-gray-700 min-w-[120px]">Handlinger</th>
+                    <th className="text-left p-4 text-sm font-medium text-gray-700">Oppdragsansvarlig</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -438,19 +530,10 @@ export default function DashboardClientTasks() {
                     >
                       <td className="p-4">
                         <div>
-                          <div className={`font-medium ${
-                            task.clientAmlStatus !== 'approved' || task.clientKycStatus !== 'approved' 
-                              ? 'text-red-600' 
-                              : 'text-gray-900'
-                          }`}>
+                          <div className="font-medium text-gray-900">
                             {task.clientName}
                           </div>
-                          {(task.clientAmlStatus !== 'approved' || task.clientKycStatus !== 'approved') && (
-                            <div className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-red-100 border border-red-300 rounded text-xs text-red-700 font-medium mt-1">
-                              <i className="fas fa-exclamation-triangle"></i>
-                              Ikke lovlig klient
-                            </div>
-                          )}
+
                           {task.clientOrgNumber && (
                             <div className="text-sm text-gray-500">Org.nr: {task.clientOrgNumber}</div>
                           )}
@@ -458,7 +541,16 @@ export default function DashboardClientTasks() {
                       </td>
                       <td className="p-4">
                         <div>
-                          <div className="font-medium text-gray-900">{task.title}</div>
+                          <div 
+                            className={`font-medium cursor-help ${
+                              task.title.toLowerCase().includes('lønn') && !shouldRunPayroll(task) 
+                                ? 'text-gray-400' 
+                                : 'text-gray-900'
+                            }`}
+                            title={getTaskTooltipContent(task)}
+                          >
+                            {task.title}
+                          </div>
                           {task.description && (
                             <div className="text-sm text-gray-500">{task.description}</div>
                           )}
@@ -476,12 +568,7 @@ export default function DashboardClientTasks() {
                         />
                       </td>
                       <td className="p-4">
-                        <div className="text-sm text-gray-600">
-                          {task.assigneeName || 'Ikke tildelt'}
-                        </div>
-                      </td>
-                      <td className="p-4 min-w-[120px]">
-                        <CompleteTaskDialog task={task} />
+                        <AssigneeDropdown task={task} />
                       </td>
                     </tr>
                   ))}
