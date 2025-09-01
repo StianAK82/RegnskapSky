@@ -1058,8 +1058,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PATCH endpoint for partial task updates (used by AssigneeDropdown)
   app.patch("/api/tasks/:id", authenticateToken, async (req: AuthRequest, res) => {
     try {
-      const task = await storage.updateTask(req.params.id, req.body);
-      res.json(task);
+      console.log('PATCH request for task:', req.params.id, 'with data:', req.body);
+      const updatedTask = await storage.updateTask(req.params.id, req.body);
+      console.log('Task updated successfully:', updatedTask);
+      
+      // Ensure we return the updated task as JSON
+      res.status(200).json(updatedTask);
     } catch (error: any) {
       console.error('Error updating task assignee:', error);
       res.status(400).json({ message: "Feil ved oppdatering av oppgave: " + error.message });

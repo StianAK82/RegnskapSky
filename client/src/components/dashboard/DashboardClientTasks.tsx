@@ -287,15 +287,32 @@ function AssigneeDropdown({ task }: { task: TaskWithClient }) {
 
   const updateAssigneeMutation = useMutation({
     mutationFn: async (newAssigneeId: string) => {
+      console.log('Updating assignee for task:', task.id, 'to:', newAssigneeId);
       const response = await apiRequest('PATCH', `/api/tasks/${task.id}`, {
         assignedTo: newAssigneeId || null
       });
+      
       if (!response.ok) {
-        throw new Error('Failed to update assignee');
+        const errorText = await response.text();
+        console.error('Server error:', response.status, errorText);
+        throw new Error(`Failed to update assignee: ${response.status}`);
       }
-      const updatedTask = await response.json();
-      console.log('Updated task from server:', updatedTask);
-      return updatedTask;
+      
+      const responseText = await response.text();
+      console.log('Server response text:', responseText);
+      
+      if (!responseText) {
+        throw new Error('Empty response from server');
+      }
+      
+      try {
+        const updatedTask = JSON.parse(responseText);
+        console.log('Updated task from server:', updatedTask);
+        return updatedTask;
+      } catch (parseError) {
+        console.error('Failed to parse JSON:', parseError, 'Response:', responseText);
+        throw new Error('Invalid JSON response from server');
+      }
     },
     onSuccess: (updatedTask) => {
       console.log('Assignment update successful, new assignedTo:', updatedTask.assignedTo);
