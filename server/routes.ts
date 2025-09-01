@@ -2389,5 +2389,232 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // AI-powered report generator
+  app.post('/api/reports/generate', authenticateToken, async (req: AuthRequest, res) => {
+    const { query, tidsrom, filters } = req.body;
+    
+    try {
+      // Parse the user query and generate report specification
+      const reportSpec = await generateReportSpecification(query, tidsrom, filters);
+      
+      // Execute the report based on specification
+      const reportData = await executeReport(reportSpec, req.user!.tenantId, storage);
+      
+      // Generate CSV output
+      const csvContent = generateCSV(reportData.data);
+      
+      // Generate SQL/pseudocode
+      const sqlPseudocode = generateSQLPseudocode(reportSpec);
+      
+      // Generate suggested variants
+      const variants = generateReportVariants(query);
+      
+      const result = {
+        title: reportSpec.title,
+        description: reportSpec.description,
+        spec: reportSpec,
+        data: reportData.data,
+        totals: reportData.totals,
+        csv: csvContent,
+        sql: sqlPseudocode,
+        variants: variants
+      };
+      
+      res.json(result);
+    } catch (error: any) {
+      console.error('Error generating report:', error);
+      res.status(500).json({ message: 'Failed to generate report: ' + error.message });
+    }
+  });
+
   return httpServer;
+}
+
+// Helper functions for report generation
+
+async function generateReportSpecification(query: string, tidsrom: any, filters: any) {
+  // Parse user query and create structured specification
+  const spec = {
+    id: `report_${Date.now()}`,
+    title: extractReportTitle(query),
+    description: `Rapport basert på forespørsel: "${query}"`,
+    tidsrom: tidsrom || { start: new Date().toISOString().split('T')[0], slutt: new Date().toISOString().split('T')[0] },
+    filtere: Object.keys(filters || {}),
+    gruppering: extractGroupingFromQuery(query),
+    kpier: extractKPIsFromQuery(query),
+    sortering: 'dato DESC',
+    format: 'Tabell' as const
+  };
+  
+  return spec;
+}
+
+async function executeReport(spec: any, tenantId: string, storage: any) {
+  // Based on the spec, execute the appropriate data queries
+  const startDate = new Date(spec.tidsrom.start);
+  const endDate = new Date(spec.tidsrom.slutt);
+  
+  // Get time entries as base data
+  const timeEntries = await storage.getTimeEntriesByTenant(tenantId, startDate, endDate);
+  
+  let data: any[] = [];
+  let totals: Record<string, number> = {};
+  
+  if (spec.gruppering.includes('klient') || spec.gruppering.includes('client')) {
+    // Group by client
+    const grouped = timeEntries.reduce((acc: any, entry: any) => {
+      const clientName = entry.client?.name || 'Ukjent klient';
+      if (!acc[clientName]) {
+        acc[clientName] = { 
+          Klient: clientName, 
+          'Totale timer': 0, 
+          'Fakturerbare timer': 0, 
+          'Ikke-fakturerbare timer': 0,
+          'Antall registreringer': 0
+        };
+      }
+      acc[clientName]['Totale timer'] += entry.timeSpent || 0;
+      if (entry.billable) {
+        acc[clientName]['Fakturerbare timer'] += entry.timeSpent || 0;
+      } else {
+        acc[clientName]['Ikke-fakturerbare timer'] += entry.timeSpent || 0;
+      }
+      acc[clientName]['Antall registreringer'] += 1;
+      return acc;
+    }, {});
+    
+    data = Object.values(grouped);
+    totals = {
+      'Totale timer': data.reduce((sum, row) => sum + row['Totale timer'], 0),
+      'Fakturerbare timer': data.reduce((sum, row) => sum + row['Fakturerbare timer'], 0),
+      'Antall klienter': data.length,
+      'Totale registreringer': data.reduce((sum, row) => sum + row['Antall registreringer'], 0)
+    };
+  } else if (spec.gruppering.includes('ansatt') || spec.gruppering.includes('employee')) {
+    // Group by employee
+    const grouped = timeEntries.reduce((acc: any, entry: any) => {
+      const employeeName = entry.user ? `${entry.user.firstName} ${entry.user.lastName}` : 'Ukjent ansatt';
+      if (!acc[employeeName]) {
+        acc[employeeName] = { 
+          Ansatt: employeeName, 
+          'Totale timer': 0, 
+          'Fakturerbare timer': 0, 
+          'Ikke-fakturerbare timer': 0,
+          'Antall registreringer': 0
+        };
+      }
+      acc[employeeName]['Totale timer'] += entry.timeSpent || 0;
+      if (entry.billable) {
+        acc[employeeName]['Fakturerbare timer'] += entry.timeSpent || 0;
+      } else {
+        acc[employeeName]['Ikke-fakturerbare timer'] += entry.timeSpent || 0;
+      }
+      acc[employeeName]['Antall registreringer'] += 1;
+      return acc;
+    }, {});
+    
+    data = Object.values(grouped);
+    totals = {
+      'Totale timer': data.reduce((sum, row) => sum + row['Totale timer'], 0),
+      'Fakturerbare timer': data.reduce((sum, row) => sum + row['Fakturerbare timer'], 0),
+      'Antall ansatte': data.length,
+      'Totale registreringer': data.reduce((sum, row) => sum + row['Antall registreringer'], 0)
+    };
+  } else {
+    // Default detailed view
+    data = timeEntries.map((entry: any) => ({
+      Dato: new Date(entry.date).toLocaleDateString('no-NO'),
+      Ansatt: entry.user ? `${entry.user.firstName} ${entry.user.lastName}` : 'Ukjent',
+      Klient: entry.client?.name || 'Ukjent',
+      Beskrivelse: entry.description || '',
+      Timer: entry.timeSpent || 0,
+      Fakturerbar: entry.billable ? 'Ja' : 'Nei'
+    }));
+    
+    totals = {
+      'Totale timer': timeEntries.reduce((sum: number, entry: any) => sum + (entry.timeSpent || 0), 0),
+      'Fakturerbare timer': timeEntries.filter((e: any) => e.billable).reduce((sum: number, entry: any) => sum + (entry.timeSpent || 0), 0),
+      'Totale registreringer': timeEntries.length,
+      'Unike klienter': new Set(timeEntries.map((e: any) => e.clientId)).size
+    };
+  }
+  
+  return { data, totals };
+}
+
+function generateCSV(data: any[]): string {
+  if (!data.length) return '';
+  
+  const headers = Object.keys(data[0]);
+  const csvRows = [
+    headers.join(';'),
+    ...data.map(row => 
+      headers.map(header => {
+        const cell = row[header];
+        if (typeof cell === 'number') return cell.toFixed(2);
+        return `"${cell || ''}"`;
+      }).join(';')
+    )
+  ];
+  
+  return csvRows.join('\n');
+}
+
+function generateSQLPseudocode(spec: any): string {
+  return `-- Rapportgenerering: ${spec.title}
+-- Periode: ${spec.tidsrom.start} til ${spec.tidsrom.slutt}
+
+SELECT 
+  ${spec.gruppering.includes('klient') ? 'c.name AS Klient,' : ''}
+  ${spec.gruppering.includes('ansatt') ? 'u.firstName || \' \' || u.lastName AS Ansatt,' : ''}
+  SUM(te.timeSpent) AS "Totale timer",
+  SUM(CASE WHEN te.billable = true THEN te.timeSpent ELSE 0 END) AS "Fakturerbare timer",
+  COUNT(*) AS "Antall registreringer"
+FROM timeEntries te
+LEFT JOIN clients c ON te.clientId = c.id
+LEFT JOIN users u ON te.userId = u.id
+WHERE te.date >= '${spec.tidsrom.start}'
+  AND te.date <= '${spec.tidsrom.slutt}'
+  ${spec.filtere.includes('clientId') ? 'AND te.clientId = :clientId' : ''}
+  ${spec.filtere.includes('employeeId') ? 'AND te.userId = :employeeId' : ''}
+GROUP BY ${spec.gruppering.join(', ') || '1'}
+ORDER BY ${spec.sortering}`;
+}
+
+function generateReportVariants(originalQuery: string): string[] {
+  const variants = [
+    'Vis samme data gruppert etter måned',
+    'Legg til kostnadsanalyse med timesatser',
+    'Sammenlign med forrige periode',
+    'Inkluder bare fakturerbare timer',
+    'Analyser produktivitet per ansatt'
+  ];
+  
+  return variants;
+}
+
+function extractReportTitle(query: string): string {
+  if (query.toLowerCase().includes('klient')) return 'Timer per klient';
+  if (query.toLowerCase().includes('ansatt')) return 'Timer per ansatt';
+  if (query.toLowerCase().includes('fakturerbar')) return 'Faktureringsanalyse';
+  if (query.toLowerCase().includes('produktivitet')) return 'Produktivitetsrapport';
+  if (query.toLowerCase().includes('lønnsomhet')) return 'Lønnsomhetsanalyse';
+  return 'Tilpasset rapport';
+}
+
+function extractGroupingFromQuery(query: string): string[] {
+  const groupings: string[] = [];
+  if (query.toLowerCase().includes('klient')) groupings.push('klient');
+  if (query.toLowerCase().includes('ansatt')) groupings.push('ansatt');
+  if (query.toLowerCase().includes('måned')) groupings.push('måned');
+  if (query.toLowerCase().includes('uke')) groupings.push('uke');
+  return groupings;
+}
+
+function extractKPIsFromQuery(query: string): string[] {
+  const kpis: string[] = ['timer', 'fakturerbare_timer'];
+  if (query.toLowerCase().includes('kostnad')) kpis.push('kostnad');
+  if (query.toLowerCase().includes('margin')) kpis.push('margin');
+  if (query.toLowerCase().includes('produktivitet')) kpis.push('utnyttelsesgrad');
+  return kpis;
 }
