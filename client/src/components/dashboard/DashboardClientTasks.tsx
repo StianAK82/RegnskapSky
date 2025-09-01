@@ -407,6 +407,10 @@ export default function DashboardClientTasks() {
   // Filter and sort tasks
   const filteredAndSortedTasks = React.useMemo(() => {
     let filtered = tasks.filter(task => {
+      // Filter out completed tasks
+      const isCompleted = ['completed', 'done', 'ferdig'].includes(task.status.toLowerCase());
+      if (isCompleted) return false;
+      
       const matchesSearch = !searchTerm || 
         task.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         task.title.toLowerCase().includes(searchTerm.toLowerCase());
@@ -476,12 +480,11 @@ export default function DashboardClientTasks() {
                 onChange={(e) => setStatusFilter(e.target.value)}
                 data-testid="select-status-filter"
               >
-                <option value="all">Alle oppgaver</option>
+                <option value="all">Alle aktive oppgaver</option>
                 <option value="overdue">Forsinkede</option>
                 <option value="today">I dag</option>
                 <option value="pending">Venter</option>
                 <option value="in_progress">Pågår</option>
-                <option value="completed">Ferdig</option>
               </select>
               
               <select
@@ -502,7 +505,7 @@ export default function DashboardClientTasks() {
       {/* Tasks List */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg font-semibold">Alle oppgaver</CardTitle>
+          <CardTitle className="text-lg font-semibold">Alle aktive oppgaver</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           {filteredAndSortedTasks.length === 0 ? (
@@ -518,7 +521,7 @@ export default function DashboardClientTasks() {
                     <th className="text-left p-4 text-sm font-medium text-gray-700">Oppgave</th>
                     <th className="text-left p-4 text-sm font-medium text-gray-700">Frist</th>
                     <th className="text-left p-4 text-sm font-medium text-gray-700">Regnskapssystem</th>
-                    <th className="text-left p-4 text-sm font-medium text-gray-700">Oppdragsansvarlig</th>
+                    <th className="text-left p-4 text-sm font-medium text-gray-700">Ansvarlig</th>
                   </tr>
                 </thead>
                 <tbody>
