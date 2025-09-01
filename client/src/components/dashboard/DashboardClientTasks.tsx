@@ -372,8 +372,8 @@ export default function DashboardClientTasks() {
   const [showTimeModal, setShowTimeModal] = useState(false);
 
   const handleStartTask = (task: TaskWithClient) => {
-    setSelectedTask(task);
-    setShowTimeModal(true);
+    // TODO: Implement time registration modal
+    alert(`Starter tidsregistrering for oppgave: ${task.title}`);
   };
 
   // Fetch all tasks with client information
@@ -609,15 +609,7 @@ export default function DashboardClientTasks() {
         </CardContent>
       </Card>
 
-      {/* Time Registration Modal */}
-      <TimeRegistrationModal 
-        isOpen={showTimeModal}
-        onClose={() => {
-          setShowTimeModal(false);
-          setSelectedTask(null);
-        }}
-        task={selectedTask}
-      />
+
     </div>
   );
 }
