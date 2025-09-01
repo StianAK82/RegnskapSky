@@ -47,10 +47,36 @@ export default function Documents() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const handleDownload = (document: any) => {
-    // Create download link
-    const link = document.downloadUrl || `/api/documents/${document.id}/download`;
-    window.open(link, '_blank');
+  const handleDownload = async (document: any) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/documents/${document.id}/download`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to download document');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = document.fileName || 'document';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Download error:', error);
+      toast({
+        title: "Nedlasting feilet",
+        description: "Kunne ikke laste ned dokumentet",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
