@@ -319,6 +319,12 @@ function AssigneeDropdown({ task }: { task: TaskWithClient }) {
     }
   });
 
+  // Find the assigned employee name for display
+  const assignedEmployee = employees.find((emp: any) => emp.id === task.assignedTo);
+  const displayValue = assignedEmployee 
+    ? `${assignedEmployee.firstName} ${assignedEmployee.lastName}`
+    : "Ingen tildelt";
+
   return (
     <Select 
       value={task.assignedTo || "unassigned"} 
@@ -326,7 +332,9 @@ function AssigneeDropdown({ task }: { task: TaskWithClient }) {
       disabled={updateAssigneeMutation.isPending}
     >
       <SelectTrigger className="w-full text-sm">
-        <SelectValue placeholder="Ikke tildelt" />
+        <SelectValue>
+          {updateAssigneeMutation.isPending ? "Oppdaterer..." : displayValue}
+        </SelectValue>
       </SelectTrigger>
       <SelectContent>
         <SelectItem value="unassigned">Ingen tildelt</SelectItem>
