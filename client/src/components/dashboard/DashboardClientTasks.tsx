@@ -438,7 +438,19 @@ export default function DashboardClientTasks() {
                     >
                       <td className="p-4">
                         <div>
-                          <div className="font-medium text-gray-900">{task.clientName}</div>
+                          <div className={`font-medium ${
+                            task.clientAmlStatus !== 'approved' || task.clientKycStatus !== 'approved' 
+                              ? 'text-red-600' 
+                              : 'text-gray-900'
+                          }`}>
+                            {task.clientName}
+                          </div>
+                          {(task.clientAmlStatus !== 'approved' || task.clientKycStatus !== 'approved') && (
+                            <div className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-red-100 border border-red-300 rounded text-xs text-red-700 font-medium mt-1">
+                              <i className="fas fa-exclamation-triangle"></i>
+                              Ikke lovlig klient
+                            </div>
+                          )}
                           {task.clientOrgNumber && (
                             <div className="text-sm text-gray-500">Org.nr: {task.clientOrgNumber}</div>
                           )}

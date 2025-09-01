@@ -1243,7 +1243,19 @@ function ClientListItem({ client, onEdit }: { client: any; onEdit: (client: any)
           <div className="flex items-center space-x-6 flex-1">
             <div className="flex-1 min-w-0">
               <div className="flex items-center space-x-3">
-                <h3 className="text-lg font-semibold text-gray-900 truncate">{client.name}</h3>
+                <h3 className={`text-lg font-semibold truncate ${
+                  client.amlStatus !== 'approved' || client.kycStatus !== 'approved' 
+                    ? 'text-red-600' 
+                    : 'text-gray-900'
+                }`}>
+                  {client.name}
+                </h3>
+                {(client.amlStatus !== 'approved' || client.kycStatus !== 'approved') && (
+                  <div className="flex items-center gap-1 px-2 py-1 bg-red-100 border border-red-300 rounded-md">
+                    <i className="fas fa-exclamation-triangle text-red-600 text-xs"></i>
+                    <span className="text-xs text-red-700 font-medium">Ikke lovlig klient</span>
+                  </div>
+                )}
                 <div className="flex space-x-2">
                   {getAMLStatusBadge(client.amlStatus)}
                   {getKYCStatusBadge(client.kycStatus)}
@@ -1251,6 +1263,14 @@ function ClientListItem({ client, onEdit }: { client: any; onEdit: (client: any)
               </div>
               {client.orgNumber && (
                 <p className="text-sm text-gray-500 mt-1">Org.nr: {client.orgNumber}</p>
+              )}
+              {(client.amlStatus !== 'approved' || client.kycStatus !== 'approved') && (
+                <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-md">
+                  <p className="text-xs text-red-700 flex items-center">
+                    <i className="fas fa-shield-alt mr-1"></i>
+                    AML/KYC-verifisering må fullføres før klienten kan behandles lovlig
+                  </p>
+                </div>
               )}
               {client.responsiblePersonFirstName && (
                 <div className="flex items-center mt-2 text-sm text-gray-600">
