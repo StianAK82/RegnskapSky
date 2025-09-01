@@ -407,9 +407,18 @@ export default function DashboardClientTasks() {
   // Filter and sort tasks
   const filteredAndSortedTasks = React.useMemo(() => {
     let filtered = tasks.filter(task => {
-      // Filter out completed tasks
-      const isCompleted = ['completed', 'done', 'ferdig'].includes(task.status.toLowerCase());
-      if (isCompleted) return false;
+      // Filter out completed tasks - check for various completion statuses
+      const taskStatus = task.status?.toLowerCase() || '';
+      const isCompleted = taskStatus.includes('fullført') || 
+                         taskStatus.includes('ferdig') || 
+                         taskStatus.includes('completed') || 
+                         taskStatus.includes('done') ||
+                         taskStatus === 'utført';
+      
+      if (isCompleted) {
+        console.log('Filtering out completed task:', task.title, 'with status:', task.status);
+        return false;
+      }
       
       const matchesSearch = !searchTerm || 
         task.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
