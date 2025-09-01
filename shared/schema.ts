@@ -8,18 +8,21 @@ import { z } from "zod";
 export const userRoles = ["admin", "ansatt", "oppdragsansvarlig", "regnskapsfører", "intern", "lisensadmin"] as const;
 export type UserRole = typeof userRoles[number];
 
-// Users table
+// Users table - 2FA only authentication
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   username: text("username").notNull().unique(),
   email: text("email").notNull().unique(),
-  password: text("password").notNull(),
+  password: text("password"), // Optional legacy field
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
   role: text("role").notNull().$type<UserRole>(),
   tenantId: uuid("tenant_id").notNull(),
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
+  twoFactorSecret: text("two_factor_secret"), // TOTP secret
+  twoFactorEnabled: boolean("two_factor_enabled").default(true),
+  twoFactorBackupCodes: text("two_factor_backup_codes").array(), // Backup codes
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

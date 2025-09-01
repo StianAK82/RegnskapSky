@@ -9,6 +9,7 @@ import { ProtectedRoute } from "@/components/ui/protected-route";
 
 // Pages
 import Login from "@/pages/login";
+import Setup2FA from "@/pages/setup-2fa";
 import Dashboard from "@/pages/Dashboard";
 import Clients from "@/pages/clients";
 import ClientDetail from "@/pages/client-detail";
@@ -40,6 +41,7 @@ function AuthenticatedRoutes() {
     return (
       <Switch>
         <Route path="/login" component={Login} />
+        <Route path="/setup-2fa" component={Setup2FA} />
         <Route path="/" component={Login} />
         <Route path="/dashboard" component={Login} />
         <Route path="/:rest*" component={Login} />

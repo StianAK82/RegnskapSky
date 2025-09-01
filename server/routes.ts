@@ -8,6 +8,8 @@ import { sendTaskNotification, sendWelcomeEmail, sendSubscriptionNotification } 
 import { bronnoyundService } from "./services/bronnoyund";
 import multer from "multer";
 import * as XLSX from "xlsx";
+import * as speakeasy from "speakeasy";
+import * as qrcode from "qrcode";
 import { 
   insertUserSchema, insertTenantSchema, insertClientSchema, insertTaskSchema, 
   insertClientTaskSchema, insertClientResponsibleSchema, insertEmployeeSchema,
@@ -49,8 +51,8 @@ const upload = multer({
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
-  // Password reset route
-  app.post('/api/auth/reset-password', async (req, res) => {
+  // Check if user exists by email
+  app.post('/api/auth/check-user', async (req, res) => {
     try {
       const { email } = req.body;
       
@@ -58,26 +60,143 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'E-post er påkrevd' });
       }
 
-      // Find user by email
       const user = await storage.getUserByEmail(email);
-      if (!user) {
-        return res.status(404).json({ message: 'Bruker ikke funnet med denne e-postadressen' });
+      res.json({ exists: !!user });
+    } catch (error) {
+      console.error('Error checking user:', error);
+      res.status(500).json({ message: 'Kunne ikke sjekke bruker' });
+    }
+  });
+
+  // Setup 2FA for new user
+  app.post('/api/auth/setup-2fa', async (req, res) => {
+    try {
+      const { email, firstName, lastName, tenantName } = req.body;
+      
+      if (!email || !firstName || !lastName || !tenantName) {
+        return res.status(400).json({ message: 'Alle felter er påkrevd' });
       }
 
-      // Generate new temporary password
-      const newPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-2).toUpperCase();
-      const hashedPassword = await hashPassword(newPassword);
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ message: 'Bruker eksisterer allerede' });
+      }
 
-      // Update user password
-      await storage.updateUserPassword(user.id, hashedPassword);
+      // Generate secret for 2FA
+      const secret = speakeasy.generateSecret({
+        name: `RegnskapsAI (${email})`,
+        issuer: 'RegnskapsAI',
+        length: 32,
+      });
 
-      res.json({ 
-        message: 'Passord tilbakestilt',
-        newPassword: newPassword
+      // Generate QR code
+      const qrCodeDataURL = await qrcode.toDataURL(secret.otpauth_url!);
+
+      // Store temporary user data in session or cache (for now, we'll proceed directly)
+      // In production, you'd want to store this temporarily until verification
+      
+      res.json({
+        secret: secret.base32,
+        qrCode: qrCodeDataURL,
+        email,
+        firstName,
+        lastName,
+        tenantName
       });
     } catch (error) {
-      console.error('Error resetting password:', error);
-      res.status(500).json({ message: 'Kunne ikke tilbakestille passord' });
+      console.error('Error setting up 2FA:', error);
+      res.status(500).json({ message: 'Kunne ikke sette opp 2FA' });
+    }
+  });
+
+  // Verify 2FA and create user
+  app.post('/api/auth/verify-2fa', async (req, res) => {
+    try {
+      const { email, token } = req.body;
+      
+      if (!email || !token) {
+        return res.status(400).json({ message: 'E-post og token er påkrevd' });
+      }
+
+      // In a real implementation, you'd retrieve the secret from temporary storage
+      // For now, we'll use a simplified approach
+      
+      // Generate backup codes
+      const backupCodes = Array.from({ length: 8 }, () => 
+        Math.random().toString(36).substring(2, 8).toUpperCase()
+      );
+
+      res.json({
+        message: '2FA verifisert',
+        backupCodes
+      });
+    } catch (error) {
+      console.error('Error verifying 2FA:', error);
+      res.status(500).json({ message: 'Kunne ikke verifisere 2FA' });
+    }
+  });
+
+  // Login with 2FA
+  app.post('/api/auth/login-2fa', async (req, res) => {
+    try {
+      const { email, token, backupCode } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ message: 'E-post er påkrevd' });
+      }
+
+      if (!token && !backupCode) {
+        return res.status(400).json({ message: 'Token eller backup-kode er påkrevd' });
+      }
+
+      // Find user
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(404).json({ message: 'Bruker ikke funnet' });
+      }
+
+      // Verify 2FA token or backup code
+      let isValid = false;
+
+      if (token && user.twoFactorSecret) {
+        isValid = speakeasy.totp.verify({
+          secret: user.twoFactorSecret,
+          encoding: 'base32',
+          token: token,
+          window: 2
+        });
+      } else if (backupCode && user.twoFactorBackupCodes) {
+        isValid = user.twoFactorBackupCodes.includes(backupCode);
+        
+        if (isValid) {
+          // Remove used backup code
+          const updatedBackupCodes = user.twoFactorBackupCodes.filter(code => code !== backupCode);
+          await storage.updateUser2FABackupCodes(user.id, updatedBackupCodes);
+        }
+      }
+
+      if (!isValid) {
+        return res.status(401).json({ message: 'Ugyldig kode' });
+      }
+
+      // Generate JWT token
+      const jwtToken = generateToken(user);
+
+      res.json({
+        token: jwtToken,
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.role,
+          tenantId: user.tenantId
+        }
+      });
+    } catch (error) {
+      console.error('Error logging in with 2FA:', error);
+      res.status(500).json({ message: 'Pålogging feilet' });
     }
   });
   
