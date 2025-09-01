@@ -1055,6 +1055,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // PATCH endpoint for partial task updates (used by AssigneeDropdown)
+  app.patch("/api/tasks/:id", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const task = await storage.updateTask(req.params.id, req.body);
+      res.json(task);
+    } catch (error: any) {
+      console.error('Error updating task assignee:', error);
+      res.status(400).json({ message: "Feil ved oppdatering av oppgave: " + error.message });
+    }
+  });
+
   // Complete task with time tracking
   app.put("/api/tasks/:id/complete", authenticateToken, async (req: AuthRequest, res) => {
     try {

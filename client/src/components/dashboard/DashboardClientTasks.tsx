@@ -302,8 +302,14 @@ function AssigneeDropdown({ task }: { task: TaskWithClient }) {
       }
     },
     onSuccess: () => {
+      // Force refetch of all task-related queries
       queryClient.invalidateQueries({ queryKey: ['/api/tasks/overview'] });
       queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/employees'] });
+      
+      // Force re-render by refetching immediately
+      queryClient.refetchQueries({ queryKey: ['/api/tasks/overview'] });
+      
       toast({
         title: "Oppgave oppdatert",
         description: "Ansvarlig er endret",
