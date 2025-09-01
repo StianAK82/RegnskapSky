@@ -293,22 +293,22 @@ function AssigneeDropdown({ task }: { task: TaskWithClient }) {
       if (!response.ok) {
         throw new Error('Failed to update assignee');
       }
-      // Handle empty response or non-JSON response
-      const text = await response.text();
-      try {
-        return text ? JSON.parse(text) : {};
-      } catch {
-        return {};
-      }
+      const updatedTask = await response.json();
+      console.log('Updated task from server:', updatedTask);
+      return updatedTask;
     },
-    onSuccess: () => {
-      // Force refetch of all task-related queries
+    onSuccess: (updatedTask) => {
+      console.log('Assignment update successful, new assignedTo:', updatedTask.assignedTo);
+      
+      // Update task in cache directly
+      queryClient.setQueryData(['/api/tasks/overview'], (old: any) => {
+        if (!old) return old;
+        return old.map((t: any) => t.id === task.id ? { ...t, assignedTo: updatedTask.assignedTo } : t);
+      });
+      
+      // Also invalidate to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ['/api/tasks/overview'] });
       queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/employees'] });
-      
-      // Force re-render by refetching immediately
-      queryClient.refetchQueries({ queryKey: ['/api/tasks/overview'] });
       
       toast({
         title: "Oppgave oppdatert",
