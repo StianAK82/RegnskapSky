@@ -368,8 +368,9 @@ export default function Documents() {
                             </Button>
                           </div>
                         </TableCell>
-                      </TableRow>
-                    )})
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>
