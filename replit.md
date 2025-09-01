@@ -96,20 +96,24 @@ Preferred communication style: Simple, everyday language.
   - Integration with existing time tracking and client management systems
 - **Result**: Full-featured report generator matching specification requirements with professional UI and comprehensive functionality
 
-### Task Management UI Improvements
+### Task Management UI Improvements & Active Task Filtering
 - **Date**: September 1, 2025
-- **Feature**: Enhanced task management interface with streamlined workflow
+- **Feature**: Enhanced task management interface with active task filtering and execution capabilities
 - **Changes Made**:
-  - Removed "Utført" button from task overview to reduce clutter
-  - Implemented editable assignee dropdown in "Oppdragsansvarlig" column
+  - Filtered out completed tasks from main task overview (status "ferdig", "completed", "done", "utført")
+  - Changed column header from "Oppdragsansvarlig" to "Ansvarlig" 
+  - Added "Handlinger" column with green "Utfør oppgave" button for task execution
+  - Implemented editable assignee dropdown with proper value handling
   - Added hover tooltips over tasks showing brief descriptions of work to be done
   - Added grayed-out text styling for payroll tasks when they shouldn't be run
 - **Technical Implementation**:
-  - Created AssigneeDropdown component with real-time employee data
+  - Created AssigneeDropdown component with real-time employee data and proper JSON response handling
   - Implemented getTaskTooltipContent function for task-specific descriptions
   - Added shouldRunPayroll business logic for conditional text styling
+  - Fixed Select.Item value prop errors by using "unassigned" instead of empty strings
+  - Added handleStartTask function for task execution workflow
   - Integrated mutation handling for assignee updates with toast notifications
-- **User Experience**: Cleaner interface with direct editing capabilities and helpful task descriptions on hover
+- **User Experience**: Cleaner interface showing only active tasks with direct editing capabilities, task execution buttons, and helpful task descriptions on hover
 
 ### Complete System Optimization 
 - **Date**: August 23, 2025
