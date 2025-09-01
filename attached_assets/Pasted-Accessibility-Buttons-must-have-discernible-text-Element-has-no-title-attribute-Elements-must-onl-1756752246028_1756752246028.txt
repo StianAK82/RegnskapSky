@@ -1,0 +1,73 @@
+Accessibility
+Buttons must have discernible text: Element has no title attribute
+Elements must only use allowed ARIA attributes: ARIA attribute is not allowed: aria-expanded="false"
+Form elements must have labels: Element has no title attribute Element has no placeholder attribute
+<input type="file" multiple="" accept="*" style="display: none;">
+Open in Elements
+Request
+https://replit.com/@stian10/RegnskapSky
+Further Reading
+Learn more about this axe rule at Deque University
+Learn why this is important and how to fix it on webhint.io
+<input type="file" webkitdirectory="true" mozdirectory="true" msdirectory="true" odirectory="true" directory="true" accept="*" style="display: none;">
+Open in Elements
+Request
+https://replit.com/@stian10/RegnskapSky
+Further Reading
+Learn more about this axe rule at Deque University
+Learn why this is important and how to fix it on webhint.io
+<input type="file" multiple="" accept="*" style="display: none;">
+Open in Elements
+Request
+https://replit.com/@stian10/RegnskapSky
+Further Reading
+Learn more about this axe rule at Deque University
+Learn why this is important and how to fix it on webhint.io
+<input type="file" webkitdirectory="true" mozdirectory="true" msdirectory="true" odirectory="true" directory="true" accept="*" style="display: none;">
+Open in Elements
+Request
+https://replit.com/@stian10/RegnskapSky
+Further Reading
+Learn more about this axe rule at Deque University
+Learn why this is important and how to fix it on webhint.io
+<input class="css-c8niax" data-rac="" value="/">
+Open in Elements
+Request
+https://replit.com/@stian10/RegnskapSky
+Further Reading
+Learn more about this axe rule at Deque University
+Learn why this is important and how to fix it on webhint.io
+<textarea id="g-recaptcha-response-100000" name="g-recaptcha-response" class="g-recaptcha-response" style="width: 250px; height: 40px; border: 1px solid rgb(193, 193, 193); margin: 10px 25px; padding: 0px; resize: none; display: none;">
+Open in Elements
+Request
+https://replit.com/@stian10/RegnskapSky
+Further Reading
+Learn more about this axe rule at Deque University
+Learn why this is important and how to fix it on webhint.io
+ARIA input fields must have an accessible name: Element has no title attribute
+<div spellcheck="false" autocorrect="on" autocapitalize="on" translate="no" contenteditable="true" style="tab-size: 4;" class="cm-content cm-lineWrapping" role="textbox" aria-multiline="true" data-gramm="false" data-gramm_editor="false" data-enabled-grammarly="false">
+Open in Elements
+Request
+https://replit.com/@stian10/RegnskapSky
+Further Reading
+Learn more about this axe rule at Deque University
+Learn why this is important and how to fix it on webhint.io
+<div role="slider" tabindex="0" class="css-jst7cw" aria-valuemin="1" aria-valuemax="10" aria-valuenow="3">
+Open in Elements
+Request
+https://replit.com/@stian10/RegnskapSky
+Further Reading
+Learn more about this axe rule at Deque University
+Learn why this is important and how to fix it on webhint.io
+Frames must have an accessible name: Element has no title attribute
+<iframe height="0" width="0" style="display: none; visibility: hidden;"></iframe>
+Open in Elements
+Request
+https://replit.com/@stian10/RegnskapSky
+Further Reading
+Learn more about this axe rule at Deque University
+Learn why this is important and how to fix it on webhint.io
+<iframe style="display: none;"></iframe>
+Open in Elements
+Request
+https://replit.com/@stian10/RegnskapSky

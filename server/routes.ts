@@ -1067,18 +1067,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('Regular task updated successfully:', updatedTask);
       } catch (regularTaskError) {
         // If regular task update fails, try client task
-        console.log('Regular task update failed, trying client task:', regularTaskError);
+        console.log('Regular task update failed, trying client task:', regularTaskError.message);
         try {
           updatedTask = await storage.updateClientTask(req.params.id, req.body);
           console.log('Client task updated successfully:', updatedTask);
         } catch (clientTaskError) {
-          console.error('Both task updates failed:', { regularTaskError, clientTaskError });
-          throw new Error('Task not found in either table');
+          console.error('Both task updates failed:', { 
+            regularError: regularTaskError.message, 
+            clientError: clientTaskError.message 
+          });
+          throw new Error(`Task with id ${req.params.id} not found in either tasks or clientTasks table`);
         }
-      }
-      
-      if (!updatedTask) {
-        throw new Error('No task was updated');
       }
       
       // Ensure we return the updated task as JSON
