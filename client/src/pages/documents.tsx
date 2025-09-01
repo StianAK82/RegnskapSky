@@ -407,7 +407,7 @@ export default function Documents() {
                           </td>
                           <td style={{ padding: '12px' }}>
                             <button
-                              onClick={() => handleViewDocument(document)}
+                              onClick={() => handleViewDocumentNew(document)}
                               title="Vis rapport på skjermen"
                               style={{
                                 backgroundColor: '#3B82F6',
