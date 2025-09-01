@@ -49,10 +49,47 @@ export default function Documents() {
 
   const handleDownload = async (document: any) => {
     try {
-      // Use apiRequest which automatically includes auth headers
-      const response = await apiRequest('GET', `/api/documents/${document.id}/download`);
+      // Get the auth token - check both possible keys
+      const authToken = localStorage.getItem('auth_token');
+      const token = localStorage.getItem('token'); 
+      const finalToken = authToken || token;
       
-      // Check if it's a blob response
+      console.log('Download debug:', {
+        authToken: authToken ? 'exists' : 'missing',
+        token: token ? 'exists' : 'missing',
+        finalToken: finalToken ? finalToken.substring(0, 20) + '...' : 'none',
+        documentId: document.id
+      });
+
+      if (!finalToken) {
+        toast({
+          title: "Ikke innlogget",
+          description: "Du må være innlogget for å laste ned dokumenter",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const response = await fetch(`/api/documents/${document.id}/download`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${finalToken}`,
+          'Accept': 'text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,*/*',
+        },
+        credentials: 'include'
+      });
+
+      console.log('Download response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Download failed:', {
+          status: response.status,
+          error: errorText
+        });
+        throw new Error(`Download failed: ${response.status} - ${errorText}`);
+      }
+
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -79,9 +116,34 @@ export default function Documents() {
 
   const handleDownloadExcel = async (document: any) => {
     try {
-      // Use apiRequest which automatically includes auth headers
-      const response = await apiRequest('GET', `/api/documents/${document.id}/download?format=excel`);
-      
+      // Get the auth token - check both possible keys
+      const authToken = localStorage.getItem('auth_token');
+      const token = localStorage.getItem('token'); 
+      const finalToken = authToken || token;
+
+      if (!finalToken) {
+        toast({
+          title: "Ikke innlogget",
+          description: "Du må være innlogget for å laste ned dokumenter",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const response = await fetch(`/api/documents/${document.id}/download?format=excel`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${finalToken}`,
+          'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,*/*',
+        },
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Excel download failed: ${response.status} - ${errorText}`);
+      }
+
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
