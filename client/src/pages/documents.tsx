@@ -132,12 +132,20 @@ export default function Documents() {
   };
 
   const handleViewDocument = async (document: any) => {
-    console.log('=== DOCUMENT VIEW DEBUG START ===');
-    console.log('handleViewDocument clicked for:', document.name);
+    console.log('=== NEW DOCUMENT VIEW DEBUG START ===');
+    console.log('UPDATED handleViewDocument clicked for:', document.name);
     console.log('Document ID:', document.id);
-    console.log('Full document object with all fields:', JSON.stringify(document, null, 2));
-    console.log('aiSuggestions field:', document.aiSuggestions);
-    console.log('data field:', document.data);
+    console.log('Full document object:', document);
+    alert('UPDATED FUNCTION CALLED - Document: ' + document.name);
+    
+    // Force return early to test if new function is running
+    setViewingDocument({
+      ...document,
+      data: [
+        { Klient: 'UPDATED TEST - Dette er ny funksjon!', 'Totale timer': 99, 'Fakturerbare timer': 88 }
+      ]
+    });
+    return;
     
     // Parse the actual document data - check aiSuggestions first (new format)
     let documentData = [];

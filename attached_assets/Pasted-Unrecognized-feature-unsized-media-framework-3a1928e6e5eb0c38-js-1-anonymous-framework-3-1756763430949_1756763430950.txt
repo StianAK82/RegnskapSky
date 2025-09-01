@@ -1,0 +1,58 @@
+Unrecognized feature: 'unsized-media'.
+_ @ framework-3a1928e6e5eb0c38.js:1
+(anonymous) @ framework-3a1928e6e5eb0c38.js:1
+uD @ framework-3a1928e6e5eb0c38.js:1
+uI @ framework-3a1928e6e5eb0c38.js:1
+uM @ framework-3a1928e6e5eb0c38.js:1
+uS @ framework-3a1928e6e5eb0c38.js:1
+C @ framework-3a1928e6e5eb0c38.js:1
+z @ framework-3a1928e6e5eb0c38.js:1
+framework-3a1928e6e5eb0c38.js:1  Unrecognized feature: 'pointer-lock'.
+_ @ framework-3a1928e6e5eb0c38.js:1
+(anonymous) @ framework-3a1928e6e5eb0c38.js:1
+uD @ framework-3a1928e6e5eb0c38.js:1
+uI @ framework-3a1928e6e5eb0c38.js:1
+uM @ framework-3a1928e6e5eb0c38.js:1
+uS @ framework-3a1928e6e5eb0c38.js:1
+C @ framework-3a1928e6e5eb0c38.js:1
+z @ framework-3a1928e6e5eb0c38.js:1
+framework-3a1928e6e5eb0c38.js:1  Allow attribute will take precedence over 'allowfullscreen'.
+_ @ framework-3a1928e6e5eb0c38.js:1
+(anonymous) @ framework-3a1928e6e5eb0c38.js:1
+uD @ framework-3a1928e6e5eb0c38.js:1
+uI @ framework-3a1928e6e5eb0c38.js:1
+uM @ framework-3a1928e6e5eb0c38.js:1
+uS @ framework-3a1928e6e5eb0c38.js:1
+C @ framework-3a1928e6e5eb0c38.js:1
+z @ framework-3a1928e6e5eb0c38.js:1
+framework-3a1928e6e5eb0c38.js:1  Allow attribute will take precedence over 'allowpaymentrequest'.
+_ @ framework-3a1928e6e5eb0c38.js:1
+(anonymous) @ framework-3a1928e6e5eb0c38.js:1
+uD @ framework-3a1928e6e5eb0c38.js:1
+uI @ framework-3a1928e6e5eb0c38.js:1
+uM @ framework-3a1928e6e5eb0c38.js:1
+uS @ framework-3a1928e6e5eb0c38.js:1
+C @ framework-3a1928e6e5eb0c38.js:1
+z @ framework-3a1928e6e5eb0c38.js:1
+framework-3a1928e6e5eb0c38.js:1  Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+_ @ framework-3a1928e6e5eb0c38.js:1
+workspace_iframe.html?initialPath=%2F&id=%3Ark1%3A:32  Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+workspace_iframe.html?initialPath=%2F&id=%3Ark1%3A:32  Unrecognized feature: 'ambient-light-sensor'.
+workspace_iframe.html?initialPath=%2F&id=%3Ark1%3A:32  Unrecognized feature: 'battery'.
+workspace_iframe.html?initialPath=%2F&id=%3Ark1%3A:32  Unrecognized feature: 'execution-while-not-rendered'.
+workspace_iframe.html?initialPath=%2F&id=%3Ark1%3A:32  Unrecognized feature: 'execution-while-out-of-viewport'.
+workspace_iframe.html?initialPath=%2F&id=%3Ark1%3A:32  Unrecognized feature: 'layout-animations'.
+workspace_iframe.html?initialPath=%2F&id=%3Ark1%3A:32  Unrecognized feature: 'legacy-image-formats'.
+workspace_iframe.html?initialPath=%2F&id=%3Ark1%3A:32  Unrecognized feature: 'navigation-override'.
+workspace_iframe.html?initialPath=%2F&id=%3Ark1%3A:32  Unrecognized feature: 'oversized-images'.
+workspace_iframe.html?initialPath=%2F&id=%3Ark1%3A:32  Unrecognized feature: 'publickey-credentials'.
+workspace_iframe.html?initialPath=%2F&id=%3Ark1%3A:32  Unrecognized feature: 'speaker-selection'.
+workspace_iframe.html?initialPath=%2F&id=%3Ark1%3A:32  Unrecognized feature: 'unoptimized-images'.
+workspace_iframe.html?initialPath=%2F&id=%3Ark1%3A:32  Unrecognized feature: 'unsized-media'.
+workspace_iframe.html?initialPath=%2F&id=%3Ark1%3A:32  Allow attribute will take precedence over 'allowfullscreen'.
+workspace_iframe.html?initialPath=%2F&id=%3Ark1%3A:32  Allow attribute will take precedence over 'allowpaymentrequest'.
+2Console.js:61 Documents component rendering, viewingDocument: false
+5Console.js:61 HTML TEST - Rendering document row: Timer per klient_2025-09-01.csv
+Console.js:61 HTML TEST - Button clicked for: Timer per klient_2025-09-01.csv
+Console.js:61 handleViewDocument clicked for: Timer per klient_2025-09-01.csv
+Console.js:61 Documents component rendering, viewingDocument: true
