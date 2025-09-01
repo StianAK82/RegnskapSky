@@ -2508,6 +2508,9 @@ async function executeReport(spec: any, tenantId: string, storage: any) {
   
   // Get time entries as base data
   const timeEntries = await storage.getTimeEntriesByTenant(tenantId, startDate, endDate);
+  console.log('Report debug - Time entries found:', timeEntries.length);
+  console.log('Report debug - Date range:', startDate, 'to', endDate);
+  console.log('Report debug - Spec grouping:', spec.gruppering);
   
   let data: any[] = [];
   let totals: Record<string, number> = {};

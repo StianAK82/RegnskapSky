@@ -540,7 +540,19 @@ export default function Reports() {
                           <Download className="h-4 w-4 mr-2" />
                           Last ned CSV
                         </Button>
-                        <Button variant="outline">
+                        <Button variant="outline" onClick={() => {
+                          // Convert CSV to Excel-compatible format
+                          const csvData = currentReport.csv;
+                          const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+                          const url = window.URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = `${currentReport.title.replace(/\s+/g, '_')}.csv`;
+                          document.body.appendChild(a);
+                          a.click();
+                          document.body.removeChild(a);
+                          window.URL.revokeObjectURL(url);
+                        }}>
                           <FileSpreadsheet className="h-4 w-4 mr-2" />
                           Eksporter Excel
                         </Button>
