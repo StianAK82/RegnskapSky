@@ -1,0 +1,85 @@
+Accessibility
+Buttons must have discernible text: Element has no title attribute
+<button class=" useView_view__C2mnv css-jaribb"></button>
+Open in Elements
+Request
+https://replit.com/@stian10/RegnskapSky
+Further Reading
+Learn more about this axe rule at Deque University
+Learn why this is important and how to fix it on webhint.io
+Elements must only use allowed ARIA attributes: ARIA attribute is not allowed: aria-expanded="false"
+Form elements must have labels: Element has no title attribute Element has no placeholder attribute
+ARIA input fields must have an accessible name: Element has no title attribute
+<div spellcheck="false" autocorrect="on" autocapitalize="on" translate="no" contenteditable="true" style="tab-size: 4;" class="cm-content cm-lineWrapping" role="textbox" aria-multiline="true" data-gramm="false" data-gramm_editor="false" data-enabled-grammarly="false">
+Open in Elements
+Request
+https://replit.com/@stian10/RegnskapSky
+Further Reading
+Learn more about this axe rule at Deque University
+Learn why this is important and how to fix it on webhint.io
+<div role="slider" tabindex="0" class="css-jst7cw" aria-valuemin="1" aria-valuemax="10" aria-valuenow="3">
+Open in Elements
+Request
+https://replit.com/@stian10/RegnskapSky
+Further Reading
+Learn more about this axe rule at Deque University
+Learn why this is important and how to fix it on webhint.io
+Frames must have an accessible name: Element has no title attribute
+<iframe height="0" width="0" style="display: none; visibility: hidden;"></iframe>
+Open in Elements
+Request
+https://replit.com/@stian10/RegnskapSky
+Further Reading
+Learn more about this axe rule at Deque University
+Learn why this is important and how to fix it on webhint.io
+<iframe style="display: none;"></iframe>
+Open in Elements
+Request
+https://replit.com/@stian10/RegnskapSky
+Further Reading
+Learn more about this axe rule at Deque University
+Learn why this is important and how to fix it on webhint.io
+Compatibility
+'div[autocapitalize]' is not supported by Safari.
+<div spellcheck="false" autocorrect="on" autocapitalize="on" translate="no" contenteditable="true" style="tab-size: 4;" class="cm-content cm-lineWrapping" role="textbox" aria-multiline="true" data-gramm="false" data-gramm_editor="false" data-enabled-grammarly="false">
+Open in Elements
+Request
+https://replit.com/@stian10/RegnskapSky
+Further Reading
+Learn more about this HTML feature on MDN
+Learn why this is important and how to fix it on webhint.io
+'iframe[allowpaymentrequest]' is not supported by Firefox 83+, Safari.
+<iframe title="webview" data-cy="ws-webview" src="https://3524d8ab-ee2d-4a4a-8e2c-73d3bb6342d7-00-21mni5fxd8id3.riker.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&amp;id=%3Ar2u%3A" sandbox="allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals allow-downloads allow-downloads-without-user-activation allow-presentation allow-orientation-lock allow-pointer-lock allow-scripts" allow="accelerometer; ambient-light-sensor; autoplay; battery; camera; display-capture; encrypted-media; execution-while-not-rendered; execution-while-out-of-viewport; fullscreen; gamepad; geolocation; gyroscope; layout-animations; legacy-image-formats; magnetometer; microphone; midi; navigation-override; oversized-images; payment; picture-in-picture; publickey-credentials; speaker-selection; sync-xhr; unoptimized-images; unsized-media; usb; screen-wake-lock; web-share; xr-spatial-tracking; clipboard-read; clipboard-write; pointer-lock" allowfullscreen="" allowtransparency="true" allowpaymentrequest="true" allowpopups="true" class="css-v27jrx" style="--colorScheme: light;">
+Open in Elements
+Request
+https://replit.com/@stian10/RegnskapSky
+Further Reading
+Learn more about this HTML feature on MDN
+Learn why this is important and how to fix it on webhint.io
+'input[autocapitalize]' is not supported by Safari.
+'meta[name=theme-color]' is not supported by Firefox.
+'scrollbar-width' is not supported by Safari.
+'textarea[autocapitalize]' is not supported by Safari.
+Performance
+A 'cache-control' header is missing or empty.
+'visibility' changes to this property will trigger: 'Layout', which can impact performance when used inside @keyframes.
+A 'cache-control' header contains directives which are not recommended: 'no-store'
+Security
+A 'set-cookie' header doesn't have the 'secure' directive.
+Response should include 'x-content-type-options' header.
+A 'set-cookie' header doesn't have the 'httponly' directive.
+Response should not include disallowed headers: x-powered-by
+The 'X-Frame-Options' header should not be used. A similar effect, with more consistent support and stronger checks, can be achieved with the 'Content-Security-Policy' header and 'frame-ancestors' directive.
+Other
+A form field element should have an id or name attribute
+A form field element has neither an id nor a name attribute. This might prevent the browser from correctly autofilling the form.
+
+To fix this issue, add a unique id or name attribute to a form field. This is not strictly needed, but still recommended even if you have an autocomplete attribute on the same element.
+
+4 resources
+Learn more: The form input element
+Deprecated feature used
+Triggering window.alert from cross origin iframes has been deprecated and will be removed in the future.
+
+1 source
+index-y9ZkvPDX.js:263
