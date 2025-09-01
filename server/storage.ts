@@ -651,11 +651,6 @@ export class DatabaseStorage implements IStorage {
     return result.count;
   }
 
-  async createDocument(insertDocument: InsertDocument): Promise<Document> {
-    const [document] = await db.insert(documents).values(insertDocument).returning();
-    return document;
-  }
-
   async updateDocument(id: string, updates: Partial<Document>): Promise<Document> {
     const [document] = await db
       .update(documents)

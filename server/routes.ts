@@ -2466,14 +2466,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Save report as document
       const reportDocument = await storage.createDocument({
-        tenantId: user.tenantId,
+        tenantId: req.user!.tenantId,
         clientId: null, // System generated report
         fileName: `${reportSpec.title}_${new Date().toISOString().split('T')[0]}.csv`,
         fileType: 'text/csv',
         fileSize: csvContent.length,
         category: 'Rapporter',
         processed: true,
-        uploadedBy: user.id,
+        uploadedBy: req.user!.id,
         aiSuggestions: { 
           reportData: reportData.data.slice(0, 5), // Store sample data
           totals: reportData.totals,
