@@ -2527,9 +2527,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/documents/:id/download', authenticateToken, async (req: AuthRequest, res) => {
+  app.get('/api/documents/:id/download', async (req, res) => {
     try {
-      const user = req.user;
+      // Check for token in query params or Authorization header
+      const tokenFromQuery = req.query.token as string;
+      const tokenFromHeader = req.headers.authorization?.replace('Bearer ', '');
+      const token = tokenFromQuery || tokenFromHeader;
+
+      if (!token) {
+        return res.status(401).json({ message: 'No token provided' });
+      }
+
+      // Verify token manually
+      let user;
+      try {
+        const jwt = require('jsonwebtoken');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET!);
+        user = decoded;
+      } catch (error) {
+        return res.status(401).json({ message: 'Invalid token' });
+      }
+
       const documentId = req.params.id;
       
       // For now, return stored CSV content from aiSuggestions

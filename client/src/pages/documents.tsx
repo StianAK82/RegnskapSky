@@ -49,18 +49,11 @@ export default function Documents() {
 
   const handleDownload = async (document: any) => {
     try {
-      // Get the auth token - check both possible keys
+      // Use simple redirect approach with token in URL
       const authToken = localStorage.getItem('auth_token');
       const token = localStorage.getItem('token'); 
       const finalToken = authToken || token;
       
-      console.log('Download debug:', {
-        authToken: authToken ? 'exists' : 'missing',
-        token: token ? 'exists' : 'missing',
-        finalToken: finalToken ? finalToken.substring(0, 20) + '...' : 'none',
-        documentId: document.id
-      });
-
       if (!finalToken) {
         toast({
           title: "Ikke innlogget",
@@ -70,73 +63,21 @@ export default function Documents() {
         return;
       }
 
-      // First test that the token works with a test endpoint
-      console.log('Testing token first...');
-      const testResponse = await fetch(`/api/documents/${document.id}/test`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${finalToken}`,
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include'
-      });
-
-      console.log('Test response:', testResponse.status);
-      if (!testResponse.ok) {
-        const testError = await testResponse.text();
-        console.error('Token test failed:', testError);
-        toast({
-          title: "Auth test feilet",
-          description: `Token virker ikke: ${testResponse.status}`,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const testData = await testResponse.json();
-      console.log('Test successful:', testData);
-
-      // Now try the actual download
-      console.log('Starting actual download...');
-      const response = await fetch(`/api/documents/${document.id}/download`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${finalToken}`,
-          'Accept': 'text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,*/*',
-        },
-        credentials: 'include'
-      });
-
-      console.log('Download response status:', response.status);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Download failed:', {
-          status: response.status,
-          error: errorText
-        });
-        throw new Error(`Download failed: ${response.status} - ${errorText}`);
-      }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = document.fileName || 'document.csv';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      // Create download URL with token as query parameter
+      const downloadUrl = `/api/documents/${document.id}/download?token=${encodeURIComponent(finalToken)}`;
+      
+      // Use window.location to trigger download
+      window.location.href = downloadUrl;
       
       toast({
-        title: "Nedlasting fullført",
-        description: "Dokumentet ble lastet ned",
+        title: "Nedlasting startet",
+        description: "Filen blir lastet ned",
       });
     } catch (error) {
       console.error('Download error:', error);
       toast({
         title: "Nedlasting feilet",
-        description: error instanceof Error ? error.message : "Kunne ikke laste ned dokumentet",
+        description: "Kunne ikke laste ned dokumentet",
         variant: "destructive",
       });
     }
@@ -144,7 +85,7 @@ export default function Documents() {
 
   const handleDownloadExcel = async (document: any) => {
     try {
-      // Get the auth token - check both possible keys
+      // Use simple redirect approach with token in URL
       const authToken = localStorage.getItem('auth_token');
       const token = localStorage.getItem('token'); 
       const finalToken = authToken || token;
@@ -158,39 +99,21 @@ export default function Documents() {
         return;
       }
 
-      const response = await fetch(`/api/documents/${document.id}/download?format=excel`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${finalToken}`,
-          'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,*/*',
-        },
-        credentials: 'include'
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Excel download failed: ${response.status} - ${errorText}`);
-      }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = document.fileName?.replace('.csv', '.xlsx') || 'document.xlsx';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      // Create Excel download URL with token as query parameter
+      const downloadUrl = `/api/documents/${document.id}/download?format=excel&token=${encodeURIComponent(finalToken)}`;
+      
+      // Use window.location to trigger download
+      window.location.href = downloadUrl;
       
       toast({
-        title: "Excel nedlasting fullført",
-        description: "Excel-filen ble lastet ned",
+        title: "Excel nedlasting startet",
+        description: "Excel-filen blir lastet ned",
       });
     } catch (error) {
       console.error('Excel download error:', error);
       toast({
         title: "Excel nedlasting feilet",
-        description: error instanceof Error ? error.message : "Kunne ikke laste ned Excel-filen",
+        description: "Kunne ikke laste ned Excel-filen",
         variant: "destructive",
       });
     }
