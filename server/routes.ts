@@ -49,6 +49,38 @@ const upload = multer({
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
+  // Password reset route
+  app.post('/api/auth/reset-password', async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ message: 'E-post er påkrevd' });
+      }
+
+      // Find user by email
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(404).json({ message: 'Bruker ikke funnet med denne e-postadressen' });
+      }
+
+      // Generate new temporary password
+      const newPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-2).toUpperCase();
+      const hashedPassword = await hashPassword(newPassword);
+
+      // Update user password
+      await storage.updateUserPassword(user.id, hashedPassword);
+
+      res.json({ 
+        message: 'Passord tilbakestilt',
+        newPassword: newPassword
+      });
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      res.status(500).json({ message: 'Kunne ikke tilbakestille passord' });
+    }
+  });
+  
   // Billing routes for invoicing new customers
   app.get('/api/billing/invoices', authenticateToken, async (req, res) => {
     try {

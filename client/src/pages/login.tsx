@@ -58,6 +58,51 @@ export default function Login() {
     }));
   };
 
+  const handlePasswordReset = async () => {
+    if (!formData.email) {
+      toast({
+        title: 'Skriv inn e-post',
+        description: 'Vennligst skriv inn din e-postadresse først',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: formData.email }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast({
+          title: 'Passord tilbakestilt',
+          description: `Nytt passord: ${data.newPassword}. Vennligst noter det ned og logg inn.`,
+        });
+      } else {
+        toast({
+          title: 'Feil',
+          description: data.message || 'Kunne ikke tilbakestille passord',
+          variant: 'destructive',
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Feil',
+        description: 'Kunne ikke tilbakestille passord',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
@@ -151,6 +196,18 @@ export default function Login() {
               {isLogin ? 'Logg inn' : 'Opprett konto'}
             </Button>
           </form>
+
+          {isLogin && (
+            <div className="mt-4 text-center">
+              <button
+                type="button"
+                onClick={handlePasswordReset}
+                className="text-primary hover:text-blue-700 text-sm"
+              >
+                Glemt passord?
+              </button>
+            </div>
+          )}
 
           <div className="mt-6 text-center">
             <button
