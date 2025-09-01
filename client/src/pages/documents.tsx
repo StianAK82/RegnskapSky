@@ -63,17 +63,37 @@ export default function Documents() {
       }
 
       console.log('Starting download with POST fetch...');
+      console.log('Token being sent:', finalToken.substring(0, 20) + '...');
+
+      // First test that POST works at all
+      try {
+        console.log('Testing POST functionality...');
+        const testResponse = await fetch('/api/test-post', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: 'test=value'
+        });
+        const testResult = await testResponse.json();
+        console.log('POST test result:', testResult);
+      } catch (testError) {
+        console.error('POST test failed:', testError);
+      }
 
       // Use fetch with POST to send token in body
       const response = await fetch(`/api/documents/${document.id}/download`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
+          'Cache-Control': 'no-cache',
         },
-        body: `token=${encodeURIComponent(finalToken)}`
+        body: `token=${encodeURIComponent(finalToken)}`,
+        cache: 'no-cache'
       });
 
       console.log('Download response status:', response.status);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
         const errorText = await response.text();

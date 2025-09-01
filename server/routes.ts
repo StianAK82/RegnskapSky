@@ -2541,7 +2541,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         hasBodyToken: !!tokenFromBody,
         hasHeaderToken: !!tokenFromHeader,
         method: req.method,
-        url: req.url
+        url: req.url,
+        bodyKeys: req.body ? Object.keys(req.body) : [],
+        bodyContent: req.body,
+        contentType: req.headers['content-type']
       });
 
       if (!token) {
@@ -2603,6 +2606,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register both GET and POST handlers for downloads
   app.get('/api/documents/:id/download', downloadHandler);
   app.post('/api/documents/:id/download', downloadHandler);
+  
+  // Simple test endpoint to verify POST is working
+  app.post('/api/test-post', (req, res) => {
+    console.log('Test POST endpoint hit:', {
+      method: req.method,
+      body: req.body,
+      headers: req.headers['content-type']
+    });
+    res.json({ success: true, receivedBody: req.body });
+  });
 
   // Test endpoint to verify token is working
   app.get('/api/documents/:id/test', authenticateToken, async (req: AuthRequest, res) => {
