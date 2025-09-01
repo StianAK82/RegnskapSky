@@ -285,94 +285,82 @@ export default function Documents() {
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Dokument</TableHead>
-                      <TableHead>Kategori</TableHead>
-                      <TableHead>Størrelse</TableHead>
-                      <TableHead>Opprettet</TableHead>
-                      <TableHead>Handlinger</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+              <div style={{ border: '2px solid #3B82F6', borderRadius: '8px', padding: '16px', backgroundColor: '#f0f9ff' }}>
+                <h3 style={{ margin: '0 0 16px 0', color: '#1e40af', fontSize: '16px', fontWeight: 'bold' }}>
+                  🔍 HTML TEST VERSJON - Midlertidig for å teste knapp-problemet
+                </h3>
+                <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'white', border: '1px solid #e5e7eb' }}>
+                  <thead>
+                    <tr style={{ backgroundColor: '#f3f4f6' }}>
+                      <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb', fontWeight: 'bold' }}>Dokument</th>
+                      <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb', fontWeight: 'bold' }}>Kategori</th>
+                      <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb', fontWeight: 'bold' }}>Størrelse</th>
+                      <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb', fontWeight: 'bold' }}>TEST KNAPP</th>
+                    </tr>
+                  </thead>
+                  <tbody>
                     {filteredDocuments.map((document: any) => {
-                      console.log('Rendering document row:', document.name);
+                      console.log('HTML TEST - Rendering document row:', document.name);
                       return (
-                        <TableRow key={document.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <span className="text-2xl">{getDocumentIcon(document.category)}</span>
-                            <div>
-                              <div className="font-medium">{document.name}</div>
-                              <div className="text-sm text-gray-500">{document.description}</div>
+                        <tr key={document.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                          <td style={{ padding: '12px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                              <span style={{ fontSize: '24px' }}>{getDocumentIcon(document.category)}</span>
+                              <div>
+                                <div style={{ fontWeight: '500' }}>{document.name}</div>
+                                <div style={{ fontSize: '12px', color: '#6b7280' }}>{document.description}</div>
+                              </div>
                             </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="secondary">{document.category}</Badge>
-                        </TableCell>
-                        <TableCell className="text-sm text-gray-500">
-                          {document.size ? formatFileSize(document.size) : 'Ukjent'}
-                        </TableCell>
-                        <TableCell className="text-sm text-gray-500">
-                          {document.createdAt ? new Date(document.createdAt).toLocaleDateString('nb-NO') : 'Ukjent'}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-1">
+                          </td>
+                          <td style={{ padding: '12px' }}>
+                            <span style={{ 
+                              backgroundColor: '#e5e7eb', 
+                              padding: '4px 8px', 
+                              borderRadius: '4px',
+                              fontSize: '12px'
+                            }}>
+                              {document.category}
+                            </span>
+                          </td>
+                          <td style={{ padding: '12px', fontSize: '14px', color: '#6b7280' }}>
+                            {document.size ? formatFileSize(document.size) : 'Ukjent'}
+                          </td>
+                          <td style={{ padding: '12px' }}>
                             <button
-                              onClick={() => handleViewDocument(document)}
-                              title="Vis dokument på skjermen"
+                              onClick={() => {
+                                console.log('HTML TEST - Button clicked for:', document.name);
+                                alert('HTML TEST KNAPP FUNGERER! Document: ' + document.name);
+                                handleViewDocument(document);
+                              }}
                               style={{
-                                backgroundColor: '#3B82F6', 
-                                color: 'white', 
-                                padding: '6px 12px',
-                                borderRadius: '6px',
-                                border: 'none',
+                                backgroundColor: '#3B82F6',
+                                color: 'white',
+                                padding: '12px 24px',
+                                borderRadius: '8px',
+                                border: '2px solid #1d4ed8',
                                 cursor: 'pointer',
-                                fontSize: '12px',
-                                fontWeight: '500',
-                                marginRight: '4px'
+                                fontSize: '14px',
+                                fontWeight: 'bold',
+                                marginRight: '8px',
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                              }}
+                              onMouseOver={(e) => {
+                                (e.target as HTMLElement).style.backgroundColor = '#2563EB';
+                                (e.target as HTMLElement).style.transform = 'scale(1.05)';
+                              }}
+                              onMouseOut={(e) => {
+                                (e.target as HTMLElement).style.backgroundColor = '#3B82F6';
+                                (e.target as HTMLElement).style.transform = 'scale(1)';
                               }}
                             >
-                              👁️ TEST VIS
+                              👁️ HTML TEST VIS RAPPORT
                             </button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDownload(document)}
-                              title="Last ned som CSV"
-                            >
-                              <Download className="h-4 w-4" />
-                            </Button>
-                            {document.category === 'Rapporter' && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleDownloadExcel(document)}
-                                title="Last ned som Excel"
-                                className="text-green-600"
-                              >
-                                📊
-                              </Button>
-                            )}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDelete(document)}
-                              title="Slett dokument"
-                              className="text-red-600"
-                            >
-                              🗑️
-                            </Button>
-                          </div>
-                        </TableCell>
-                        </TableRow>
+                          </td>
+                        </tr>
                       );
                     })}
-                  </TableBody>
-                </Table>
+                  </tbody>
+                </table>
               </div>
             )}
           </CardContent>
