@@ -411,19 +411,24 @@ export default function DashboardClientTasks() {
   const [currentTimeEntry, setCurrentTimeEntry] = useState<any>(null);
 
   const handleStartTask = (task: TaskWithClient) => {
-    console.log('Starting task:', task.title);
-    // Set up for time entry modal
+    console.log('NEW VERSION: Starting task:', task.title);
+    console.log('NEW VERSION: Setting up time entry modal');
+    
+    // Set up for time entry modal - NEW VERSION
     setSelectedTask(task);
-    setCurrentTimeEntry({ 
+    const newTimeEntry = { 
       taskId: task.id,
       taskTitle: task.title,
       clientId: task.clientId,
       clientName: task.clientName,
       description: `Arbeid på oppgave: ${task.title}`,
       startTime: new Date().toISOString()
-    });
+    };
+    
+    console.log('NEW VERSION: Time entry data:', newTimeEntry);
+    setCurrentTimeEntry(newTimeEntry);
     setShowTimeModal(true);
-    console.log('Time modal should be open:', true);
+    console.log('NEW VERSION: Modal state set to true');
   };
 
   // Fetch all tasks with client information
@@ -645,12 +650,13 @@ export default function DashboardClientTasks() {
                           size="sm"
                           className="bg-green-600 hover:bg-green-700 text-white"
                           onClick={() => {
-                            console.log('Button clicked for task:', task.title);
+                            console.log('NEW VERSION: Button clicked for task:', task.title);
+                            console.log('NEW VERSION: About to call handleStartTask');
                             handleStartTask(task);
                           }}
                           data-testid={`button-start-task-${task.id}`}
                         >
-                          Utfør oppgave (v2)
+                          🚀 Start oppgave
                         </Button>
                       </td>
                     </tr>
