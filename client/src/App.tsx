@@ -19,6 +19,7 @@ import Tasks from "@/pages/tasks";
 import Timer from "@/pages/timer";
 import AIAssistant from "@/pages/ai-assistant";
 import Reports from "@/pages/reports";
+import Documents from "@/pages/documents";
 import Subscriptions from "@/pages/subscriptions";
 import Subscribe from "@/pages/subscribe";
 import AdminSubscriptions from "@/pages/AdminSubscriptions";
@@ -123,6 +124,24 @@ function AuthenticatedRoutes() {
         component={() => (
           <ProtectedRoute allowedRoles={['admin', 'ansatt']}>
             <Reports />
+          </ProtectedRoute>
+        )} 
+      />
+      
+      <Route 
+        path="/documents" 
+        component={() => (
+          <ProtectedRoute allowedRoles={['admin', 'ansatt']}>
+            <Documents />
+          </ProtectedRoute>
+        )} 
+      />
+      
+      <Route 
+        path="/documenter" 
+        component={() => (
+          <ProtectedRoute allowedRoles={['admin', 'ansatt']}>
+            <Documents />
           </ProtectedRoute>
         )} 
       />

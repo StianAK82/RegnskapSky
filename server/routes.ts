@@ -2511,6 +2511,7 @@ async function executeReport(spec: any, tenantId: string, storage: any) {
   console.log('Report debug - Time entries found:', timeEntries.length);
   console.log('Report debug - Date range:', startDate, 'to', endDate);
   console.log('Report debug - Spec grouping:', spec.gruppering);
+  console.log('Report debug - First few entries:', timeEntries.slice(0, 2));
   
   let data: any[] = [];
   let totals: Record<string, number> = {};
