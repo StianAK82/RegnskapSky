@@ -190,8 +190,9 @@ export default function Documents() {
     }
   };
 
-  // Keep old function for fallback but redirect to new one
+  // Redirect old function to new one
   const handleViewDocument = async (document: any) => {
+    console.log('REDIRECTING TO NEW FUNCTION...');
     return handleViewDocumentNew(document);
     
     // Parse the actual document data - check aiSuggestions first (new format)

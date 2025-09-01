@@ -21,6 +21,7 @@ import AIAssistant from "@/pages/ai-assistant";
 import Reports from "@/pages/reports";
 import Documents from "@/pages/documents";
 import DocumentsSimple from "@/pages/documents-simple";
+import DocumentsFixed from "@/pages/documents-fixed";
 import Subscriptions from "@/pages/subscriptions";
 import Subscribe from "@/pages/subscribe";
 import AdminSubscriptions from "@/pages/AdminSubscriptions";
@@ -133,7 +134,7 @@ function AuthenticatedRoutes() {
         path="/documents" 
         component={() => (
           <ProtectedRoute allowedRoles={['admin', 'ansatt']}>
-            <Documents />
+            <DocumentsFixed />
           </ProtectedRoute>
         )} 
       />
