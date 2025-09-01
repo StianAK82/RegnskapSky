@@ -644,10 +644,13 @@ export default function DashboardClientTasks() {
                         <Button
                           size="sm"
                           className="bg-green-600 hover:bg-green-700 text-white"
-                          onClick={() => handleStartTask(task)}
+                          onClick={() => {
+                            console.log('Button clicked for task:', task.title);
+                            handleStartTask(task);
+                          }}
                           data-testid={`button-start-task-${task.id}`}
                         >
-                          Utfør oppgave
+                          Utfør oppgave (v2)
                         </Button>
                       </td>
                     </tr>
