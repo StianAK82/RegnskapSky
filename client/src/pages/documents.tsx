@@ -132,7 +132,9 @@ export default function Documents() {
   };
 
   const handleViewDocument = async (document: any) => {
+    console.log('=== DOCUMENT VIEW DEBUG START ===');
     console.log('handleViewDocument clicked for:', document.name);
+    console.log('Document ID:', document.id);
     console.log('Full document object with all fields:', JSON.stringify(document, null, 2));
     console.log('aiSuggestions field:', document.aiSuggestions);
     console.log('data field:', document.data);

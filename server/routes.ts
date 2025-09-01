@@ -2618,9 +2618,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // View document data endpoint
-  app.get('/api/documents/:id/view', authenticateToken, async (req, res) => {
+  app.get('/api/documents/:id/view', authenticateToken, async (req: any, res) => {
     try {
+      console.log('=== DOCUMENT VIEW ENDPOINT HIT ===');
       const documentId = req.params.id;
+      console.log('Requested document ID:', documentId);
       const document = await storage.getDocument(documentId);
       
       if (!document) {
