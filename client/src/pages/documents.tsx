@@ -62,33 +62,44 @@ export default function Documents() {
         return;
       }
 
-      // Create a hidden form to POST the token securely
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = `/api/documents/${document.id}/download`;
-      form.style.display = 'none';
+      console.log('Starting download with POST fetch...');
 
-      // Add token as form data
-      const tokenInput = document.createElement('input');
-      tokenInput.type = 'hidden';
-      tokenInput.name = 'token';
-      tokenInput.value = finalToken;
-      form.appendChild(tokenInput);
+      // Use fetch with POST to send token in body
+      const response = await fetch(`/api/documents/${document.id}/download`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `token=${encodeURIComponent(finalToken)}`
+      });
 
-      // Add to DOM, submit, then remove
-      document.body.appendChild(form);
-      form.submit();
-      document.body.removeChild(form);
+      console.log('Download response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Download failed: ${response.status} - ${errorText}`);
+      }
+
+      // Handle the file download
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = document.fileName || 'document.csv';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
       
       toast({
-        title: "Nedlasting startet",
-        description: "Filen blir lastet ned",
+        title: "Nedlasting fullført",
+        description: "Dokumentet ble lastet ned",
       });
     } catch (error) {
       console.error('Download error:', error);
       toast({
         title: "Nedlasting feilet",
-        description: "Kunne ikke laste ned dokumentet",
+        description: error instanceof Error ? error.message : "Kunne ikke laste ned dokumentet",
         variant: "destructive",
       });
     }
@@ -109,40 +120,44 @@ export default function Documents() {
         return;
       }
 
-      // Create a hidden form to POST the token securely
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = `/api/documents/${document.id}/download`;
-      form.style.display = 'none';
+      console.log('Starting Excel download with POST fetch...');
 
-      // Add token as form data
-      const tokenInput = document.createElement('input');
-      tokenInput.type = 'hidden';
-      tokenInput.name = 'token';
-      tokenInput.value = finalToken;
-      form.appendChild(tokenInput);
+      // Use fetch with POST to send token and format in body
+      const response = await fetch(`/api/documents/${document.id}/download`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `token=${encodeURIComponent(finalToken)}&format=excel`
+      });
 
-      // Add format parameter for Excel
-      const formatInput = document.createElement('input');
-      formatInput.type = 'hidden';
-      formatInput.name = 'format';
-      formatInput.value = 'excel';
-      form.appendChild(formatInput);
+      console.log('Excel download response status:', response.status);
 
-      // Add to DOM, submit, then remove
-      document.body.appendChild(form);
-      form.submit();
-      document.body.removeChild(form);
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Excel download failed: ${response.status} - ${errorText}`);
+      }
+
+      // Handle the file download
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = document.fileName?.replace('.csv', '.xlsx') || 'document.xlsx';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
       
       toast({
-        title: "Excel nedlasting startet",
-        description: "Excel-filen blir lastet ned",
+        title: "Excel nedlasting fullført",
+        description: "Excel-filen ble lastet ned",
       });
     } catch (error) {
       console.error('Excel download error:', error);
       toast({
         title: "Excel nedlasting feilet",
-        description: "Kunne ikke laste ned Excel-filen",
+        description: error instanceof Error ? error.message : "Kunne ikke laste ned Excel-filen",
         variant: "destructive",
       });
     }
