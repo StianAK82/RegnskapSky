@@ -128,6 +128,19 @@ export default function Documents() {
   };
 
   const handleViewDocument = async (document: any) => {
+    console.log('handleViewDocument clicked for:', document.name);
+    
+    // First test - just show dialog with dummy data
+    setViewingDocument({
+      ...document,
+      data: [
+        { Klient: 'Test Klient', 'Totale timer': 5.5, 'Fakturerbare timer': 4.0 },
+        { Klient: 'Annen Klient', 'Totale timer': 3.0, 'Fakturerbare timer': 3.0 }
+      ]
+    });
+    
+    return; // Stop here for testing
+    
     try {
       const authToken = localStorage.getItem('auth_token');
       const token = localStorage.getItem('token'); 
@@ -303,17 +316,15 @@ export default function Documents() {
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-2">
-                            {document.category === 'Rapporter' && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleViewDocument(document)}
-                                title="Vis rapport på skjermen"
-                                className="text-blue-600"
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                            )}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewDocument(document)}
+                              title="Vis dokument på skjermen"
+                              className="text-blue-600"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
                             <Button
                               variant="outline"
                               size="sm"
