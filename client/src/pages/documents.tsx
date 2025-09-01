@@ -133,18 +133,53 @@ export default function Documents() {
 
   const handleViewDocument = async (document: any) => {
     console.log('handleViewDocument clicked for:', document.name);
-    alert('Vis dokument knappen fungerer! Document: ' + document.name);
+    console.log('Document object:', document);
     
-    // First test - just show dialog with dummy data
+    // Parse the actual document data if it exists
+    let documentData = [];
+    try {
+      if (document.data) {
+        // If data is a string, parse it as JSON
+        if (typeof document.data === 'string') {
+          documentData = JSON.parse(document.data);
+        } else if (Array.isArray(document.data)) {
+          documentData = document.data;
+        } else {
+          documentData = [document.data];
+        }
+        console.log('Parsed document data:', documentData);
+      } else {
+        console.log('No document.data found, trying to fetch from server...');
+        // Fallback: try to fetch data from server
+        const authToken = localStorage.getItem('auth_token') || localStorage.getItem('token');
+        if (authToken) {
+          try {
+            const response = await fetch(`/api/documents/${document.id}/view`, {
+              headers: {
+                'Authorization': `Bearer ${authToken}`
+              }
+            });
+            if (response.ok) {
+              const serverData = await response.json();
+              documentData = Array.isArray(serverData) ? serverData : [serverData];
+              console.log('Fetched data from server:', documentData);
+            }
+          } catch (error) {
+            console.error('Error fetching from server:', error);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error parsing document data:', error);
+    }
+    
+    // Show the document with actual data
     setViewingDocument({
       ...document,
-      data: [
-        { Klient: 'Test Klient', 'Totale timer': 5.5, 'Fakturerbare timer': 4.0 },
-        { Klient: 'Annen Klient', 'Totale timer': 3.0, 'Fakturerbare timer': 3.0 }
-      ]
+      data: documentData
     });
     
-    return; // Stop here for testing
+    return; // Remove this line and the code below for now
     
     try {
       const authToken = localStorage.getItem('auth_token');
