@@ -50,30 +50,114 @@ export default function Documents() {
   const handleDownload = async (document: any) => {
     try {
       const token = localStorage.getItem('token');
+      console.log('Download attempt:', {
+        documentId: document.id,
+        hasToken: !!token,
+        tokenStart: token ? token.substring(0, 20) + '...' : 'none'
+      });
+      
+      if (!token) {
+        toast({
+          title: "Ikke innlogget",
+          description: "Du må være innlogget for å laste ned dokumenter",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const response = await fetch(`/api/documents/${document.id}/download`, {
+        method: 'GET',
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
 
+      console.log('Download response:', {
+        status: response.status,
+        headers: Object.fromEntries(response.headers.entries())
+      });
+
       if (!response.ok) {
-        throw new Error('Failed to download document');
+        const errorText = await response.text();
+        console.error('Download failed:', errorText);
+        throw new Error(`Failed to download document: ${response.status} - ${errorText}`);
       }
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = document.fileName || 'document';
+      link.download = document.fileName || 'document.csv';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Nedlasting fullført",
+        description: "Dokumentet ble lastet ned",
+      });
     } catch (error) {
       console.error('Download error:', error);
       toast({
         title: "Nedlasting feilet",
-        description: "Kunne ikke laste ned dokumentet",
+        description: error instanceof Error ? error.message : "Kunne ikke laste ned dokumentet",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDownloadExcel = async (document: any) => {
+    try {
+      const token = localStorage.getItem('token');
+      console.log('Excel download attempt:', {
+        documentId: document.id,
+        hasToken: !!token
+      });
+      
+      if (!token) {
+        toast({
+          title: "Ikke innlogget",
+          description: "Du må være innlogget for å laste ned dokumenter",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const response = await fetch(`/api/documents/${document.id}/download?format=excel`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Excel download failed:', errorText);
+        throw new Error(`Failed to download Excel: ${response.status} - ${errorText}`);
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = document.fileName?.replace('.csv', '.xlsx') || 'document.xlsx';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Excel nedlasting fullført",
+        description: "Excel-filen ble lastet ned",
+      });
+    } catch (error) {
+      console.error('Excel download error:', error);
+      toast({
+        title: "Excel nedlasting feilet",
+        description: error instanceof Error ? error.message : "Kunne ikke laste ned Excel-filen",
         variant: "destructive",
       });
     }
@@ -224,9 +308,21 @@ export default function Documents() {
                               variant="outline"
                               size="sm"
                               onClick={() => handleDownload(document)}
+                              title="Last ned som CSV"
                             >
                               <Download className="h-4 w-4" />
                             </Button>
+                            {document.category === 'Rapporter' && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDownloadExcel(document)}
+                                title="Last ned som Excel"
+                                className="text-green-600"
+                              >
+                                📊
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>

@@ -2543,15 +2543,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Generate CSV content from stored report data
       let csvContent = '';
+      let excelContent = null;
+      
       if (document.aiSuggestions && document.aiSuggestions.reportData) {
         csvContent = generateCSV(document.aiSuggestions.reportData);
+        // Also generate Excel if requested
+        if (document.fileName?.includes('.xlsx') || req.query.format === 'excel') {
+          excelContent = generateExcel(document.aiSuggestions.reportData, document.fileName?.replace('.csv', ''));
+        }
       } else {
         csvContent = 'Ingen data tilgjengelig';
       }
       
-      res.setHeader('Content-Type', 'text/csv');
-      res.setHeader('Content-Disposition', `attachment; filename="${document.fileName}"`);
-      res.send(csvContent);
+      if (excelContent) {
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename="${document.fileName?.replace('.csv', '.xlsx')}"`);
+        res.send(excelContent);
+      } else {
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="${document.fileName}"`);
+        res.send(csvContent);
+      }
     } catch (error: any) {
       console.error('Error downloading document:', error);
       res.status(500).json({ message: 'Failed to download document: ' + error.message });
