@@ -302,10 +302,11 @@ function AssigneeDropdown({ task }: { task: TaskWithClient }) {
         description: "Oppdragsansvarlig er endret",
       });
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error('Failed to update assignee:', error);
       toast({
         title: "Feil",
-        description: "Kunne ikke oppdatere oppdragsansvarlig",
+        description: "Kunne ikke oppdatere ansvarlig",
         variant: "destructive",
       });
     }
@@ -367,6 +368,13 @@ export default function DashboardClientTasks() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'dueDate' | 'client' | 'task'>('dueDate');
+  const [selectedTask, setSelectedTask] = useState<TaskWithClient | null>(null);
+  const [showTimeModal, setShowTimeModal] = useState(false);
+
+  const handleStartTask = (task: TaskWithClient) => {
+    setSelectedTask(task);
+    setShowTimeModal(true);
+  };
 
   // Fetch all tasks with client information
   const { data: tasks = [], isLoading } = useQuery<TaskWithClient[]>({
@@ -530,6 +538,7 @@ export default function DashboardClientTasks() {
                     <th className="text-left p-4 text-sm font-medium text-gray-700">Frist</th>
                     <th className="text-left p-4 text-sm font-medium text-gray-700">Regnskapssystem</th>
                     <th className="text-left p-4 text-sm font-medium text-gray-700">Ansvarlig</th>
+                    <th className="text-left p-4 text-sm font-medium text-gray-700">Handlinger</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -581,6 +590,16 @@ export default function DashboardClientTasks() {
                       <td className="p-4">
                         <AssigneeDropdown task={task} />
                       </td>
+                      <td className="p-4">
+                        <Button
+                          size="sm"
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                          onClick={() => handleStartTask(task)}
+                          data-testid={`button-start-task-${task.id}`}
+                        >
+                          Utfør oppgave
+                        </Button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -589,6 +608,16 @@ export default function DashboardClientTasks() {
           )}
         </CardContent>
       </Card>
+
+      {/* Time Registration Modal */}
+      <TimeRegistrationModal 
+        isOpen={showTimeModal}
+        onClose={() => {
+          setShowTimeModal(false);
+          setSelectedTask(null);
+        }}
+        task={selectedTask}
+      />
     </div>
   );
 }
