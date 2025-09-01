@@ -31,6 +31,16 @@ export default function Documents() {
     return matchesSearch && matchesCategory;
   });
 
+  // DEBUG LOGGING
+  console.log('DOCUMENTS DEBUG:');
+  console.log('- Total documents:', documents.length);
+  console.log('- Filtered documents:', filteredDocuments.length);
+  console.log('- Search term:', searchTerm);
+  console.log('- Selected category:', selectedCategory);
+  console.log('- isLoading:', isLoading);
+  console.log('- First document:', filteredDocuments[0]);
+  console.log('- Should show table:', !isLoading && filteredDocuments.length > 0);
+
   const categories = ['Rapporter', 'Kontrakter', 'Fakturaer', 'Bilag', 'Andre'];
 
   const getDocumentIcon = (category: string) => {
@@ -287,7 +297,7 @@ export default function Documents() {
             ) : (
               <div style={{ border: '2px solid #3B82F6', borderRadius: '8px', padding: '16px', backgroundColor: '#f0f9ff' }}>
                 <h3 style={{ margin: '0 0 16px 0', color: '#1e40af', fontSize: '16px', fontWeight: 'bold' }}>
-                  🔍 HTML TEST VERSJON - Midlertidig for å teste knapp-problemet
+                  🔍 HTML TEST VERSJON - Midlertidig for å teste knapp-problemet ({filteredDocuments.length} dokumenter)
                 </h3>
                 <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'white', border: '1px solid #e5e7eb' }}>
                   <thead>
