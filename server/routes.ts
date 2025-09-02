@@ -2270,12 +2270,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tenantId: req.user!.tenantId,
       });
       
-      // Debug logging to see what's being parsed
-      console.log("DEBUG: Time entry data being saved:", {
-        originalBody: req.body,
-        parsedData: timeEntryData
-      });
-      
       const timeEntry = await storage.createTimeEntry(timeEntryData);
       
       // Send notification if time entry is for a specific task
