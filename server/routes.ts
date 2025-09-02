@@ -2244,6 +2244,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const licensingService = new LicensingService();
       
       const subscriptionSummary = await licensingService.getSubscriptionSummary(tenantId);
+      
+      // Prevent caching to ensure fresh data
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
+      
       res.json(subscriptionSummary);
     } catch (error: any) {
       console.error('Error fetching subscription summary:', error);
