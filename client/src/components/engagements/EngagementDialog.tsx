@@ -94,23 +94,12 @@ const STANDARD_TASKS = [
 ];
 
 export function EngagementDialog({ clientId, clientName, open, onOpenChange, trigger }: EngagementDialogProps) {
-  console.log('🔍 EngagementDialog render - clientId:', clientId, 'open:', open);
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  console.log('🔍 STANDARD_TASKS available:', STANDARD_TASKS);
 
-  // Debug the API call
-  useEffect(() => {
-    console.log('🔍 EngagementDialog mounted');
-    console.log('🔍 clientId:', clientId, 'Type:', typeof clientId);
-    console.log('🔍 URL:', `/api/clients/${clientId}/tasks`);
-    console.log('🔍 Loading:', tasksLoading);
-    console.log('🔍 Error:', tasksError);
-    console.log('🔍 Data:', clientTasks);
-  }, [clientId, tasksLoading, tasksError, clientTasks]);
 
   // Function to map task names to scope categories
   const mapTaskToScope = (taskName: string) => {
@@ -168,30 +157,20 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
 
   // Auto-populate scopes based on standard tasks
   useEffect(() => {
-    console.log('🔍 useEffect triggered - open:', open, 'clientId:', clientId);
     if (open && clientId) {
-      console.log('🔍 Auto-populating scopes from standard tasks:', STANDARD_TASKS);
-      
-      const autoScopes = STANDARD_TASKS.map((task, index) => {
+      const autoScopes = STANDARD_TASKS.map((task) => {
         const scopeKey = mapTaskToScope(task.name);
         const firstFreq = task.frequency[0];
         const frequency = mapIntervalToFrequency(firstFreq);
         
-        console.log('🔍 Mapping:', task.name, '→', scopeKey, 'frequency:', firstFreq, '→', frequency);
-        
         return {
           scopeKey: scopeKey as any,
           frequency: frequency as any,
-          comments: `Automatisk lagt til basert på ${task.name}`
+          comments: task.name
         };
       });
-
-      console.log('🔍 Final autoScopes array:', autoScopes);
-      console.log('🔍 Current form scopes before setValue:', form.getValues('scopes'));
       
       form.setValue('scopes', autoScopes);
-      
-      console.log('🔍 Form scopes after setValue:', form.getValues('scopes'));
     }
   }, [open, clientId, form]);
 
@@ -502,91 +481,104 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
               <div className="space-y-4">
                 {/* Scopes */}
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="flex items-center justify-between text-xl">
                       Omfang / Arbeidsområder
-                      <Button type="button" size="sm" onClick={addScope}>
-                        <Plus className="h-4 w-4 mr-1" />
+                      <Button type="button" size="sm" variant="outline" onClick={addScope}>
+                        <Plus className="h-4 w-4 mr-2" />
                         Legg til område
                       </Button>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
-                      {form.watch('scopes').map((_, index) => (
-                        <div key={index} className="border p-4 rounded-lg relative">
-                          {form.watch('scopes').length > 1 && (
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              className="absolute top-2 right-2"
-                              onClick={() => removeItem('scopes', index)}
-                            >
-                              <Minus className="h-4 w-4" />
-                            </Button>
-                          )}
-                          
-                          <div className="grid grid-cols-3 gap-4">
-                            <FormField
-                              control={form.control}
-                              name={`scopes.${index}.scopeKey`}
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Område</FormLabel>
-                                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <SelectTrigger>
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {Object.entries(SCOPE_LABELS).map(([key, label]) => (
-                                        <SelectItem key={key} value={key}>{label}</SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-
-                            <FormField
-                              control={form.control}
-                              name={`scopes.${index}.frequency`}
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Frekvens</FormLabel>
-                                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <SelectTrigger>
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {Object.entries(FREQUENCY_LABELS).map(([key, label]) => (
-                                        <SelectItem key={key} value={key}>{label}</SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-
-                            <FormField
-                              control={form.control}
-                              name={`scopes.${index}.comments`}
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Kommentarer</FormLabel>
-                                  <FormControl>
-                                    <Input {...field} placeholder="Tilleggsinformasjon" />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                    {form.watch('scopes').length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        <p>Ingen arbeidsområder lagt til enda</p>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          size="sm" 
+                          className="mt-4"
+                          onClick={addScope}
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Legg til ditt første område
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="overflow-hidden rounded-lg border">
+                        <table className="w-full">
+                          <thead className="bg-gray-50 border-b">
+                            <tr>
+                              <th className="text-left py-3 px-4 font-medium text-gray-700">Område</th>
+                              <th className="text-left py-3 px-4 font-medium text-gray-700">Frekvens</th>
+                              <th className="w-16 py-3 px-4"></th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-200">
+                            {form.watch('scopes').map((_, index) => (
+                              <tr key={index} className="hover:bg-gray-50">
+                                <td className="py-4 px-4">
+                                  <FormField
+                                    control={form.control}
+                                    name={`scopes.${index}.scopeKey`}
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <Select onValueChange={field.onChange} value={field.value}>
+                                          <SelectTrigger className="border-0 shadow-none bg-transparent p-0 h-auto font-medium">
+                                            <SelectValue placeholder="Velg område" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {Object.entries(SCOPE_LABELS).map(([key, label]) => (
+                                              <SelectItem key={key} value={key}>{label}</SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                </td>
+                                <td className="py-4 px-4">
+                                  <FormField
+                                    control={form.control}
+                                    name={`scopes.${index}.frequency`}
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <Select onValueChange={field.onChange} value={field.value}>
+                                          <SelectTrigger className="border-0 shadow-none bg-transparent p-0 h-auto text-gray-600">
+                                            <SelectValue placeholder="Velg frekvens" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {Object.entries(FREQUENCY_LABELS).map(([key, label]) => (
+                                              <SelectItem key={key} value={key}>{label}</SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                </td>
+                                <td className="py-4 px-4 text-right">
+                                  {form.watch('scopes').length > 1 && (
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="ghost"
+                                      className="text-gray-400 hover:text-red-500 h-8 w-8 p-0"
+                                      onClick={() => removeItem('scopes', index)}
+                                    >
+                                      <Minus className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
 
