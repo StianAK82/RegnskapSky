@@ -1316,20 +1316,15 @@ function ClientListItem({ client, onEdit }: { client: any; onEdit: (client: any)
             </span>
             
             {/* Engagement Dialog Button */}
-            <EngagementDialog 
-              clientId={client.id}
-              clientName={client.name}
-              trigger={
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-orange-600 border-orange-300 hover:bg-orange-50"
-                >
-                  <FileText className="mr-1 h-3 w-3" />
-                  Oppdragsavtale
-                </Button>
-              }
-            />
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-orange-600 border-orange-300 hover:bg-orange-50"
+              onClick={() => console.log('Oppdragsavtale clicked for:', client.id)}
+            >
+              <FileText className="mr-1 h-3 w-3" />
+              Oppdragsavtale
+            </Button>
             
             <Button
               variant="outline"
