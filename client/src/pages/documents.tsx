@@ -17,7 +17,7 @@ export default function Documents() {
   const [viewingDocument, setViewingDocument] = useState<any>(null);
   const { toast } = useToast();
 
-  console.log('Documents component rendering, viewingDocument:', !!viewingDocument);
+  // Clean documents page - no debug output
 
   const { data: documents = [], isLoading } = useQuery({
     queryKey: ['/api/documents'],
