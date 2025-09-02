@@ -1,0 +1,197 @@
+
+> rest-express@1.0.0 dev
+API key does not start with "SG.". Email sending will be disabled.
+Serving production build from: /home/runner/workspace/dist/public
+RegnskapsAI serving on port 5000
+Auth check: {
+  hasAuthHeader: true,
+  hasToken: true,
+  tokenStart: 'eyJhbGciOiJIUzI1NiIs...',
+  url: '/api/dashboard/metrics'
+}
+Auth check: {
+  hasAuthHeader: true,
+  hasToken: true,
+  tokenStart: 'eyJhbGciOiJIUzI1NiIs...',
+  url: '/api/clients'
+}
+Auth check: {
+  hasAuthHeader: true,
+  hasToken: true,
+  tokenStart: 'eyJhbGciOiJIUzI1NiIs...',
+  url: '/api/tasks'
+}
+Token verified for user: stian@zaldo.no
+GET /api/dashboard/metrics 304 in 2799ms :: {"totalClients":19,"activeTasks":39…
+Auth check: {
+  hasAuthHeader: true,
+  hasToken: true,
+  tokenStart: 'eyJhbGciOiJIUzI1NiIs...',
+  url: '/api/tasks/overview'
+}
+Token verified for user: stian@zaldo.no
+GET /api/tasks/overview 304 in 109ms :: [{"id":"b71a1b7c-6c10-441c-b46a-f46abf4…
+Token verified for user: stian@zaldo.no
+GET /api/tasks 304 in 3151ms :: [{"id":"a788b94f-1a49-4ad9-b1ee-8d265fb40041","…
+Auth check: {
+  hasAuthHeader: true,
+  hasToken: true,
+  tokenStart: 'eyJhbGciOiJIUzI1NiIs...',
+  url: '/api/employees'
+}
+Token verified for user: stian@zaldo.no
+Token verified for user: stian@zaldo.no
+GET /api/clients 304 in 3279ms :: [{"id":"f72c2d67-705d-43c0-ae89-8cec8d987d10"…
+GET /api/employees 304 in 181ms :: [{"id":"ab6c17ad-2df4-4648-b013-adf8ec465d91…
+Auth check: {
+  hasAuthHeader: true,
+  hasToken: true,
+  tokenStart: 'eyJhbGciOiJIUzI1NiIs...',
+  url: '/api/bilag-count/f72c2d67-705d-43c0-ae89-8cec8d987d10'
+}
+Auth check: {
+  hasAuthHeader: true,
+  hasToken: true,
+  tokenStart: 'eyJhbGciOiJIUzI1NiIs...',
+  url: '/api/bilag-count/8635dc7e-a858-47f2-8cd9-98f10bb78b71'
+}
+Auth check: {
+  hasAuthHeader: true,
+  hasToken: true,
+  tokenStart: 'eyJhbGciOiJIUzI1NiIs...',
+  url: '/api/bilag-count/09c2a8fa-4935-4bb3-bbca-4ce7757fbae1'
+}
+Auth check: {
+  hasAuthHeader: true,
+  hasToken: true,
+  tokenStart: 'eyJhbGciOiJIUzI1NiIs...',
+  url: '/api/bilag-count/158689a8-4f38-4013-86b8-2605ae13faed'
+}
+Token verified for user: stian@zaldo.no
+Token verified for user: stian@zaldo.no
+Token verified for user: stian@zaldo.no
+GET /api/bilag-count/158689a8-4f38-4013-86b8-2605ae13faed 304 in 601ms :: {"cou…
+GET /api/bilag-count/f72c2d67-705d-43c0-ae89-8cec8d987d10 304 in 612ms :: {"cou…
+GET /api/bilag-count/8635dc7e-a858-47f2-8cd9-98f10bb78b71 304 in 608ms :: {"cou…
+Auth check: {
+  hasAuthHeader: true,
+  hasToken: true,
+  tokenStart: 'eyJhbGciOiJIUzI1NiIs...',
+  url: '/api/bilag-count/a4767d98-0674-49d9-850e-6c937bc213c1'
+}
+Auth check: {
+  hasAuthHeader: true,
+  hasToken: true,
+  tokenStart: 'eyJhbGciOiJIUzI1NiIs...',
+  url: '/api/bilag-count/463b1e01-9d19-4212-b513-5af91f66a91f'
+}
+Token verified for user: stian@zaldo.no
+Token verified for user: stian@zaldo.no
+GET /api/bilag-count/463b1e01-9d19-4212-b513-5af91f66a91f 304 in 45ms :: {"coun…
+GET /api/bilag-count/a4767d98-0674-49d9-850e-6c937bc213c1 304 in 48ms :: {"coun…
+Auth check: {
+  hasAuthHeader: true,
+  hasToken: true,
+  tokenStart: 'eyJhbGciOiJIUzI1NiIs...',
+  url: '/api/bilag-count/abfc9b22-00de-47f8-a0ff-b9844ce61d42'
+}
+Auth check: {
+  hasAuthHeader: true,
+  hasToken: true,
+  tokenStart: 'eyJhbGciOiJIUzI1NiIs...',
+  url: '/api/bilag-count/15f15324-e640-46e9-adc0-37da64dbd514'
+}
+Auth check: {
+  hasAuthHeader: true,
+  hasToken: true,
+  tokenStart: 'eyJhbGciOiJIUzI1NiIs...',
+  url: '/api/bilag-count/c862337b-7e7d-42e8-9c55-6b21a9e2420f'
+}
+Auth check: {
+  hasAuthHeader: true,
+  hasToken: true,
+  tokenStart: 'eyJhbGciOiJIUzI1NiIs...',
+  url: '/api/bilag-count/5ceb58f4-20f9-4f87-b7b6-1bf4e7ad6b2a'
+}
+Auth check: {
+  hasAuthHeader: true,
+  hasToken: true,
+  tokenStart: 'eyJhbGciOiJIUzI1NiIs...',
+  url: '/api/bilag-count/900af9b7-4431-406c-a14b-4b91a53e5f92'
+}
+Token verified for user: stian@zaldo.no
+Token verified for user: stian@zaldo.no
+Token verified for user: stian@zaldo.no
+GET /api/bilag-count/abfc9b22-00de-47f8-a0ff-b9844ce61d42 304 in 47ms :: {"coun…
+GET /api/bilag-count/15f15324-e640-46e9-adc0-37da64dbd514 304 in 47ms :: {"coun…
+GET /api/bilag-count/c862337b-7e7d-42e8-9c55-6b21a9e2420f 304 in 46ms :: {"coun…
+Token verified for user: stian@zaldo.no
+Token verified for user: stian@zaldo.no
+GET /api/bilag-count/900af9b7-4431-406c-a14b-4b91a53e5f92 304 in 120ms :: {"cou…
+GET /api/bilag-count/5ceb58f4-20f9-4f87-b7b6-1bf4e7ad6b2a 304 in 125ms :: {"cou…
+Auth check: {
+  hasAuthHeader: true,
+  hasToken: true,
+  tokenStart: 'eyJhbGciOiJIUzI1NiIs...',
+  url: '/api/bilag-count/b89e0bf8-2ca6-4466-8a10-6859f1920a24'
+}
+Auth check: {
+  hasAuthHeader: true,
+  hasToken: true,
+  tokenStart: 'eyJhbGciOiJIUzI1NiIs...',
+  url: '/api/bilag-count/b8dd2538-2ce1-444d-853a-79d0a1d2ccdf'
+}
+Auth check: {
+  hasAuthHeader: true,
+  hasToken: true,
+  tokenStart: 'eyJhbGciOiJIUzI1NiIs...',
+  url: '/api/bilag-count/356be330-8397-4ad0-95ee-ee4d74335c73'
+}
+Token verified for user: stian@zaldo.no
+Token verified for user: stian@zaldo.no
+Token verified for user: stian@zaldo.no
+GET /api/bilag-count/b89e0bf8-2ca6-4466-8a10-6859f1920a24 304 in 49ms :: {"coun…
+GET /api/bilag-count/b8dd2538-2ce1-444d-853a-79d0a1d2ccdf 304 in 48ms :: {"coun…
+GET /api/bilag-count/356be330-8397-4ad0-95ee-ee4d74335c73 304 in 46ms :: {"coun…
+Auth check: {
+  hasAuthHeader: true,
+  hasToken: true,
+  tokenStart: 'eyJhbGciOiJIUzI1NiIs...',
+  url: '/api/bilag-count/9d57578e-2689-40b8-a0d1-091fda2067b0'
+}
+Auth check: {
+  hasAuthHeader: true,
+  hasToken: true,
+  tokenStart: 'eyJhbGciOiJIUzI1NiIs...',
+  url: '/api/bilag-count/47eb26ec-98de-4c3e-96ca-3ba498b7feb7'
+}
+Token verified for user: stian@zaldo.no
+Token verified for user: stian@zaldo.no
+GET /api/bilag-count/9d57578e-2689-40b8-a0d1-091fda2067b0 304 in 44ms :: {"coun…
+GET /api/bilag-count/47eb26ec-98de-4c3e-96ca-3ba498b7feb7 304 in 44ms :: {"coun…
+Token verified for user: stian@zaldo.no
+GET /api/bilag-count/09c2a8fa-4935-4bb3-bbca-4ce7757fbae1 304 in 1282ms :: {"co…
+Auth check: {
+  hasAuthHeader: true,
+  hasToken: true,
+  tokenStart: 'eyJhbGciOiJIUzI1NiIs...',
+  url: '/api/bilag-count/fa64d15a-f4da-4cb9-bffc-3b93004819a8'
+}
+Auth check: {
+  hasAuthHeader: true,
+  hasToken: true,
+  tokenStart: 'eyJhbGciOiJIUzI1NiIs...',
+  url: '/api/bilag-count/a16e404d-ec12-4249-bd97-af0087105fe6'
+}
+Auth check: {
+  hasAuthHeader: true,
+  hasToken: true,
+  tokenStart: 'eyJhbGciOiJIUzI1NiIs...',
+  url: '/api/bilag-count/66a5a351-04e7-4a42-93b8-ee6ddc850e76'
+}
+Token verified for user: stian@zaldo.no
+Token verified for user: stian@zaldo.no
+Token verified for user: stian@zaldo.no
+GET /api/bilag-count/66a5a351-04e7-4a42-93b8-ee6ddc850e76 304 in 41ms :: {"coun…
+GET /api/bilag-count/fa64d15a-f4da-4cb9-bffc-3b93004819a8 304 in 46ms :: {"coun…
+GET /api/bilag-count/a16e404d-ec12-4249-bd97-af0087105fe6 304 in 44ms :: {"coun…
