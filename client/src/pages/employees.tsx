@@ -149,6 +149,7 @@ export default function Employees() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/employees'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/subscription'] });
       toast({
         title: 'Lisens oppdatert',
         description: data.message || (data.isLicensed ? 'Lisens aktivert for ansatt' : 'Lisens deaktivert for ansatt'),
