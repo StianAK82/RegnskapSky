@@ -1161,7 +1161,7 @@ export default function Clients() {
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-2">
               {filteredClients.map((client) => (
                 <ClientListItem key={client.id} client={client} onEdit={handleEdit} />
               ))}
@@ -1221,11 +1221,11 @@ function ClientListItem({ client, onEdit }: { client: any; onEdit: (client: any)
 
   return (
     <Card className="hover:shadow-md transition-all duration-200 border-l-4 border-l-blue-500">
-      <CardContent className="p-3">
+      <CardContent className="p-2.5">
         {/* Top Row - Main client info */}
-        <div className="flex items-start justify-between mb-2">
-          <div className="flex-1 min-w-0 mr-4">
-            <div className="flex items-center space-x-2 mb-1">
+        <div className="flex items-start justify-between mb-1.5">
+          <div className="flex-1 min-w-0 mr-3">
+            <div className="flex items-center space-x-2 mb-0.5">
               <h3 className={`text-base font-semibold truncate ${
                 client.amlStatus !== 'approved' || client.kycStatus !== 'approved' 
                   ? 'text-red-600' 
@@ -1241,7 +1241,7 @@ function ClientListItem({ client, onEdit }: { client: any; onEdit: (client: any)
               )}
             </div>
             {client.orgNumber && (
-              <p className="text-xs text-gray-500">Org.nr: {client.orgNumber}</p>
+              <p className="text-xs text-gray-500 -mt-0.5">Org.nr: {client.orgNumber}</p>
             )}
           </div>
           
