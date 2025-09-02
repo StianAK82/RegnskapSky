@@ -624,9 +624,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           tenantId: client.tenantId,
           taskName: task.name,
           taskType: "standard",
+          description: `Standard oppgave: ${task.name}`,
           interval: task.interval,
-          dueDate: task.dueDate,
-          status: "ikke_startet"
+          repeatInterval: null,
+          dueDate: task.dueDate.toISOString(),
+          status: "ikke_startet",
+          assignedTo: null
         });
       }
       

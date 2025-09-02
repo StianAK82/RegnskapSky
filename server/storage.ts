@@ -512,12 +512,27 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createClientTask(task: any): Promise<any> {
-    const [newTask] = await db
-      .insert(clientTasks)
-      .values(task)
-      .returning();
-    
-    return newTask;
+    try {
+      // Validate required fields
+      if (!task.clientId || !task.tenantId || !task.taskName || !task.taskType) {
+        throw new Error("Missing required fields for client task");
+      }
+
+      // Ensure dueDate is properly formatted
+      if (task.dueDate && typeof task.dueDate === 'string') {
+        task.dueDate = new Date(task.dueDate);
+      }
+
+      const [newTask] = await db
+        .insert(clientTasks)
+        .values(task)
+        .returning();
+      
+      return newTask;
+    } catch (error: any) {
+      console.error('Error creating client task:', error);
+      throw new Error(`Failed to create client task: ${error.message}`);
+    }
   }
 
   async updateClientTask(id: string, updates: any): Promise<any> {
