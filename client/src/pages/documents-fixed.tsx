@@ -123,23 +123,31 @@ export default function DocumentsFixed() {
         {/* Document List */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Dokumenter ({filteredDocuments.length})
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Dokumenter ({filteredDocuments.length})
+              </CardTitle>
+              <Button className="gap-2">
+                <Upload className="h-4 w-4" />
+                Last opp dokument
+              </Button>
+            </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             {isLoading ? (
-              <div className="space-y-4">
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className="animate-pulse">
-                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                  </div>
-                ))}
+              <div className="p-6">
+                <div className="space-y-4">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="animate-pulse">
+                      <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                      <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                    </div>
+                  ))}
+                </div>
               </div>
             ) : filteredDocuments.length === 0 ? (
-              <div className="text-center py-8">
+              <div className="text-center py-12 px-6">
                 <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">Ingen dokumenter funnet</h3>
                 <p className="text-gray-500">
@@ -150,60 +158,71 @@ export default function DocumentsFixed() {
                 </p>
               </div>
             ) : (
-              <div className="space-y-4">
-                {filteredDocuments.map((document: any) => (
-                  <div
-                    key={document.id}
-                    className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
-                        <div className="flex-shrink-0">
-                          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                            <FileText className="h-5 w-5 text-blue-600" />
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-200 bg-gray-50">
+                      <th className="text-left py-3 px-6 font-semibold text-gray-900">Dokument</th>
+                      <th className="text-left py-3 px-6 font-semibold text-gray-900">Kategori</th>
+                      <th className="text-left py-3 px-6 font-semibold text-gray-900">Størrelse</th>
+                      <th className="text-right py-3 px-6 font-semibold text-gray-900">Handlinger</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {filteredDocuments.map((document: any) => (
+                      <tr key={document.id} className="hover:bg-gray-50">
+                        <td className="py-4 px-6">
+                          <div className="flex items-center space-x-3">
+                            <div className="flex-shrink-0">
+                              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <FileText className="h-4 w-4 text-blue-600" />
+                              </div>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 truncate">
+                                {document.name}
+                              </p>
+                              <p className="text-xs text-gray-500 truncate">
+                                {document.description || 'Generert rapport'}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-sm font-medium text-gray-900 truncate">
-                            {document.name}
-                          </h3>
-                          <p className="text-sm text-gray-500 truncate">
-                            {document.description || 'Ingen beskrivelse'}
-                          </p>
-                          <div className="flex items-center space-x-4 mt-1">
-                            {document.category && (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                {document.category}
-                              </span>
-                            )}
-                            <span className="text-xs text-gray-500">
-                              {document.size ? formatFileSize(document.size) : 'Ukjent størrelse'}
+                        </td>
+                        <td className="py-4 px-6">
+                          {document.category && (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                              {document.category}
                             </span>
+                          )}
+                        </td>
+                        <td className="py-4 px-6 text-sm text-gray-500">
+                          {document.size ? formatFileSize(document.size) : 'Ukjent'}
+                        </td>
+                        <td className="py-4 px-6 text-right">
+                          <div className="flex items-center justify-end space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewDocument(document)}
+                              className="h-8"
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              Vis
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8"
+                            >
+                              <Download className="h-4 w-4 mr-1" />
+                              Last ned
+                            </Button>
                           </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleViewDocument(document)}
-                          className="h-8 gap-2"
-                        >
-                          <Eye className="h-4 w-4" />
-                          Vis
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 gap-2"
-                        >
-                          <Download className="h-4 w-4" />
-                          Last ned
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </CardContent>
