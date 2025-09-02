@@ -2261,7 +2261,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Enhanced Time Tracking with modal functionality
   app.post("/api/time-entries", authenticateToken, async (req: AuthRequest, res) => {
     try {
-      console.log("Received time entry data:", req.body);
+      console.log("Received time entry data:", JSON.stringify(req.body, null, 2));
+      
+      // Validate timeSpent is not 0
+      if (req.body.timeSpent <= 0) {
+        console.error("Invalid timeSpent:", req.body.timeSpent);
+        return res.status(400).json({ message: "Feil ved registrering av timer: Tiden må være større enn 0" });
+      }
       
       const timeEntryData = insertTimeEntrySchema.parse({
         ...req.body,
@@ -2269,9 +2275,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tenantId: req.user!.tenantId,
       });
       
-      console.log("Parsed time entry data:", timeEntryData);
+      console.log("Parsed time entry data:", JSON.stringify(timeEntryData, null, 2));
       
       const timeEntry = await storage.createTimeEntry(timeEntryData);
+      console.log("Created time entry:", timeEntry.id);
       
       // Send notification if time entry is for a specific task
       if (timeEntry.taskId) {
@@ -2285,7 +2292,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.status(201).json(timeEntry);
     } catch (error: any) {
-      console.error("Time entry error:", error);
+      console.error("Time entry error details:", {
+        message: error.message,
+        stack: error.stack,
+        data: req.body
+      });
       res.status(400).json({ message: "Feil ved registrering av timer: " + error.message });
     }
   });

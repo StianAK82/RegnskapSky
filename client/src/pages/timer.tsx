@@ -177,10 +177,19 @@ export default function Timer() {
     const minutes = parseInt(newTimeEntry.minutes || '0');
     const totalHours = hours + (minutes / 60);
     
-    if (!newTimeEntry.clientId || !newTimeEntry.employeeId || !newTimeEntry.description || totalHours <= 0) {
+    if (!newTimeEntry.clientId || !newTimeEntry.employeeId || !newTimeEntry.description.trim()) {
       toast({
         title: 'Manglende informasjon',
-        description: 'Vennligst fyll ut alle feltene og sørg for at timer/minutter er større enn 0.',
+        description: 'Vennligst fyll ut klient, ansatt og beskrivelse.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (totalHours <= 0) {
+      toast({
+        title: 'Ugyldig tid',
+        description: 'Timer og minutter må være større enn 0. Minst 1 minutt må registreres.',
         variant: 'destructive',
       });
       return;
