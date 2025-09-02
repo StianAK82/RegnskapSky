@@ -1246,7 +1246,7 @@ function ClientListItem({ client, onEdit }: { client: any; onEdit: (client: any)
           </div>
           
           {/* Action buttons */}
-          <div className="flex items-center space-x-1.5">
+          <div className="flex items-center space-x-3">
             {/* Compact accounting system */}
             {client.accountingSystem && (
               <button
