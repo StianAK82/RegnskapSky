@@ -242,6 +242,18 @@ export class LicensingService {
   /**
    * Toggle employee license status
    */
+  /**
+   * Get current license status for an employee
+   */
+  async getEmployeeLicenseStatus(tenantId: string, userId: string): Promise<boolean> {
+    const [user] = await db
+      .select({ isLicensed: users.isLicensed })
+      .from(users)
+      .where(eq(users.id, userId));
+    
+    return user?.isLicensed || false;
+  }
+
   async toggleEmployeeLicense(tenantId: string, userId: string, isLicensed: boolean): Promise<void> {
     const period = currentPeriod();
     

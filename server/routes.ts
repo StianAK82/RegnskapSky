@@ -2254,12 +2254,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/employees/:employeeId/toggle-license', authenticateToken, requireRole(['admin', 'lisensadmin']), async (req: AuthRequest, res) => {
     try {
       const { employeeId } = req.params;
-      const { isLicensed } = req.body;
       const tenantId = req.user!.tenantId;
       const licensingService = new LicensingService();
       
       // Get employee to find associated user
-      const employee = await storage.getEmployeeById(employeeId);
+      const employee = await storage.getEmployee(employeeId);
       if (!employee) {
         return res.status(404).json({ message: 'Ansatt ikke funnet' });
       }
@@ -2269,9 +2268,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Bruker ikke funnet for ansatt' });
       }
       
-      await licensingService.toggleEmployeeLicense(tenantId, user.id, isLicensed);
+      // Get current license status
+      const currentStatus = await licensingService.getEmployeeLicenseStatus(tenantId, user.id);
+      const newStatus = !currentStatus;
       
-      res.json({ success: true, message: isLicensed ? 'Lisens aktivert' : 'Lisens deaktivert' });
+      await licensingService.toggleEmployeeLicense(tenantId, user.id, newStatus);
+      
+      res.json({ 
+        success: true, 
+        isLicensed: newStatus,
+        message: newStatus ? 'Lisens aktivert' : 'Lisens deaktivert' 
+      });
     } catch (error: any) {
       console.error('Error toggling employee license:', error);
       res.status(500).json({ message: 'Feil ved endring av lisens: ' + error.message });
