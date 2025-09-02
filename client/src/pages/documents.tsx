@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { FileText, Download, Upload, Search, Filter, Eye } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
-export default function DocumentsNew() {
+export default function Documents() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [viewingDocument, setViewingDocument] = useState<any>(null);
