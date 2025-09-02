@@ -1251,11 +1251,11 @@ function ClientListItem({ client, onEdit }: { client: any; onEdit: (client: any)
             {client.accountingSystem && (
               <button
                 onClick={handleAccountingSystemRedirect}
-                className="flex items-center px-2 py-1 text-xs text-blue-600 hover:text-blue-800 border border-blue-200 rounded hover:bg-blue-50"
+                className="flex items-center px-3 py-1.5 text-sm text-blue-600 hover:text-blue-800 border border-blue-200 rounded hover:bg-blue-50"
               >
                 <i className="fas fa-calculator mr-1"></i>
                 {client.accountingSystem}
-                <i className="fas fa-external-link-alt ml-1 text-xs"></i>
+                <i className="fas fa-external-link-alt ml-1"></i>
               </button>
             )}
             
@@ -1266,7 +1266,7 @@ function ClientListItem({ client, onEdit }: { client: any; onEdit: (client: any)
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-xs px-2 py-1 h-7 text-orange-600 border-orange-300 hover:bg-orange-50"
+                  className="text-sm px-3 py-1.5 h-8 text-orange-600 border-orange-300 hover:bg-orange-50"
                 >
                   <FileText className="mr-1 h-3 w-3" />
                   Oppdragsavtale
@@ -1278,17 +1278,26 @@ function ClientListItem({ client, onEdit }: { client: any; onEdit: (client: any)
               variant="outline"
               size="sm"
               onClick={() => window.open('https://www.verified.eu/no', '_blank')}
-              className="text-xs px-2 py-1 h-7 text-purple-600 border-purple-300 hover:bg-purple-50"
+              className="text-sm px-3 py-1.5 h-8 text-purple-600 border-purple-300 hover:bg-purple-50 relative"
             >
-              <i className="fas fa-shield-alt mr-1"></i>
-              AML/KYC
+              <div className="flex items-center">
+                <i className="fas fa-shield-alt mr-1"></i>
+                AML/KYC
+                <div className="flex items-center ml-2 pl-2 border-l border-purple-300">
+                  <img 
+                    src="/verified-logo.png" 
+                    alt="Powered by Verified" 
+                    className="h-3 w-auto"
+                  />
+                </div>
+              </div>
             </Button>
             
             <Button
               variant="outline"
               size="sm"
               onClick={() => onEdit(client)}
-              className="text-xs px-2 py-1 h-7 text-blue-600 border-blue-300 hover:bg-blue-50"
+              className="text-sm px-3 py-1.5 h-8 text-blue-600 border-blue-300 hover:bg-blue-50"
             >
               <i className="fas fa-edit mr-1"></i>
               Rediger
@@ -1298,7 +1307,7 @@ function ClientListItem({ client, onEdit }: { client: any; onEdit: (client: any)
               variant="outline"
               size="sm"
               onClick={() => window.location.href = `/client-detail/${client.id}`}
-              className="text-xs px-2 py-1 h-7 text-green-600 border-green-300 hover:bg-green-50"
+              className="text-sm px-3 py-1.5 h-8 text-green-600 border-green-300 hover:bg-green-50"
             >
               <i className="fas fa-tasks mr-1"></i>
               Oppgaver
