@@ -625,7 +625,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           taskName: task.name,
           taskType: "standard",
           description: `Standard oppgave: ${task.name}`,
-          interval: task.interval,
+          interval: "yearly" as any,
           repeatInterval: null,
           dueDate: task.dueDate.toISOString(),
           status: "ikke_startet",
