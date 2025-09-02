@@ -88,7 +88,7 @@ export function useTimeTracking() {
       await apiRequest('POST', '/api/time-entries', {
         clientId: currentSession.clientId,
         description: description || currentSession.description || 'Klientarbeid',
-        timeSpent: Math.round(timeSpent * 100) / 100,
+        timeSpent: parseFloat((Math.round(timeSpent * 100) / 100).toFixed(2)),
         date: new Date(),
         billable: true
       });

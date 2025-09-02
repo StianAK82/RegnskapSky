@@ -191,7 +191,7 @@ export default function Timer() {
       userId: newTimeEntry.employeeId,
       description: newTimeEntry.description,
       date: new Date(newTimeEntry.date),
-      timeSpent: totalHours.toFixed(2),
+      timeSpent: parseFloat(totalHours.toFixed(2)),
       billable: newTimeEntry.billable
     });
   };
