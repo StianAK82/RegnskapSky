@@ -666,7 +666,13 @@ export const insertTimeEntrySchema = createInsertSchema(timeEntries).omit({
   createdAt: true,
   updatedAt: true,
 }).extend({
-  timeSpent: z.coerce.number().min(0.01, { message: "Time spent must be greater than 0" })
+  timeSpent: z.union([z.string(), z.number()]).transform((val) => {
+    const num = typeof val === 'string' ? parseFloat(val) : val;
+    if (isNaN(num) || num <= 0) {
+      throw new Error(`Invalid timeSpent value: ${val}. Must be a positive number.`);
+    }
+    return num;
+  })
 });
 
 export const insertDocumentSchema = createInsertSchema(documents).omit({
