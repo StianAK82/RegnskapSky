@@ -50,6 +50,10 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Force clear cache for root route
+  app.get('/', (req, res) => {
+    res.redirect('/app');
+  });
   
   // Check if user exists by email
   app.post('/api/auth/check-user', async (req, res) => {
