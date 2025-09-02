@@ -27,6 +27,8 @@ interface SubscriptionSummary {
 export default function Subscription() {
   const { data: subscription, isLoading, error } = useQuery<SubscriptionSummary>({
     queryKey: ['/api/subscription'],
+    refetchInterval: 5000, // Automatisk oppdatering hvert 5. sekund
+    refetchOnWindowFocus: true, // Oppdater når bruker kommer tilbake til siden
   });
 
   const formatCurrency = (amount: number, currency: string = 'NOK') => {
