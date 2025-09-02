@@ -2527,75 +2527,112 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Handle both GET and POST for downloads (POST for secure token transmission)
-  const downloadHandler = async (req: any, res: any) => {
+  // Generate report data based on time entries grouped by client
+  const generateTimeReportData = async (tenantId: string) => {
     try {
-      // Check for token in query params, POST body, or Authorization header
-      const tokenFromQuery = req.query.token as string;
-      const tokenFromBody = req.body?.token as string;
-      const tokenFromHeader = req.headers.authorization?.replace('Bearer ', '');
-      const token = tokenFromBody || tokenFromQuery || tokenFromHeader;
-
-      console.log('Download endpoint - Debug info:', {
-        hasQueryToken: !!tokenFromQuery,
-        hasBodyToken: !!tokenFromBody,
-        hasHeaderToken: !!tokenFromHeader,
-        method: req.method,
-        url: req.url,
-        bodyKeys: req.body ? Object.keys(req.body) : [],
-        bodyContent: req.body,
-        contentType: req.headers['content-type']
-      });
-
-      if (!token) {
-        console.log('Download endpoint - No token found');
-        return res.status(401).json({ message: 'No token provided' });
+      // Get all time entries for the tenant
+      const timeEntries = await storage.getTimeEntriesByTenant(tenantId);
+      
+      if (!timeEntries || timeEntries.length === 0) {
+        return [];
       }
 
-      // Verify token manually
-      let user;
-      try {
-        const jwt = require('jsonwebtoken');
-        const decoded = jwt.verify(token, process.env.JWT_SECRET!);
-        user = decoded;
-      } catch (error) {
-        return res.status(401).json({ message: 'Invalid token' });
+      // Group by client and calculate totals
+      const clientTotals = new Map();
+      
+      for (const entry of timeEntries) {
+        const clientName = entry.client?.name || 'Ukjent Klient';
+        const key = clientName;
+        
+        if (!clientTotals.has(key)) {
+          clientTotals.set(key, {
+            Dato: entry.date,
+            Ansatt: entry.user?.firstName && entry.user?.lastName ? 
+              `${entry.user.firstName} ${entry.user.lastName}` : 'Ukjent Ansatt',
+            Klient: clientName,
+            Beskrivelse: '',
+            Timer: 0,
+            Fakturerbar: entry.billable ? 'Ja' : 'Nei',
+            Type: entry.taskType || 'Oppgave',
+            entries: []
+          });
+        }
+        
+        const existing = clientTotals.get(key);
+        existing.Timer += parseFloat(entry.timeSpent || '0');
+        existing.entries.push({
+          date: entry.date,
+          description: entry.description,
+          hours: parseFloat(entry.timeSpent || '0'),
+          billable: entry.billable
+        });
+        
+        // Use the most recent description
+        if (entry.description) {
+          existing.Beskrivelse = entry.description;
+        }
       }
 
+      // Convert to array and sort by client name
+      const reportData = Array.from(clientTotals.values())
+        .sort((a, b) => a.Klient.localeCompare(b.Klient))
+        .map(item => ({
+          Dato: item.Dato,
+          Ansatt: item.Ansatt,
+          Klient: item.Klient,
+          Beskrivelse: item.Beskrivelse,
+          Timer: `${item.Timer.toFixed(2)}t`,
+          Fakturerbar: item.Fakturerbar,
+          Type: item.Type
+        }));
+      
+      return reportData;
+    } catch (error) {
+      console.error('Error generating time report data:', error);
+      return [];
+    }
+  };
+
+  // Handle both GET and POST for downloads using standard authentication
+  const downloadHandler = async (req: AuthRequest, res: any) => {
+    try {
       const documentId = req.params.id;
       
-      // For now, return stored CSV content from aiSuggestions
-      // In a real implementation, you'd store files in object storage
-      const documents = await storage.getDocumentsByTenant(user.tenantId);
+      // Get the document
+      const documents = await storage.getDocumentsByTenant(req.user!.tenantId);
       const document = documents.find(d => d.id === documentId);
       
       if (!document) {
         return res.status(404).json({ message: 'Document not found' });
       }
       
-      // Generate CSV content from stored report data
-      let csvContent = '';
-      let excelContent = null;
-      
-      if (document.aiSuggestions && document.aiSuggestions.reportData) {
-        csvContent = generateCSV(document.aiSuggestions.reportData);
-        // Also generate Excel if requested
-        const format = req.query.format as string || req.body?.format as string;
-        if (document.fileName?.includes('.xlsx') || format === 'excel') {
-          excelContent = generateExcel(document.aiSuggestions.reportData, document.fileName?.replace('.csv', ''));
-        }
-      } else {
-        csvContent = 'Ingen data tilgjengelig';
+      // Generate fresh report data from time entries
+      let reportData = [];
+      if (document.fileName?.includes('Timer per klient')) {
+        reportData = await generateTimeReportData(req.user!.tenantId);
+      } else if (document.aiSuggestions && document.aiSuggestions.reportData) {
+        reportData = document.aiSuggestions.reportData;
       }
       
-      if (excelContent) {
+      if (reportData.length === 0) {
+        reportData = [{ 
+          Melding: 'Ingen timeregistreringer funnet for denne perioden' 
+        }];
+      }
+      
+      // Generate content
+      const csvContent = generateCSV(reportData);
+      const format = req.query.format as string || req.body?.format as string;
+      
+      if (format === 'excel' || document.fileName?.includes('.xlsx')) {
+        const excelContent = generateExcel(reportData, document.fileName?.replace('.csv', ''));
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         res.setHeader('Content-Disposition', `attachment; filename="${document.fileName?.replace('.csv', '.xlsx')}"`);
         res.send(excelContent);
       } else {
-        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
         res.setHeader('Content-Disposition', `attachment; filename="${document.fileName}"`);
-        res.send(csvContent);
+        res.send('\ufeff' + csvContent); // Add BOM for proper UTF-8 encoding
       }
     } catch (error: any) {
       console.error('Error downloading document:', error);
@@ -2603,9 +2640,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   };
 
-  // Register both GET and POST handlers for downloads
-  app.get('/api/documents/:id/download', downloadHandler);
-  app.post('/api/documents/:id/download', downloadHandler);
+  // Register both GET and POST handlers for downloads with authentication
+  app.get('/api/documents/:id/download', authenticateToken, downloadHandler);
+  app.post('/api/documents/:id/download', authenticateToken, downloadHandler);
   
   // Simple test endpoint to verify POST is working
   app.post('/api/test-post', (req, res) => {
@@ -2643,20 +2680,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           documentData = [];
         }
       }
-      // If no existing data, use original report structure
+      // If no existing data, generate from time entries
       if (!documentData || (Array.isArray(documentData) && documentData.length === 0)) {
-        documentData = [
-          { 
-            Klient: 'Test Klient', 
-            'Totale timer': 5.5, 
-            'Fakturerbare timer': 4.0 
-          },
-          { 
-            Klient: 'Annen Klient', 
-            'Totale timer': 3.0, 
-            'Fakturerbare timer': 3.0 
-          }
-        ];
+        if (document.fileName?.includes('Timer per klient')) {
+          documentData = await generateTimeReportData(req.user!.tenantId);
+        } else {
+          documentData = [{ 
+            Melding: 'Ingen data tilgjengelig for denne rapporten' 
+          }];
+        }
       }
 
       res.json(documentData || []);
