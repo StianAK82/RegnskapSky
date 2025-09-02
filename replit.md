@@ -4,6 +4,10 @@
 Zaldo CRM is a comprehensive Norwegian multi-tenant accounting and client management system designed to streamline financial and client operations. It features strict licensing, robust role-based authentication, and tenant isolation. Key capabilities include automated task generation, AML compliance tracking, forced time registration, comprehensive auditing, and role-specific dashboards. The project aims to provide a complete, secure, and efficient solution for accounting and client management needs, built from scratch with a strong focus on compliance and user experience.
 
 ## Recent Changes (September 2025)
+- **Licensing System**: Comprehensive multi-tenant licensing system implemented with database schema, API endpoints, and frontend integration
+- **Employee License Management**: Toggle functionality for individual employee licenses with real-time status badges and cost tracking
+- **Subscription Dashboard**: Complete abonnement overview showing license costs, user counts, and detailed billing breakdown
+- **API Integration**: Full backend/frontend integration with licensing service, subscription summaries, and employee license management
 - **Document Management**: Successfully implemented document deletion functionality with trash can icons and confirmation dialogs
 - **AML/KYC Design**: Improved layout with closer positioning of text and Verified logo using bullet separator
 - **Time Registration**: Dashboard time registration working correctly; manual time entry has ongoing validation issues that require further investigation
@@ -53,6 +57,7 @@ Development approach: Focus on completing working features and moving forward wi
 - **Language Support**: Specialized prompts for Norwegian accounting standards.
 
 ### Feature Specifications
+- **Licensing System**: Multi-tenant license management with employee-level control, cost tracking (2500 kr base + 500 kr per user), and subscription billing integration.
 - **Automated Task Generation**: Standard tasks (Bokføring, MVA, Lønn) and special deadline tasks (Aksjonærregister, Skattemelding, Årsoppgjør).
 - **AML/KYC Workflow**: Status progression with 12-month renewal and reminders.
 - **Time Tracking System**: Forced modal on logout, comprehensive reporting, CSV export.
