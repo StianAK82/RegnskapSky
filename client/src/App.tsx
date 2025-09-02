@@ -21,7 +21,7 @@ import AIAssistant from "@/pages/ai-assistant";
 import Reports from "@/pages/reports";
 import Documents from "@/pages/documents";
 import DocumentsSimple from "@/pages/documents-simple";
-import DocumentsFixed from "@/pages/documents-fixed";
+import DocumentsClean from "@/pages/documents-clean";
 import Subscriptions from "@/pages/subscriptions";
 import Subscribe from "@/pages/subscribe";
 import AdminSubscriptions from "@/pages/AdminSubscriptions";
@@ -134,7 +134,7 @@ function AuthenticatedRoutes() {
         path="/documents" 
         component={() => (
           <ProtectedRoute allowedRoles={['admin', 'ansatt']}>
-            <DocumentsFixed />
+            <DocumentsClean />
           </ProtectedRoute>
         )} 
       />
@@ -143,7 +143,7 @@ function AuthenticatedRoutes() {
         path="/documents-fixed" 
         component={() => (
           <ProtectedRoute allowedRoles={['admin', 'ansatt']}>
-            <DocumentsFixed />
+            <DocumentsClean />
           </ProtectedRoute>
         )} 
       />
