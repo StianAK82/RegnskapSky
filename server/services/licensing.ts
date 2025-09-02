@@ -7,7 +7,7 @@ import {
   type InsertSubscription, type InsertLicensedEmployee, 
   type InsertInvoice, type InsertInvoiceLine, type Invoice
 } from '../../shared/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 import { 
   currentPeriod, getPeriodDates, generateInvoiceId, 
   USER_LICENSE_PRICE, BASE_LICENSE_PRICE 
@@ -274,24 +274,22 @@ export class LicensingService {
    * Get subscription summary for frontend display
    */
   async getSubscriptionSummary(tenantId: string, period: string = currentPeriod()) {
-    // Get current period invoice
-    const invoice = await this.getOrCreateDraftInvoice(tenantId, period);
-    
-    // Get active licensed employees for this period
-    const activeLicenses = await db
-      .select()
-      .from(licensedEmployees)
+    // Get count of licensed users directly from users table
+    const [result] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(users)
       .where(
         and(
-          eq(licensedEmployees.tenantId, tenantId),
-          eq(licensedEmployees.period, period),
-          eq(licensedEmployees.isLicensed, true)
+          eq(users.tenantId, tenantId),
+          eq(users.isLicensed, true)
         )
       );
 
-    const userLicenseCount = activeLicenses.length;
+    const userLicenseCount = result.count;
     const userLicenseAmount = userLicenseCount * USER_LICENSE_PRICE;
     const totalAmount = BASE_LICENSE_PRICE + userLicenseAmount;
+
+    console.log(`Subscription summary: ${userLicenseCount} licensed users, total: ${totalAmount} NOK`);
 
     return {
       period,
