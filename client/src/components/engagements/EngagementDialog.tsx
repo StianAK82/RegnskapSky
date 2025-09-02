@@ -84,6 +84,7 @@ const FREQUENCY_LABELS = {
 };
 
 export function EngagementDialog({ clientId, clientName, open, onOpenChange, trigger }: EngagementDialogProps) {
+  console.log('🔍 EngagementDialog render - clientId:', clientId, 'open:', open);
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -92,8 +93,9 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
   // Fetch client tasks to auto-populate scopes
   const { data: clientTasks, isLoading: tasksLoading, error: tasksError } = useQuery({
     queryKey: [`/api/clients/${clientId}/tasks`],
-    enabled: !!clientId
+    enabled: !!clientId && !!open
   });
+  console.log('🔍 useQuery config - enabled:', !!clientId && !!open, 'clientId:', clientId, 'open:', open);
 
   // Debug the API call
   useEffect(() => {
