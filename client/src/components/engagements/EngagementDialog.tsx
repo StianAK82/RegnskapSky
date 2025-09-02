@@ -99,6 +99,8 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  console.log('🔍 STANDARD_TASKS available:', STANDARD_TASKS);
 
   // Debug the API call
   useEffect(() => {
@@ -166,35 +168,30 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
 
   // Auto-populate scopes based on standard tasks
   useEffect(() => {
+    console.log('🔍 useEffect triggered - open:', open, 'clientId:', clientId);
     if (open && clientId) {
       console.log('🔍 Auto-populating scopes from standard tasks:', STANDARD_TASKS);
       
-      const taskScopes = new Map();
-      
-      STANDARD_TASKS.forEach((task) => {
+      const autoScopes = STANDARD_TASKS.map((task, index) => {
         const scopeKey = mapTaskToScope(task.name);
         const firstFreq = task.frequency[0];
         const frequency = mapIntervalToFrequency(firstFreq);
         
         console.log('🔍 Mapping:', task.name, '→', scopeKey, 'frequency:', firstFreq, '→', frequency);
         
-        taskScopes.set(scopeKey, { 
-          frequency, 
-          comments: `Automatisk lagt til basert på ${task.name}` 
-        });
+        return {
+          scopeKey: scopeKey as any,
+          frequency: frequency as any,
+          comments: `Automatisk lagt til basert på ${task.name}`
+        };
       });
 
-      const autoScopes = Array.from(taskScopes.entries()).map(([scopeKey, data]) => ({
-        scopeKey: scopeKey as any,
-        frequency: data.frequency as any,
-        comments: data.comments
-      }));
-
-      console.log('🔍 Setting auto-populated scopes:', autoScopes);
+      console.log('🔍 Final autoScopes array:', autoScopes);
+      console.log('🔍 Current form scopes before setValue:', form.getValues('scopes'));
       
-      if (autoScopes.length > 0) {
-        form.setValue('scopes', autoScopes);
-      }
+      form.setValue('scopes', autoScopes);
+      
+      console.log('🔍 Form scopes after setValue:', form.getValues('scopes'));
     }
   }, [open, clientId, form]);
 
