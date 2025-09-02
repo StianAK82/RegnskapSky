@@ -97,7 +97,8 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
 
   // Debug the API call
   useEffect(() => {
-    console.log('🔍 API Call Debug:');
+    console.log('🔍 EngagementDialog mounted');
+    console.log('🔍 clientId:', clientId, 'Type:', typeof clientId);
     console.log('🔍 URL:', `/api/clients/${clientId}/tasks`);
     console.log('🔍 Loading:', tasksLoading);
     console.log('🔍 Error:', tasksError);
