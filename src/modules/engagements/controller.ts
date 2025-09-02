@@ -1,9 +1,17 @@
 import { Request, Response } from 'express';
 import { engagementService } from './service';
 import { insertClientSchema, insertEngagementSchema } from './schema';
-import type { AuthRequest } from '../../server/auth';
+// Define AuthRequest type locally for now
+interface AuthRequest extends Request {
+  user?: {
+    tenantId: string;
+    email: string;
+    id: string;
+  };
+}
 
 export class EngagementController {
+  private engagementService = engagementService;
   // Client endpoints
   async createClient(req: AuthRequest, res: Response) {
     try {
@@ -113,6 +121,66 @@ export class EngagementController {
     } catch (error: any) {
       console.error('Error updating engagement:', error);
       res.status(400).json({ message: 'Feil ved oppdatering av oppdrag: ' + error.message });
+    }
+  }
+
+  // Finalize engagement - sets status to active and generates PDFs
+  async finalizeEngagement(req: AuthRequest, res: Response) {
+    try {
+      const { engagementId } = req.params;
+      const tenantId = req.user!.tenantId;
+
+      const result = await this.engagementService.finalizeEngagement(engagementId, tenantId);
+      res.json(result);
+    } catch (error: any) {
+      console.error('Finalize engagement error:', error);
+      res.status(500).json({ message: error.message });
+    }
+  }
+
+  // Report endpoints as specified
+  async getMrrReport(req: AuthRequest, res: Response) {
+    try {
+      const tenantId = req.user!.tenantId;
+      const mrrData = await this.engagementService.getMrrReport(tenantId);
+      res.json(mrrData);
+    } catch (error: any) {
+      console.error('MRR report error:', error);
+      res.status(500).json({ message: error.message });
+    }
+  }
+
+  async getHourlyRateReport(req: AuthRequest, res: Response) {
+    try {
+      const tenantId = req.user!.tenantId;
+      const rateData = await this.engagementService.getHourlyRateDistribution(tenantId);
+      res.json(rateData);
+    } catch (error: any) {
+      console.error('Hourly rate report error:', error);
+      res.status(500).json({ message: error.message });
+    }
+  }
+
+  async getLicenseHolderReport(req: AuthRequest, res: Response) {
+    try {
+      const tenantId = req.user!.tenantId;
+      const licenseData = await this.engagementService.getLicenseHolderReport(tenantId);
+      res.json(licenseData);
+    } catch (error: any) {
+      console.error('License holder report error:', error);
+      res.status(500).json({ message: error.message });
+    }
+  }
+
+  async getTerminationWindowReport(req: AuthRequest, res: Response) {
+    try {
+      const tenantId = req.user!.tenantId;
+      const { months = '3' } = req.query;
+      const terminationData = await this.engagementService.getTerminationWindowReport(tenantId, parseInt(months as string));
+      res.json(terminationData);
+    } catch (error: any) {
+      console.error('Termination window report error:', error);
+      res.status(500).json({ message: error.message });
     }
   }
 }

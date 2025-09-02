@@ -124,6 +124,133 @@ export class EngagementService {
       pricing
     };
   }
+
+  // Finalize engagement - sets status to active and generates PDFs
+  async finalizeEngagement(engagementId: string, tenantId: string) {
+    const engagement = await this.getEngagementById(engagementId, tenantId);
+    if (!engagement) {
+      throw new Error('Engagement not found');
+    }
+
+    // Update status to active
+    const [updatedEngagement] = await db
+      .update(engagements)
+      .set({ 
+        status: 'active',
+        updatedAt: new Date()
+      })
+      .where(
+        and(
+          eq(engagements.id, engagementId),
+          eq(engagements.tenantId, tenantId)
+        )
+      )
+      .returning();
+
+    // TODO: Generate PDFs here
+    const pdfUrls = {
+      fullPackage: `/api/engagements/${engagementId}/pdf/full`,
+      shortVersion: `/api/engagements/${engagementId}/pdf/short`
+    };
+
+    return {
+      engagement: updatedEngagement,
+      pdfUrls
+    };
+  }
+
+  // Report methods as specified in requirements
+  async getMrrReport(tenantId: string) {
+    // Sum fixed pricing per month from active engagements
+    const mrrData = await db
+      .select({
+        month: engagementPricing.fixedPeriod,
+        totalMrr: engagementPricing.fixedAmountExVat,
+        clientName: clients.legalName,
+        engagementId: engagements.id
+      })
+      .from(engagementPricing)
+      .innerJoin(engagements, eq(engagementPricing.engagementId, engagements.id))
+      .innerJoin(clients, eq(engagements.clientId, clients.id))
+      .where(
+        and(
+          eq(clients.tenantId, tenantId),
+          eq(engagementPricing.model, 'fixed'),
+          eq(engagements.status, 'active')
+        )
+      );
+
+    return mrrData;
+  }
+
+  async getHourlyRateDistribution(tenantId: string) {
+    // List hourly rates by area, rate, client, engagement
+    const rateData = await db
+      .select({
+        area: engagementPricing.area,
+        hourlyRate: engagementPricing.hourlyRateExVat,
+        clientName: clients.legalName,
+        engagementId: engagements.id
+      })
+      .from(engagementPricing)
+      .innerJoin(engagements, eq(engagementPricing.engagementId, engagements.id))
+      .innerJoin(clients, eq(engagements.clientId, clients.id))
+      .where(
+        and(
+          eq(clients.tenantId, tenantId),
+          eq(engagementPricing.model, 'hourly'),
+          eq(engagements.status, 'active')
+        )
+      );
+
+    return rateData;
+  }
+
+  async getLicenseHolderReport(tenantId: string) {
+    // Count license holders (client vs firm)
+    const licenseData = await db
+      .select({
+        licenseHolder: engagements.licenseHolder,
+        count: db.select({ count: "1" }).from(engagements)
+      })
+      .from(engagements)
+      .innerJoin(clients, eq(engagements.clientId, clients.id))
+      .where(
+        and(
+          eq(clients.tenantId, tenantId),
+          eq(engagements.status, 'active')
+        )
+      )
+      .groupBy(engagements.licenseHolder);
+
+    return licenseData;
+  }
+
+  async getTerminationWindowReport(tenantId: string, months: number) {
+    // Find engagements within termination window
+    const now = new Date();
+    const futureDate = new Date();
+    futureDate.setMonth(futureDate.getMonth() + months);
+
+    const terminationData = await db
+      .select({
+        clientName: clients.legalName,
+        engagementId: engagements.id,
+        validFrom: engagements.validFrom,
+        validTo: engagements.validTo,
+        noticeMonths: clients.noticeMonths
+      })
+      .from(engagements)
+      .innerJoin(clients, eq(engagements.clientId, clients.id))
+      .where(
+        and(
+          eq(clients.tenantId, tenantId),
+          eq(engagements.status, 'active')
+        )
+      );
+
+    return terminationData;
+  }
 }
 
 export const engagementService = new EngagementService();

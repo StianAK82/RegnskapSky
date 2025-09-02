@@ -1,0 +1,299 @@
+0) Tekniske rammer
+
+Stack: Node.js 20, TypeScript, Express, PostgreSQL, Prisma ORM, Zod for validering, Handlebars eller Nunjucks for templates, pdf-lib eller puppeteer for PDF.
+
+Mappestruktur (forslag):
+
+/src
+  /db (prisma schema + migrasjoner)
+  /modules/engagements (service, repo, controller, templates)
+  /modules/reports
+  /modules/clients
+  /routes
+  /ui (skjema-komponenter/klientkort om vi har web-klient)
+  /templates
+
+
+Kvalitetskrav: ESLint/Prettier, Jest for tester.
+
+1) Forretningskrav (oppsummering)
+
+Ved opprettelse av ny klient skal systemet automatisk opprette et engagement (oppdragsforhold) i status draft som kan generere PDF av komplett Oppdragsavtale (Regnskap Norge-mal med bilag).
+
+Viktig tekstkrav: I alle genererte dokumenter må ikke label/tekst «Klient navn» forekomme. Bruk begrepet «Kunden» konsekvent (eks: «Kunden: <Juridisk navn> (Org.nr <orgnr>)»).
+
+Avtalen skal være gyldig etter norsk rett/GRFS, standard leveransevilkår, oppsigelsesfrist 3 mnd, betalingsfrist 14 dager (default).
+
+Klientkortet må støtte prismodell (fastpris/timepris/volum). Dette manglet. Legg inn felter beskrevet under.
+
+Løsningen skal være rapportvennlig (MRR, timepriser, lisenshaver, oppsigelsesvinduer).
+
+2) Datamodell (Prisma schema – lag migrasjoner)
+
+Bruk UUID (cuid/uuid) som PK, FK med onDelete RESTRICT.
+
+model Client {
+  id                   String  @id @default(uuid())
+  legal_name           String
+  orgnr                String
+  address              String
+  postal_address       String
+  contact_name         String
+  contact_email        String
+  contact_phone        String
+  sign_date            DateTime
+  start_date           DateTime
+  notice_months        Int      @default(3)
+  payment_terms_days   Int      @default(14)
+  engagements          Engagement[]
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+enum EngagementStatus { draft active terminated }
+enum LicenseHolder { client firm }
+enum ScopeKey { bookkeeping year_end payroll invoicing mva period_reports project other }
+enum Frequency { løpende månedlig kvartalsvis årlig ved_behov }
+enum PricingModel { fixed hourly volume }
+enum FixedPeriod { monthly quarterly yearly }
+
+model Engagement {
+  id                    String  @id @default(uuid())
+  client_id             String
+  client                Client  @relation(fields: [client_id], references: [id])
+  status                EngagementStatus
+  version               Int      @default(1)
+  valid_from            DateTime
+  valid_to              DateTime?
+  system_name           String?
+  license_holder        LicenseHolder?
+  admin_access          Boolean  @default(false)
+  include_standard_terms Boolean @default(true)
+  include_dpa            Boolean @default(true)
+  include_it_bilag       Boolean @default(true)
+  scopes                EngagementScope[]
+  pricing               EngagementPricing[]
+  dpas                  EngagementDpa[]
+  signatories           Signatory[]
+  checks                EngagementChecks?
+  changes               ChangeLog[]
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([client_id])
+}
+
+model Signatory {
+  id            String  @id @default(uuid())
+  engagement_id String
+  role          String  // client_representative | responsible_accountant | managing_director
+  name          String
+  title         String?
+  email         String
+  phone         String?
+  engagement    Engagement @relation(fields: [engagement_id], references: [id])
+
+  @@index([engagement_id])
+}
+
+model EngagementScope {
+  id            String   @id @default(uuid())
+  engagement_id String
+  scope_key     ScopeKey
+  frequency     Frequency
+  comments      String?
+  engagement    Engagement @relation(fields: [engagement_id], references: [id])
+
+  @@index([engagement_id])
+}
+
+model EngagementPricing {
+  id                         String       @id @default(uuid())
+  engagement_id              String
+  area                       ScopeKey
+  model                      PricingModel
+  hourly_rate_ex_vat         Decimal?
+  min_time_unit_minutes      Int?         @default(15)
+  rush_markup_percent        Decimal?     @default(50)
+  fixed_amount_ex_vat        Decimal?
+  fixed_period               FixedPeriod?
+  volume_unit_label          String?
+  volume_unit_price_ex_vat   Decimal?
+  system_costs_note          String?
+  engagement                 Engagement @relation(fields: [engagement_id], references: [id])
+
+  @@index([engagement_id])
+}
+
+model EngagementDpa {
+  id            String  @id @default(uuid())
+  engagement_id String
+  processor_name String
+  country       String
+  transfer_basis String   // enum/text som passer
+  engagement    Engagement @relation(fields: [engagement_id], references: [id])
+
+  @@index([engagement_id])
+}
+
+model EngagementChecks {
+  id                  String  @id @default(uuid())
+  engagement_id       String  @unique
+  standard_terms      Boolean @default(true)
+  oppdragsspesifikasjon Boolean @default(true)
+  honorar_betaling    Boolean @default(true)
+  dpa                 Boolean @default(true)
+  it_bilag            Boolean @default(true)
+  endringsoversikt    Boolean @default(true)
+  engagement          Engagement @relation(fields: [engagement_id], references: [id])
+}
+
+model ChangeLog {
+  id            String  @id @default(uuid())
+  engagement_id String
+  date          DateTime
+  description   String
+  attachment_url String?
+  engagement    Engagement @relation(fields: [engagement_id], references: [id])
+
+  @@index([engagement_id])
+}
+
+3) API-endepunkter (Express + Zod)
+
+Implementer med service-lag og repo-lag. Returner JSON.
+
+POST /clients
+
+Oppretter Client + initielt Engagement (status=draft, valid_from=sign_date).
+
+Body kan inkludere signatories, scopes, pricing, dpas, checks, IT-felter.
+
+PUT /engagements/:id
+
+Oppdaterer scope/pris/IT/DPA. Skriv en linje i change_log automatisk med beskrivelse.
+
+POST /engagements/:id/finalize
+
+Setter status=active, genererer PDF (full pakke + kortversjon), øker version hvis allerede aktiv og det gjøres endringer, og lagrer fil-URLer (returner i payload).
+
+Rapporter (GET):
+
+/reports/mrr → summer fastpris per måned (fra EngagementPricing hvor model=fixed).
+
+/reports/hourly-rate-distribution → liste over timepriser (område, sats, klient, engagement_id).
+
+/reports/license-holders → antall/andel license_holder {client|firm}.
+
+/reports/termination-window?months=3 → engagements som er innenfor oppsigelsesvindu (bruk notice_months på klient + valid_from/valid_to).
+
+4) Skjema/klientkort (UI-felter)
+
+Utvid klientkortet slik at bruker kan legge inn alt som trengs for avtalen:
+
+Grunnlag: legal_name, orgnr, address, postal_address, contact_name/email/phone, sign_date, start_date, oppdragsansvarlig (legges som signatory responsible_accountant).
+
+Omfang (checkboxer + frekvens + kommentar): bookkeeping, year_end, payroll, invoicing, mva, period_reports, project, other.
+
+Honorar/pris (NYTT): velg modell {fast|hourly|volume} per område, med relevante felter:
+
+hourly: hourly_rate_ex_vat, min_time_unit_minutes (default 15), rush_markup_percent (default 50).
+
+fixed: fixed_amount_ex_vat, fixed_period {monthly|quarterly|yearly}.
+
+volume: volume_unit_label, volume_unit_price_ex_vat.
+
+system_costs_note (valgfritt).
+
+IT-system: system_name, license_holder {client|firm}, admin_access {true|false}.
+
+DPA: liste over (processor_name, country, transfer_basis).
+
+Validering: min. én prislinje; timepris > 0 for hourly; fixed_amount > 0 for fixed.
+
+5) Dokumentgenerering (PDF)
+
+Bruk templates i /templates. Rendre én sammenhengende PDF med:
+
+Oppdragsavtale (forside + parter + omfang + varighet + representanter + avhukingsliste for vedlagte dokumenter).
+
+Standard leveransevilkår (statisk tekst – behold juridisk tekst uendret; norsk rett, GRFS; oppsigelse 3 mnd).
+
+Oppdragsspesifikasjon (fra engagement_scopes).
+
+Honorar og betalingsbetingelser (fra engagement_pricing, betalingsfrist payment_terms_days, default 14).
+
+Databehandleravtale (statisk mal + Vedlegg 1/2 generert fra engagement_dpas).
+
+Bruk av IT-systemer i fellesskap (system, lisenshaver, tilganger).
+
+Endringsoversikt (tabell fra change_log).
+
+Kritisk: Ikke rendrer label «Klient navn». Bruk «Kunden: <legal_name> (Org.nr <orgnr>)».
+
+Generer to filer: (a) Full pakke (alle bilag) og (b) Kortversjon (kun signeringssider + oppdragsspesifikasjon + honorar).
+
+Legg generated_by + tidsstempel + engagement.version i PDF-metadata.
+
+6) Versjonering & endringer
+
+Ved PUT /engagements/:id etter at status=active:
+
+Opprett ChangeLog-rad.
+
+Øk version.
+
+Regenerer PDF og behold tidligere fil-URLer.
+
+valid_to settes når status endres til terminated.
+
+7) Eksempel-payload (bruk i e2e-test)
+{
+  "client": {
+    "legal_name": "Eksempelselskap AS",
+    "orgnr": "999999999",
+    "address": "Storgata 1, 0101 Oslo",
+    "postal_address": "Postboks 100, 0102 Oslo",
+    "contact_name": "Kari Kunde",
+    "contact_email": "kari@eksempelselskap.no",
+    "contact_phone": "+47 40000000",
+    "sign_date": "2025-09-02",
+    "start_date": "2025-10-01",
+    "notice_months": 3,
+    "payment_terms_days": 14
+  },
+  "engagement": {
+    "system_name": "Conta",
+    "license_holder": "client",
+    "admin_access": true,
+    "signatories": [
+      {"role":"client_representative","name":"Kari Kunde","title":"Daglig leder","email":"kari@eksempelselskap.no","phone":"+47 40000000"},
+      {"role":"responsible_accountant","name":"Stian Anderssen Karlsen","title":"Oppdragsansvarlig regnskapsfører","email":"stian@zaldo.no","phone":"+47 90000000"}
+    ],
+    "scopes": [
+      {"scope_key":"bookkeeping","frequency":"løpende","comments":"Periodiske avstemminger ved behov"},
+      {"scope_key":"year_end","frequency":"årlig","comments":"Årsregnskap med noter på forespørsel"},
+      {"scope_key":"mva","frequency":"ved_behov","comments":"Signering/innsending ved behov"}
+    ],
+    "pricing": [
+      {"area":"bookkeeping","model":"hourly","hourly_rate_ex_vat":850,"min_time_unit_minutes":15,"rush_markup_percent":50},
+      {"area":"year_end","model":"fixed","fixed_amount_ex_vat":12000,"fixed_period":"yearly"}
+    ],
+    "dpas": [
+      {"processor_name":"Conta","country":"Norge","transfer_basis":"N/A"}
+    ],
+    "checks":{"standard_terms":true,"oppdragsspesifikasjon":true,"honorar_betaling":true,"dpa":true,"it_bilag":true,"endringsoversikt":true}
+  }
+}
+
+8) Akseptansekriterier (kort)
+
+Opprettelse av klient genererer engagement i draft.
+
+POST /engagements/:id/finalize lager to PDF-filer (full + kort), uten teksten «Klient navn», og med «Kunden: …».
+
+Standardvilkår inneholder norsk rett, GRFS, oppsigelse 3 mnd, betalingsfrist 14 dager.
+
+Rapporter returnerer data i JSON og kan aggregeres per måned/område.
+
+Endring i scope/pris etter aktivering skaper ChangeLog + øker version + ny PDF.

@@ -3211,3 +3211,7 @@ function extractKPIsFromQuery(query: string): string[] {
   if (query.toLowerCase().includes('produktivitet')) kpis.push('utnyttelsesgrad');
   return kpis;
 }
+
+// TODO: Add engagement routes integration
+// const { engagementRoutes } = require("../src/routes/engagements");
+// app.use('/api', engagementRoutes);

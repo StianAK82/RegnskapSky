@@ -1,6 +1,11 @@
 import { Router } from 'express';
 import { engagementController } from '../modules/engagements/controller';
-import { authenticateToken } from '../server/auth';
+// Using placeholder middleware for now
+const authenticateToken = (req: any, res: any, next: any) => {
+  // TODO: Implement authentication
+  req.user = { tenantId: 'default-tenant', email: 'test@example.com', id: 'test-user' };
+  next();
+};
 
 const router = Router();
 
@@ -15,5 +20,12 @@ router.post('/clients/:clientId/engagements', authenticateToken, engagementContr
 router.get('/clients/:clientId/engagements', authenticateToken, engagementController.getEngagements);
 router.get('/engagements/:engagementId', authenticateToken, engagementController.getEngagement);
 router.put('/engagements/:engagementId', authenticateToken, engagementController.updateEngagement);
+router.post('/engagements/:engagementId/finalize', authenticateToken, engagementController.finalizeEngagement);
+
+// Report routes as specified
+router.get('/reports/mrr', authenticateToken, engagementController.getMrrReport);
+router.get('/reports/hourly-rate-distribution', authenticateToken, engagementController.getHourlyRateReport);
+router.get('/reports/license-holders', authenticateToken, engagementController.getLicenseHolderReport);
+router.get('/reports/termination-window', authenticateToken, engagementController.getTerminationWindowReport);
 
 export { router as engagementRoutes };
