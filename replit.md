@@ -3,8 +3,16 @@
 ## Overview
 Zaldo CRM is a comprehensive Norwegian multi-tenant accounting and client management system designed to streamline financial and client operations. It features strict licensing, robust role-based authentication, and tenant isolation. Key capabilities include automated task generation, AML compliance tracking, forced time registration, comprehensive auditing, and role-specific dashboards. The project aims to provide a complete, secure, and efficient solution for accounting and client management needs, built from scratch with a strong focus on compliance and user experience.
 
+## Recent Changes (September 2025)
+- **Document Management**: Successfully implemented document deletion functionality with trash can icons and confirmation dialogs
+- **AML/KYC Design**: Improved layout with closer positioning of text and Verified logo using bullet separator
+- **Time Registration**: Dashboard time registration working correctly; manual time entry has ongoing validation issues that require further investigation
+- **Server Stability**: Resolved port conflicts and database connection problems
+- **UI Enhancements**: Multiple design improvements and user experience optimizations
+
 ## User Preferences
 Preferred communication style: Simple, everyday language.
+Development approach: Focus on completing working features and moving forward with development rather than getting stuck on single issues.
 
 ## System Architecture
 
