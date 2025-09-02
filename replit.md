@@ -4,13 +4,13 @@
 Zaldo CRM is a comprehensive Norwegian multi-tenant accounting and client management system designed to streamline financial and client operations. It features strict licensing, robust role-based authentication, and tenant isolation. Key capabilities include automated task generation, AML compliance tracking, forced time registration, comprehensive auditing, and role-specific dashboards. The project aims to provide a complete, secure, and efficient solution for accounting and client management needs, built from scratch with a strong focus on compliance and user experience.
 
 ## Recent Changes (September 2025)
-- **System Owner Billing Module**: Exclusive billing dashboard for system owner (stian@zaldo.no) with comprehensive tenant overview
+- **System Owner Billing Module**: Exclusive billing dashboard for system owner (stian@zaldo.no) with comprehensive tenant overview and Excel export
 - **Pricing Structure Fixed**: Corrected to 2500 kr base + 500 kr per licensed user for accurate billing calculations
-- **Excel Export**: Added Excel export functionality for system billing with detailed customer data and revenue breakdown
+- **Excel Export**: Full Excel export functionality for system billing with detailed customer data and revenue breakdown
+- **Modular Architecture Implemented**: Complete restructure with `/src/modules/` organization for better maintainability
+- **Client/Engagement System**: Advanced engagement management with comprehensive schema for Norwegian accounting practices
 - **Test Data**: Created 13 test customers with 19 licensed users across different subscription statuses
 - **Access Control**: Strict security ensuring only system owner can access billing module
-- **Real-time Updates**: Automatic refresh every 30 seconds with accurate license counting and revenue calculations
-- **Architecture Restructure**: Planning new modular structure with `/src/modules/` organization for better code maintainability
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
@@ -35,15 +35,21 @@ Development approach: Focus on completing working features and moving forward wi
 - **Access Control**: Middleware-based Role-Based Access Control (RBAC).
 - **API Structure**: RESTful API.
 
-### Planned Modular Structure
+### Current Modular Structure
 ```
 /src
-  /db (database schema + migrations)
-  /modules/engagements (service, repo, controller, templates)
-  /modules/reports (reporting system with AI-powered generation)
-  /modules/clients (client management and AML/KYC workflows)
-  /modules/billing (system owner billing and subscription management)
-  /routes (API route definitions)
+  /modules/engagements (✓ implemented: advanced client/engagement management)
+    - schema.ts: Complete engagement model with pricing, scopes, signatories
+    - service.ts: Full CRUD operations for clients and engagements
+    - controller.ts: REST API endpoints with validation
+  /modules/billing (✓ implemented: system owner billing functionality)
+    - service.ts: Tenant billing calculations and Excel export
+    - controller.ts: Secure billing endpoints for system owner
+  /modules/reports (placeholder for future AI-powered reports)
+  /modules/clients (placeholder for AML/KYC workflows)
+  /routes (✓ implemented: modular route definitions)
+    - billing.ts: System billing routes
+    - engagements.ts: Client and engagement API routes
   /ui (form components and client cards for web client)
   /templates (document and email templates)
 ```

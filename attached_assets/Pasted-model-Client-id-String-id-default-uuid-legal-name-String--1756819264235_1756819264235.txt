@@ -1,0 +1,126 @@
+model Client {
+  id                   String  @id @default(uuid())
+  legal_name           String
+  orgnr                String
+  address              String
+  postal_address       String
+  contact_name         String
+  contact_email        String
+  contact_phone        String
+  sign_date            DateTime
+  start_date           DateTime
+  notice_months        Int      @default(3)
+  payment_terms_days   Int      @default(14)
+  engagements          Engagement[]
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+enum EngagementStatus { draft active terminated }
+enum LicenseHolder { client firm }
+enum ScopeKey { bookkeeping year_end payroll invoicing mva period_reports project other }
+enum Frequency { løpende månedlig kvartalsvis årlig ved_behov }
+enum PricingModel { fixed hourly volume }
+enum FixedPeriod { monthly quarterly yearly }
+
+model Engagement {
+  id                    String  @id @default(uuid())
+  client_id             String
+  client                Client  @relation(fields: [client_id], references: [id])
+  status                EngagementStatus
+  version               Int      @default(1)
+  valid_from            DateTime
+  valid_to              DateTime?
+  system_name           String?
+  license_holder        LicenseHolder?
+  admin_access          Boolean  @default(false)
+  include_standard_terms Boolean @default(true)
+  include_dpa            Boolean @default(true)
+  include_it_bilag       Boolean @default(true)
+  scopes                EngagementScope[]
+  pricing               EngagementPricing[]
+  dpas                  EngagementDpa[]
+  signatories           Signatory[]
+  checks                EngagementChecks?
+  changes               ChangeLog[]
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([client_id])
+}
+
+model Signatory {
+  id            String  @id @default(uuid())
+  engagement_id String
+  role          String  // client_representative | responsible_accountant | managing_director
+  name          String
+  title         String?
+  email         String
+  phone         String?
+  engagement    Engagement @relation(fields: [engagement_id], references: [id])
+
+  @@index([engagement_id])
+}
+
+model EngagementScope {
+  id            String   @id @default(uuid())
+  engagement_id String
+  scope_key     ScopeKey
+  frequency     Frequency
+  comments      String?
+  engagement    Engagement @relation(fields: [engagement_id], references: [id])
+
+  @@index([engagement_id])
+}
+
+model EngagementPricing {
+  id                         String       @id @default(uuid())
+  engagement_id              String
+  area                       ScopeKey
+  model                      PricingModel
+  hourly_rate_ex_vat         Decimal?
+  min_time_unit_minutes      Int?         @default(15)
+  rush_markup_percent        Decimal?     @default(50)
+  fixed_amount_ex_vat        Decimal?
+  fixed_period               FixedPeriod?
+  volume_unit_label          String?
+  volume_unit_price_ex_vat   Decimal?
+  system_costs_note          String?
+  engagement                 Engagement @relation(fields: [engagement_id], references: [id])
+
+  @@index([engagement_id])
+}
+
+model EngagementDpa {
+  id            String  @id @default(uuid())
+  engagement_id String
+  processor_name String
+  country       String
+  transfer_basis String   // enum/text som passer
+  engagement    Engagement @relation(fields: [engagement_id], references: [id])
+
+  @@index([engagement_id])
+}
+
+model EngagementChecks {
+  id                  String  @id @default(uuid())
+  engagement_id       String  @unique
+  standard_terms      Boolean @default(true)
+  oppdragsspesifikasjon Boolean @default(true)
+  honorar_betaling    Boolean @default(true)
+  dpa                 Boolean @default(true)
+  it_bilag            Boolean @default(true)
+  endringsoversikt    Boolean @default(true)
+  engagement          Engagement @relation(fields: [engagement_id], references: [id])
+}
+
+model ChangeLog {
+  id            String  @id @default(uuid())
+  engagement_id String
+  date          DateTime
+  description   String
+  attachment_url String?
+  engagement    Engagement @relation(fields: [engagement_id], references: [id])
+
+  @@index([engagement_id])
+}
