@@ -11,13 +11,11 @@ import { useToast } from '@/hooks/use-toast';
 import { FileText, Download, Upload, Search, Filter, Eye } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
-export default function Documents() {
+export default function DocumentsNew() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [viewingDocument, setViewingDocument] = useState<any>(null);
   const { toast } = useToast();
-
-  // Clean documents page - no debug output
 
   const { data: documents = [], isLoading } = useQuery({
     queryKey: ['/api/documents'],
@@ -30,8 +28,6 @@ export default function Documents() {
     const matchesCategory = selectedCategory === 'all' || doc.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
-
-
 
   const categories = ['Rapporter', 'Kontrakter', 'Fakturaer', 'Bilag', 'Andre'];
 
@@ -66,8 +62,6 @@ export default function Documents() {
       });
       return;
     }
-
-    console.log('Direct download with token in URL...');
     
     // Use window.open with token in URL - this bypasses all fetch/POST complications
     const downloadUrl = `/api/documents/${document.id}/download?token=${encodeURIComponent(finalToken)}`;
@@ -93,8 +87,6 @@ export default function Documents() {
       return;
     }
 
-    console.log('Direct Excel download with token in URL...');
-
     // Use window.open with token and format in URL
     const downloadUrl = `/api/documents/${document.id}/download?format=excel&token=${encodeURIComponent(finalToken)}`;
     window.open(downloadUrl, '_blank');
@@ -105,465 +97,256 @@ export default function Documents() {
     });
   };
 
-  // Delete document mutation
-  const deleteDocumentMutation = useMutation({
-    mutationFn: (documentId: string) => 
-      apiRequest('DELETE', `/api/documents/${documentId}`),
+  const handleView = (document: any) => {
+    setViewingDocument(document);
+  };
+
+  const uploadMutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      return apiRequest('POST', '/api/documents/upload', formData);
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/documents'] });
       toast({
-        title: "Dokument slettet",
-        description: "Dokumentet ble slettet",
+        title: "Suksess",
+        description: "Dokument ble lastet opp",
       });
+      queryClient.invalidateQueries({ queryKey: ['/api/documents'] });
     },
     onError: (error: any) => {
       toast({
-        title: "Feil ved sletting",
-        description: error.message || "Kunne ikke slette dokumentet",
+        title: "Feil",
+        description: error.message || "Kunne ikke laste opp dokument",
         variant: "destructive",
       });
-    }
+    },
   });
 
-  const handleDelete = (document: any) => {
-    if (confirm(`Er du sikker på at du vil slette "${document.name}"?`)) {
-      deleteDocumentMutation.mutate(document.id);
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('category', selectedCategory === 'all' ? 'Andre' : selectedCategory);
+      uploadMutation.mutate(formData);
     }
   };
 
-  const handleViewDocumentNew = async (document: any) => {
-    console.log('=== SERVER FETCH DOCUMENT DATA START ===');
-    console.log('Document name:', document.name, 'ID:', document.id);
-    
-    // ALWAYS fetch fresh data from server with employee details
-    const authToken = localStorage.getItem('auth_token') || localStorage.getItem('token');
-    if (!authToken) {
-      console.error('No auth token found');
-      return;
-    }
-    
-    try {
-      const response = await fetch(`/api/documents/${document.id}/view`, {
-        headers: {
-          'Authorization': `Bearer ${authToken}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (response.ok) {
-        const serverData = await response.json();
-        console.log('SUCCESS - Server returned data:', serverData);
-        
-        if (Array.isArray(serverData) && serverData.length > 0) {
-          setViewingDocument({
-            ...document,
-            data: serverData
-          });
-          console.log('DISPLAY - Using server data with employee details');
-        } else {
-          console.log('FALLBACK - Server returned empty, using test data');
-          setViewingDocument({
-            ...document,
-            data: [
-              { Klient: 'Ingen data fra server - viser testdata', 'Totale timer': 0, 'Fakturerbare timer': 0 }
-            ]
-          });
-        }
-      } else {
-        const errorText = await response.text();
-        console.error('Server error:', response.status, errorText);
-        setViewingDocument({
-          ...document,
-          data: [
-            { Klient: `Server-feil ${response.status}`, 'Totale timer': 0, 'Fakturerbare timer': 0 }
-          ]
-        });
-      }
-    } catch (error) {
-      console.error('Fetch error:', error);
-      setViewingDocument({
-        ...document,
-        data: [
-          { Klient: 'Nettverksfeil - kunne ikke hente data', 'Totale timer': 0, 'Fakturerbare timer': 0 }
-        ]
-      });
-    }
-  };
-
-  // Redirect old function to new one
-  const handleViewDocument = async (document: any) => {
-    console.log('REDIRECTING TO NEW FUNCTION...');
-    return handleViewDocumentNew(document);
-    
-    // Parse the actual document data - check aiSuggestions first (new format)
-    let documentData = [];
-    try {
-      // First check if aiSuggestions contains reportData (new format)
-      if (document.aiSuggestions?.reportData) {
-        documentData = Array.isArray(document.aiSuggestions.reportData) 
-          ? document.aiSuggestions.reportData 
-          : [document.aiSuggestions.reportData];
-        console.log('Using aiSuggestions.reportData:', documentData);
-      }
-      // Check if there's data field (legacy format) 
-      else if (document.data) {
-        if (typeof document.data === 'string') {
-          documentData = JSON.parse(document.data);
-        } else if (Array.isArray(document.data)) {
-          documentData = document.data;
-        } else {
-          documentData = [document.data];
-        }
-        console.log('Using document.data:', documentData);
-      }
-      // ALWAYS fetch from server to get latest data with employee details
-      else {
-        console.log('FORCING server fetch for latest employee data...');
-      }
-      
-      // Force server fetch regardless of local data to get detailed employee info
-      console.log('Fetching detailed data from server...');
-      const authToken = localStorage.getItem('auth_token') || localStorage.getItem('token');
-      if (authToken) {
-        try {
-          const response = await fetch(`/api/documents/${document.id}/view`, {
-            headers: {
-              'Authorization': `Bearer ${authToken}`,
-              'Content-Type': 'application/json'
-            }
-          });
-          if (response.ok) {
-            const serverData = await response.json();
-            console.log('SERVER RESPONSE:', serverData);
-            if (serverData && Array.isArray(serverData) && serverData.length > 0) {
-              documentData = serverData;
-              console.log('Using server data with employee details:', documentData);
-            } else {
-              console.log('Server returned empty data, using local if available');
-            }
-          } else {
-            console.error('Server response not ok:', response.status, response.statusText);
-            const errorText = await response.text();
-            console.error('Server error details:', errorText);
-          }
-        } catch (error) {
-          console.error('Error fetching from server:', error);
-        }
-      }
-    } catch (error) {
-      console.error('Error parsing document data:', error);
-    }
-    
-    // Show the document with actual data
-    setViewingDocument({
-      ...document,
-      data: documentData
-    });
-
-  };
+  if (isLoading) {
+    return (
+      <AppShell>
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+        </div>
+      </AppShell>
+    );
+  }
 
   return (
-    <AppShell title="Dokumenter" subtitle="Administrer og last ned dokumenter">
+    <AppShell>
       <div className="space-y-6">
-        {/* Search and Filter */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Search className="h-5 w-5" />
-              Søk og filtrer
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Input
-                  placeholder="Søk etter dokumentnavn..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full"
-                />
-              </div>
-              <div>
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full p-2 border rounded-md"
-                >
-                  <option value="all">Alle kategorier</option>
-                  {categories.map(category => (
-                    <option key={category} value={category}>{category}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-6">
-              <div className="text-2xl font-bold text-blue-600">{documents.length}</div>
-              <p className="text-gray-600">Totalt dokumenter</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="text-2xl font-bold text-green-600">
-                {documents.filter((d: any) => d.category === 'Rapporter').length}
-              </div>
-              <p className="text-gray-600">Rapporter</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="text-2xl font-bold text-purple-600">
-                {documents.filter((d: any) => d.category === 'Kontrakter').length}
-              </div>
-              <p className="text-gray-600">Kontrakter</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="text-2xl font-bold text-orange-600">
-                {documents.filter((d: any) => d.category === 'Bilag').length}
-              </div>
-              <p className="text-gray-600">Bilag</p>
-            </CardContent>
-          </Card>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Dokumenter</h1>
+            <p className="text-muted-foreground">
+              Administrer og organiser dine dokumenter
+            </p>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <input
+              type="file"
+              id="file-upload"
+              className="hidden"
+              onChange={handleFileUpload}
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt"
+            />
+            <Button
+              onClick={() => document.getElementById('file-upload')?.click()}
+              disabled={uploadMutation.isPending}
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              {uploadMutation.isPending ? 'Laster opp...' : 'Last opp'}
+            </Button>
+          </div>
         </div>
 
-        {/* Documents Table */}
-        <Card>
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Dokumenter ({filteredDocuments.length})
-              </CardTitle>
-              <Button>
-                <Upload className="h-4 w-4 mr-2" />
-                Last opp dokument
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="space-y-4">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="animate-pulse border rounded p-4">
-                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                  </div>
-                ))}
-              </div>
-            ) : filteredDocuments.length === 0 ? (
-              <div className="text-center py-8">
-                <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Ingen dokumenter funnet</h3>
-                <p className="text-gray-500">
-                  {searchTerm || selectedCategory !== 'all' 
-                    ? 'Prøv å endre søkekriteriene dine' 
-                    : 'Last opp ditt første dokument for å komme i gang'
-                  }
-                </p>
-              </div>
-            ) : (
-              <div className="rounded-md border">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              placeholder="Søk i dokumenter..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="px-3 py-2 border border-input bg-background rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+            >
+              <option value="all">Alle kategorier</option>
+              {categories.map(category => (
+                <option key={category} value={category}>{category}</option>
+              ))}
+            </select>
+          </div>
+        </div>
 
-                <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'white', border: '1px solid #e5e7eb' }}>
-                  <thead>
-                    <tr style={{ backgroundColor: '#f3f4f6' }}>
-                      <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb', fontWeight: 'bold' }}>Dokument</th>
-                      <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb', fontWeight: 'bold' }}>Kategori</th>
-                      <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb', fontWeight: 'bold' }}>Størrelse</th>
-                      <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb', fontWeight: 'bold' }}>Handlinger</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredDocuments.map((document: any) => {
-                      return (
-                        <tr key={document.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                          <td style={{ padding: '12px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                              <span style={{ fontSize: '24px' }}>{getDocumentIcon(document.category)}</span>
-                              <div>
-                                <div style={{ fontWeight: '500' }}>{document.name}</div>
-                                <div style={{ fontSize: '12px', color: '#6b7280' }}>{document.description}</div>
-                              </div>
-                            </div>
-                          </td>
-                          <td style={{ padding: '12px' }}>
-                            <span style={{ 
-                              backgroundColor: '#e5e7eb', 
-                              padding: '4px 8px', 
-                              borderRadius: '4px',
-                              fontSize: '12px'
-                            }}>
-                              {document.category}
+        <Card>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-12"></TableHead>
+                  <TableHead>Navn</TableHead>
+                  <TableHead className="hidden md:table-cell">Kategori</TableHead>
+                  <TableHead className="hidden sm:table-cell">Størrelse</TableHead>
+                  <TableHead className="hidden md:table-cell">Opprettet</TableHead>
+                  <TableHead className="text-right">Handlinger</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredDocuments.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      <FileText className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                      {searchTerm || selectedCategory !== 'all' 
+                        ? 'Ingen dokumenter funnet med de valgte filtrene'
+                        : 'Ingen dokumenter funnet'
+                      }
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredDocuments.map((document: any, index: number) => (
+                    <TableRow key={document.id || index} className="hover:bg-muted/50">
+                      <TableCell>
+                        <span className="text-lg" role="img" aria-label={document.category}>
+                          {getDocumentIcon(document.category)}
+                        </span>
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        <div className="flex flex-col">
+                          <span className="line-clamp-1">{document.name}</span>
+                          {document.description && (
+                            <span className="text-xs text-muted-foreground line-clamp-1">
+                              {document.description}
                             </span>
-                          </td>
-                          <td style={{ padding: '12px', fontSize: '14px', color: '#6b7280' }}>
-                            {document.size ? formatFileSize(document.size) : 'Ukjent'}
-                          </td>
-                          <td style={{ padding: '12px' }}>
-                            <button
-                              onClick={() => handleViewDocumentNew(document)}
-                              title="Vis rapport på skjermen"
-                              style={{
-                                backgroundColor: '#3B82F6',
-                                color: 'white',
-                                padding: '8px 16px',
-                                borderRadius: '6px',
-                                border: 'none',
-                                cursor: 'pointer',
-                                fontSize: '12px',
-                                fontWeight: '500',
-                                marginRight: '8px',
-                                transition: 'all 0.2s'
-                              }}
-                              onMouseOver={(e) => (e.target as HTMLElement).style.backgroundColor = '#2563EB'}
-                              onMouseOut={(e) => (e.target as HTMLElement).style.backgroundColor = '#3B82F6'}
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        <Badge variant="secondary" className="text-xs">
+                          {document.category}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell text-muted-foreground">
+                        {formatFileSize(document.size || 0)}
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell text-muted-foreground">
+                        {document.createdAt 
+                          ? new Date(document.createdAt).toLocaleDateString('nb-NO')
+                          : 'N/A'
+                        }
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleView(document)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDownload(document)}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                          {document.name?.toLowerCase().includes('timer') && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDownloadExcel(document)}
+                              className="text-green-600 hover:text-green-700"
+                              title="Last ned som Excel"
                             >
-                              👁️ Vis rapport
-                            </button>
-                            
-                            <button
-                              onClick={() => handleDownload(document)}
-                              title="Last ned som CSV"
-                              style={{
-                                backgroundColor: '#6b7280',
-                                color: 'white',
-                                padding: '8px 12px',
-                                borderRadius: '4px',
-                                border: 'none',
-                                cursor: 'pointer',
-                                fontSize: '12px',
-                                marginRight: '4px',
-                                transition: 'all 0.2s'
-                              }}
-                              onMouseOver={(e) => (e.target as HTMLElement).style.backgroundColor = '#4b5563'}
-                              onMouseOut={(e) => (e.target as HTMLElement).style.backgroundColor = '#6b7280'}
-                            >
-                              📥 CSV
-                            </button>
-                            
-                            {document.category === 'Rapporter' && (
-                              <button
-                                onClick={() => handleDownloadExcel(document)}
-                                title="Last ned som Excel"
-                                style={{
-                                  backgroundColor: '#059669',
-                                  color: 'white',
-                                  padding: '8px 12px',
-                                  borderRadius: '4px',
-                                  border: 'none',
-                                  cursor: 'pointer',
-                                  fontSize: '12px',
-                                  marginRight: '4px',
-                                  transition: 'all 0.2s'
-                                }}
-                                onMouseOver={(e) => (e.target as HTMLElement).style.backgroundColor = '#047857'}
-                                onMouseOut={(e) => (e.target as HTMLElement).style.backgroundColor = '#059669'}
-                              >
-                                📊 Excel
-                              </button>
-                            )}
-                            
-                            <button
-                              onClick={() => handleDelete(document)}
-                              title="Slett dokument"
-                              style={{
-                                backgroundColor: '#dc2626',
-                                color: 'white',
-                                padding: '8px 12px',
-                                borderRadius: '4px',
-                                border: 'none',
-                                cursor: 'pointer',
-                                fontSize: '12px',
-                                transition: 'all 0.2s'
-                              }}
-                              onMouseOver={(e) => (e.target as HTMLElement).style.backgroundColor = '#b91c1c'}
-                              onMouseOut={(e) => (e.target as HTMLElement).style.backgroundColor = '#dc2626'}
-                            >
-                              🗑️ Slett
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                              📊
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
-        {/* Rapport visningsmodal */}
-        {viewingDocument && (
-          <Dialog open={!!viewingDocument} onOpenChange={() => setViewingDocument(null)}>
-            <DialogContent className="max-w-6xl max-h-[90vh] overflow-auto">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  {viewingDocument.name}
-                </DialogTitle>
-              </DialogHeader>
-              <div className="mt-4">
-                {viewingDocument.data ? (
-                  <div className="space-y-4">
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <h3 className="font-semibold mb-2">Rapport informasjon:</h3>
-                      <p><strong>Navn:</strong> {viewingDocument.name}</p>
-                      <p><strong>Beskrivelse:</strong> {viewingDocument.description}</p>
-                      <p><strong>Opprettet:</strong> {new Date(viewingDocument.createdAt).toLocaleDateString('nb-NO')}</p>
-                    </div>
-                    
-                    {/* Vis rapportdata som tabell */}
-                    {Array.isArray(viewingDocument.data) && viewingDocument.data.length > 0 ? (
-                      <div className="border rounded-lg overflow-auto">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              {Object.keys(viewingDocument.data[0]).map((key) => (
-                                <TableHead key={key} className="font-semibold">
-                                  {key}
-                                </TableHead>
-                              ))}
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {viewingDocument.data.map((row: any, index: number) => (
-                              <TableRow key={index}>
-                                {Object.values(row).map((value: any, cellIndex: number) => (
-                                  <TableCell key={cellIndex}>
-                                    {typeof value === 'number' 
-                                      ? value.toLocaleString('nb-NO', { minimumFractionDigits: 2 })
-                                      : String(value || '-')
-                                    }
-                                  </TableCell>
-                                ))}
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    ) : (
-                      <div className="text-center py-8">
-                        <p className="text-gray-500">Ingen data funnet i rapporten</p>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-                    <p>Laster rapport...</p>
-                  </div>
-                )}
-              </div>
-            </DialogContent>
-          </Dialog>
-        )}
       </div>
+
+      {/* Document Viewer Dialog */}
+      <Dialog open={!!viewingDocument} onOpenChange={() => setViewingDocument(null)}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <span className="text-lg">{getDocumentIcon(viewingDocument?.category)}</span>
+              {viewingDocument?.name}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="font-medium">Kategori:</span>
+                <Badge variant="secondary" className="ml-2">
+                  {viewingDocument?.category}
+                </Badge>
+              </div>
+              <div>
+                <span className="font-medium">Størrelse:</span>
+                <span className="ml-2">{formatFileSize(viewingDocument?.size || 0)}</span>
+              </div>
+              <div>
+                <span className="font-medium">Opprettet:</span>
+                <span className="ml-2">
+                  {viewingDocument?.createdAt 
+                    ? new Date(viewingDocument.createdAt).toLocaleDateString('nb-NO')
+                    : 'N/A'
+                  }
+                </span>
+              </div>
+            </div>
+            
+            {viewingDocument?.description && (
+              <div>
+                <span className="font-medium">Beskrivelse:</span>
+                <p className="mt-1 text-muted-foreground">{viewingDocument.description}</p>
+              </div>
+            )}
+            
+            <div className="flex gap-2 pt-4 border-t">
+              <Button onClick={() => handleDownload(viewingDocument)}>
+                <Download className="h-4 w-4 mr-2" />
+                Last ned
+              </Button>
+              {viewingDocument?.name?.toLowerCase().includes('timer') && (
+                <Button 
+                  onClick={() => handleDownloadExcel(viewingDocument)}
+                  variant="outline"
+                >
+                  📊 Last ned Excel
+                </Button>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 }
