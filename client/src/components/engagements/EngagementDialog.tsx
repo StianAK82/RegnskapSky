@@ -157,22 +157,33 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
 
   // Auto-populate scopes based on standard tasks
   useEffect(() => {
-    if (open && clientId) {
-      const autoScopes = STANDARD_TASKS.map((task) => {
-        const scopeKey = mapTaskToScope(task.name);
-        const firstFreq = task.frequency[0];
-        const frequency = mapIntervalToFrequency(firstFreq);
+    if (open && clientId && form.getValues('scopes').length === 0) {
+      // Small delay to ensure form is ready
+      setTimeout(() => {
+        const autoScopes = STANDARD_TASKS.map((task) => {
+          const scopeKey = mapTaskToScope(task.name);
+          const firstFreq = task.frequency[0];
+          const frequency = mapIntervalToFrequency(firstFreq);
+          
+          return {
+            scopeKey: scopeKey as any,
+            frequency: frequency as any,
+            comments: task.name
+          };
+        });
         
-        return {
-          scopeKey: scopeKey as any,
-          frequency: frequency as any,
-          comments: task.name
-        };
-      });
-      
-      form.setValue('scopes', autoScopes);
+        form.setValue('scopes', autoScopes, { shouldValidate: true });
+      }, 100);
     }
   }, [open, clientId, form]);
+
+  // Reset form when dialog closes
+  useEffect(() => {
+    if (!open) {
+      form.reset();
+      setCurrentStep(1);
+    }
+  }, [open, form]);
 
   const createEngagementMutation = useMutation({
     mutationFn: async (data: EngagementFormData) => {
