@@ -2302,9 +2302,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/clients/:clientId/tasks", authenticateToken, async (req: AuthRequest, res) => {
     try {
       const { clientId } = req.params;
+      console.log('🔍 SERVER: Henter oppgaver for klient:', clientId);
       const tasks = await storage.getClientTasksByClient(clientId);
+      console.log('🔍 SERVER: Fant', tasks.length, 'oppgaver:', tasks.map(t => t.taskName));
       res.json(tasks);
     } catch (error: any) {
+      console.log('🔍 SERVER: Feil ved henting:', error.message);
       res.status(500).json({ message: "Feil ved henting av klientoppgaver: " + error.message });
     }
   });
