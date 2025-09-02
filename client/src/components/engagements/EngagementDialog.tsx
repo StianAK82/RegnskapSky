@@ -96,6 +96,8 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
     enabled: !!clientId && !!open
   });
   console.log('🔍 useQuery config - enabled:', !!clientId && !!open, 'clientId:', clientId, 'open:', open);
+  console.log('🔍 clientTasks data:', clientTasks);
+  console.log('🔍 tasksLoading:', tasksLoading, 'tasksError:', tasksError);
 
   // Debug the API call
   useEffect(() => {
