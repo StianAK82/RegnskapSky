@@ -1371,20 +1371,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/time-entries", authenticateToken, async (req: AuthRequest, res) => {
-    try {
-      const entryData = insertTimeEntrySchema.parse({
-        ...req.body,
-        tenantId: req.user!.tenantId,
-        userId: req.user!.id,
-      });
-      
-      const entry = await storage.createTimeEntry(entryData);
-      res.status(201).json(entry);
-    } catch (error: any) {
-      res.status(400).json({ message: "Feil ved registrering av timer: " + error.message });
-    }
-  });
 
   app.put("/api/time-entries/:id", authenticateToken, async (req: AuthRequest, res) => {
     try {
