@@ -197,7 +197,7 @@ export default function Timer() {
 
     addTimeEntryMutation.mutate({
       clientId: newTimeEntry.clientId,
-      userId: newTimeEntry.employeeId,
+      employeeId: newTimeEntry.employeeId, // Keep as employeeId, backend will map to userId
       description: newTimeEntry.description,
       date: new Date(newTimeEntry.date),
       timeSpent: parseFloat(totalHours.toFixed(2)),
