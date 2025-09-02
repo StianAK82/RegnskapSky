@@ -781,6 +781,12 @@ export const insertTimeEntrySchema = createInsertSchema(timeEntries).omit({
       throw new Error(`Invalid timeSpent value: ${val}. Must be a positive number.`);
     }
     return num;
+  }),
+  date: z.union([z.string(), z.date()]).transform((val) => {
+    if (typeof val === 'string') {
+      return new Date(val);
+    }
+    return val;
   })
 });
 
