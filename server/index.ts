@@ -1,5 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
+import { TaskSchedulerService } from "./services/task-scheduler";
 import path from "path";
 
 const app = express();
@@ -109,5 +110,9 @@ app.use((req, res, next) => {
     reusePort: true,
   }, () => {
     console.log(`RegnskapsAI serving on port ${port}`);
+    
+    // Start the automatic task scheduler
+    const scheduler = TaskSchedulerService.getInstance();
+    scheduler.start();
   });
 })();

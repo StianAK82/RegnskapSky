@@ -916,6 +916,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Task Scheduler Management
+  app.get("/api/tasks/scheduler/status", authenticateToken, requireRole(["admin", "oppdragsansvarlig"]), async (req: AuthRequest, res) => {
+    try {
+      const { TaskSchedulerService } = await import("./services/task-scheduler");
+      const scheduler = TaskSchedulerService.getInstance();
+      const status = scheduler.getStatus();
+      
+      res.json({
+        ...status,
+        message: status.isRunning ? 'Scheduler kjører' : 'Scheduler er stoppet'
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: "Feil ved henting av scheduler status: " + error.message });
+    }
+  });
+
+  app.post("/api/tasks/scheduler/trigger", authenticateToken, requireRole(["admin", "oppdragsansvarlig"]), async (req: AuthRequest, res) => {
+    try {
+      const { TaskSchedulerService } = await import("./services/task-scheduler");
+      const scheduler = TaskSchedulerService.getInstance();
+      
+      // Manually trigger task processing
+      await (scheduler as any).processRecurringTasks();
+      
+      res.json({ 
+        success: true, 
+        message: "Gjentagende oppgaver prosessert manuelt"
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: "Feil ved manuell kjøring av scheduler: " + error.message });
+    }
+  });
+
   // Employee management
   app.get("/api/employees", authenticateToken, async (req: AuthRequest, res) => {
     try {
