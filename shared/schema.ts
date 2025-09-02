@@ -39,6 +39,13 @@ export const tenants = pgTable("tenants", {
   email: text("email"),
   phone: text("phone"),
   subscriptionPlan: text("subscription_plan").default("basic"),
+  subscriptionStatus: text("subscription_status").default("trial"), // trial, active, suspended, cancelled
+  billingContact: text("billing_contact"),
+  billingEmail: text("billing_email"),
+  monthlyRate: decimal("monthly_rate").default("799"),
+  trialStartDate: timestamp("trial_start_date").defaultNow(),
+  trialEndDate: timestamp("trial_end_date"),
+  lastBilledDate: timestamp("last_billed_date"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

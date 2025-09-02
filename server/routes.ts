@@ -2875,6 +2875,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // System Owner Billing Routes (KUN for stian@zaldo.no)
+  app.get('/api/system-owner/billing', authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      // Sjekk at kun systemets eier har tilgang
+      if (req.user!.email !== 'stian@zaldo.no') {
+        return res.status(403).json({ message: 'Kun systemets eier har tilgang til faktureringsdata' });
+      }
+
+      // Hent alle tenants med deres lisensinformasjon
+      const tenantsData = await db
+        .select({
+          id: tenants.id,
+          name: tenants.name,
+          orgNumber: tenants.orgNumber,
+          email: tenants.email,
+          subscriptionStatus: tenants.subscriptionStatus,
+          monthlyRate: tenants.monthlyRate,
+          trialStartDate: tenants.trialStartDate,
+          trialEndDate: tenants.trialEndDate,
+          lastBilledDate: tenants.lastBilledDate,
+          createdAt: tenants.createdAt,
+        })
+        .from(tenants)
+        .orderBy(tenants.createdAt);
+
+      // For hver tenant, hent antall lisensierte brukere
+      const enrichedTenants = await Promise.all(
+        tenantsData.map(async (tenant) => {
+          const [licenseCount] = await db
+            .select({ count: sql<number>`count(*)` })
+            .from(users)
+            .where(
+              and(
+                eq(users.tenantId, tenant.id),
+                eq(users.isLicensed, true)
+              )
+            );
+
+          const licensedUsers = licenseCount.count;
+          const baseRate = parseFloat(tenant.monthlyRate || '799');
+          const userLicenseCost = licensedUsers * 500; // 500 kr per bruker
+          const totalMonthlyAmount = baseRate + userLicenseCost;
+
+          return {
+            ...tenant,
+            licensedUsers,
+            totalMonthlyAmount,
+            monthlyRate: baseRate,
+            trialEndDate: tenant.trialStartDate ? 
+              new Date(new Date(tenant.trialStartDate).getTime() + 30 * 24 * 60 * 60 * 1000).toISOString() : // 30 dagers prøveperiode
+              null
+          };
+        })
+      );
+
+      res.json(enrichedTenants);
+    } catch (error: any) {
+      console.error('Error fetching system billing data:', error);
+      res.status(500).json({ message: 'Feil ved henting av faktureringsoversikt: ' + error.message });
+    }
+  });
+
   return httpServer;
 }
 
