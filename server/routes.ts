@@ -2376,8 +2376,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("DEBUG: Request body:", req.body);
       console.log("DEBUG: User info:", { id: req.user!.id, tenantId: req.user!.tenantId });
       
-      const timeEntryData = insertTimeEntrySchema.parse({
+      // Clean up taskId if it's empty string
+      const cleanBody = {
         ...req.body,
+        taskId: req.body.taskId === '' ? undefined : req.body.taskId
+      };
+      
+      const timeEntryData = insertTimeEntrySchema.parse({
+        ...cleanBody,
         userId: req.user!.id, // Always use current logged in user
         tenantId: req.user!.tenantId,
       });
@@ -2398,6 +2404,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.status(201).json(timeEntry);
     } catch (error: any) {
+      console.log("DEBUG: Time entry error:", error.message);
+      console.log("DEBUG: Full error:", error);
       res.status(400).json({ message: "Feil ved registrering av timer: " + error.message });
     }
   });
