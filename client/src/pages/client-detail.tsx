@@ -92,7 +92,7 @@ const STANDARD_TASKS = [
   { name: 'Bokføring', frequency: ['Daglig', 'Ukentlig', 'Månedlig'] },
   { name: 'MVA', frequency: ['2 vær mnd', 'Kvartalsvis'] },
   { name: 'Lønn', frequency: ['Månedlig'] },
-  { name: 'Bankavstemming', frequency: ['Daglig', 'Ukentlig'] },
+  { name: 'Bankavstemming', frequency: ['Daglig', 'Ukentlig', 'Månedlig'] },
   { name: 'Kontoavstemming', frequency: ['Månedlig', 'Kvartalsvis'] }
 ];
 
