@@ -2914,8 +2914,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             );
 
           const licensedUsers = licenseCount.count;
-          const baseRate = parseFloat(tenant.monthlyRate || '799');
-          const userLicenseCost = licensedUsers * 500; // 500 kr per bruker
+          const baseRate = 2500; // Fast basepris
+          const userLicenseCost = licensedUsers * 500; // 500 kr per lisensiert bruker
           const totalMonthlyAmount = baseRate + userLicenseCost;
 
           return {
