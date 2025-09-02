@@ -210,6 +210,7 @@ export default function ClientDetail() {
     mutationFn: (data: any) => apiRequest('POST', `/api/clients/${clientId}/tasks`, data).then(res => res.json()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/clients', clientId, 'tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/clients/task-overview'] });
       setIsTaskModalOpen(false);
       setTaskData({
         taskName: '',
@@ -262,6 +263,7 @@ export default function ClientDetail() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/clients', clientId, 'tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/clients/task-overview'] });
       toast({
         title: "Oppgaveplaner lagret",
         description: "Standardoppgaver er konfigurert for denne klienten."
