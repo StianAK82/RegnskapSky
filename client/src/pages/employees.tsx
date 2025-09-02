@@ -27,6 +27,8 @@ interface Employee {
   salary?: number;
   notes?: string;
   isActive: boolean;
+  userId?: string;
+  isLicensed?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -135,6 +137,27 @@ export default function Employees() {
       toast({
         title: 'Feil',
         description: error.message || 'Kunne ikke slette ansatt',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const toggleLicenseMutation = useMutation({
+    mutationFn: async ({ employeeId, isLicensed }: { employeeId: string; isLicensed: boolean }) => {
+      const response = await apiRequest('PATCH', `/api/employees/${employeeId}/license`, { isLicensed });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/employees'] });
+      toast({
+        title: 'Lisens oppdatert',
+        description: data.isLicensed ? 'Lisens aktivert for ansatt' : 'Lisens deaktivert for ansatt',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Feil',
+        description: error.message || 'Kunne ikke oppdatere lisens',
         variant: 'destructive',
       });
     },
@@ -477,9 +500,21 @@ export default function Employees() {
                             <p className="text-sm text-gray-600">{employee.position}</p>
                           </div>
                         </div>
-                        <Badge className="bg-green-100 text-green-800">
-                          {employee.isActive ? 'Aktiv' : 'Inaktiv'}
-                        </Badge>
+                        <div className="flex flex-col gap-1">
+                          <Badge className="bg-green-100 text-green-800">
+                            {employee.isActive ? 'Aktiv' : 'Inaktiv'}
+                          </Badge>
+                          {employee.isLicensed !== undefined && (
+                            <Badge 
+                              className={employee.isLicensed 
+                                ? "bg-blue-100 text-blue-800" 
+                                : "bg-gray-100 text-gray-800"
+                              }
+                            >
+                              {employee.isLicensed ? 'Lisensiert' : 'Ikke lisens'}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
 
                       <div className="space-y-2">
@@ -511,25 +546,47 @@ export default function Employees() {
                         )}
                       </div>
 
-                      <div className="flex space-x-2 mt-4">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEdit(employee)}
-                          className="flex-1"
-                        >
-                          <i className="fas fa-edit mr-1"></i>
-                          Rediger
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDelete(employee)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <i className="fas fa-trash mr-1"></i>
-                          Slett
-                        </Button>
+                      <div className="flex flex-col gap-2 mt-4">
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEdit(employee)}
+                            className="flex-1"
+                          >
+                            <i className="fas fa-edit mr-1"></i>
+                            Rediger
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDelete(employee)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <i className="fas fa-trash mr-1"></i>
+                            Slett
+                          </Button>
+                        </div>
+                        
+                        {employee.isLicensed !== undefined && (
+                          <Button
+                            variant={employee.isLicensed ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => toggleLicenseMutation.mutate({
+                              employeeId: employee.id,
+                              isLicensed: !employee.isLicensed
+                            })}
+                            disabled={toggleLicenseMutation.isPending}
+                            className="w-full"
+                          >
+                            {toggleLicenseMutation.isPending ? (
+                              <i className="fas fa-spinner fa-spin mr-2"></i>
+                            ) : (
+                              <i className={`fas ${employee.isLicensed ? 'fa-user-minus' : 'fa-user-plus'} mr-2`}></i>
+                            )}
+                            {employee.isLicensed ? 'Deaktiver lisens' : 'Aktiver lisens'}
+                          </Button>
+                        )}
                       </div>
                     </CardContent>
                   </Card>

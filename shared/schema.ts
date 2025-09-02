@@ -23,6 +23,8 @@ export const users = pgTable("users", {
   twoFactorSecret: text("two_factor_secret"), // TOTP secret
   twoFactorEnabled: boolean("two_factor_enabled").default(true),
   twoFactorBackupCodes: text("two_factor_backup_codes").array(), // Backup codes
+  isLicensed: boolean("is_licensed").default(true), // License tracking for billing
+  verifiedAt: timestamp("verified_at"), // When license was verified/activated
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -397,6 +399,60 @@ export const pluginConfigurations = pgTable("plugin_configurations", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Subscription Management (new licensing model)
+export const subscriptions = pgTable("subscriptions", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull(),
+  plan: text("plan").notNull().default("basic"), // basic, premium, enterprise
+  basePrice: decimal("base_price", { precision: 10, scale: 2 }).notNull().default("2500"), // 2500 NOK base
+  activeFrom: timestamp("active_from").notNull().defaultNow(),
+  activeTo: timestamp("active_to"),
+  status: text("status").notNull().default("active"), // active, cancelled, suspended
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Licensed Employees tracking (for billing)
+export const licensedEmployees = pgTable("licensed_employees", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull(),
+  userId: uuid("user_id").notNull(),
+  period: text("period").notNull(), // YYYY-MM format
+  isLicensed: boolean("is_licensed").notNull().default(true),
+  verifiedAt: timestamp("verified_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Invoice types for billing
+export const invoiceLineTypes = ["MAIN_LICENSE", "USER_LICENSE", "ADDON"] as const;
+export type InvoiceLineType = typeof invoiceLineTypes[number];
+
+// Invoices for billing periods
+export const invoices = pgTable("invoices", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull(),
+  invoiceId: text("invoice_id").notNull().unique(), // External invoice reference
+  periodStart: timestamp("period_start").notNull(),
+  periodEnd: timestamp("period_end").notNull(),
+  totalAmount: decimal("total_amount", { precision: 12, scale: 2 }).notNull().default("0"),
+  status: text("status").notNull().default("draft"), // draft, sent, paid, overdue, cancelled
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Invoice lines for detailed billing
+export const invoiceLines = pgTable("invoice_lines", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  invoiceId: uuid("invoice_id").notNull(),
+  type: text("type").notNull().$type<InvoiceLineType>(),
+  description: text("description").notNull(),
+  qty: integer("qty").notNull().default(1),
+  unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  metadata: jsonb("metadata"), // Additional data like userId for USER_LICENSE
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // AML/KYC External Partner Integration
 export const amlProviders = pgTable("aml_providers", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -591,6 +647,45 @@ export const integrationsRelations = relations(integrations, ({ one }) => ({
   }),
 }));
 
+// Relations for licensing tables
+export const subscriptionsRelations = relations(subscriptions, ({ one, many }) => ({
+  tenant: one(tenants, {
+    fields: [subscriptions.tenantId],
+    references: [tenants.id],
+  }),
+  invoices: many(invoices),
+}));
+
+export const licensedEmployeesRelations = relations(licensedEmployees, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [licensedEmployees.tenantId],
+    references: [tenants.id],
+  }),
+  user: one(users, {
+    fields: [licensedEmployees.userId],
+    references: [users.id],
+  }),
+}));
+
+export const invoicesRelations = relations(invoices, ({ one, many }) => ({
+  tenant: one(tenants, {
+    fields: [invoices.tenantId],
+    references: [tenants.id],
+  }),
+  subscription: one(subscriptions, {
+    fields: [invoices.tenantId],
+    references: [subscriptions.tenantId],
+  }),
+  lines: many(invoiceLines),
+}));
+
+export const invoiceLinesRelations = relations(invoiceLines, ({ one }) => ({
+  invoice: one(invoices, {
+    fields: [invoiceLines.invoiceId],
+    references: [invoices.id],
+  }),
+}));
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -746,6 +841,31 @@ export const insertAmlCheckSchema = createInsertSchema(amlChecks).omit({
   updatedAt: true,
 });
 
+// Insert schemas for licensing tables
+export const insertSubscriptionSchema = createInsertSchema(subscriptions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertLicensedEmployeeSchema = createInsertSchema(licensedEmployees).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertInvoiceSchema = createInsertSchema(invoices).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertInvoiceLineSchema = createInsertSchema(invoiceLines).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  type: z.enum(invoiceLineTypes),
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -787,3 +907,13 @@ export type AmlProvider = typeof amlProviders.$inferSelect;
 export type InsertAmlProvider = z.infer<typeof insertAmlProviderSchema>;
 export type AmlCheck = typeof amlChecks.$inferSelect;
 export type InsertAmlCheck = z.infer<typeof insertAmlCheckSchema>;
+
+// Licensing types
+export type Subscription = typeof subscriptions.$inferSelect;
+export type InsertSubscription = z.infer<typeof insertSubscriptionSchema>;
+export type LicensedEmployee = typeof licensedEmployees.$inferSelect;
+export type InsertLicensedEmployee = z.infer<typeof insertLicensedEmployeeSchema>;
+export type Invoice = typeof invoices.$inferSelect;
+export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
+export type InvoiceLine = typeof invoiceLines.$inferSelect;
+export type InsertInvoiceLine = z.infer<typeof insertInvoiceLineSchema>;

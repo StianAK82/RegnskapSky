@@ -1,0 +1,103 @@
+Du jobber i et TypeScript/Node-prosjekt med filer som server/auth.ts, server/routes.ts, server/storage.ts og shared/schema.ts. Implementer en enkel lisensmodell slik at hver gang en ny ansatt opprettes, så registreres automatisk en ekstra brukerlisens-kostnad (500 NOK/mnd) for den aktuelle tenant’en. Hovedlisens (2 500 NOK/mnd) finnes fra før som en linje i abonnementet per tenant.
+
+⚠️ Viktig krav: Ikke endre eksisterende kode. All ny logikk skal legges til i nye filer/funksjoner eller som utvidelser (services, utils, nye tabeller). Eksisterende ruter og schema skal kun suppleres via nye felt/tabeller, ikke endres eller slettes.
+
+Krav (funksjonelt)
+
+Ved opprettelse av ansatt (POST /employees eller tilsvarende rute/service):
+
+Sett users.isLicensed = true som default.
+
+Opprett/oppdater en lisens-registrering for inneværende fakturaperiode for tenant’en, slik at månedsbeløpet øker med 500 NOK.
+
+Registreringen må være idempotent: samme bruker skal ikke telles to ganger i samme periode.
+
+Modeller & datalagring (legg til/utvid i shared/schema.ts):
+
+Opprett nye tabeller (ikke endre eksisterende):
+
+subscriptions (tenantId, plan, basePrice, activeFrom, activeTo, status)
+
+licensedEmployees (tenantId, userId, period (YYYY-MM), isLicensed, verifiedAt, createdAt)
+
+invoices (tenantId, invoiceId, periodStart, periodEnd, totalAmount, status)
+
+invoice_lines (invoiceId, type['MAIN_LICENSE'|'USER_LICENSE'|'ADDON'], description, qty, unitPrice, amount, metadata)
+
+Legg kun til nye felter hvis nødvendig (users.isLicensed, users.verifiedAt).
+
+Fakturaperiode & oppførsel:
+
+Bruk kalendermåned som periode (YYYY-MM).
+
+Ved første opprettelse av ansatt i en måned:
+
+Upsert licensedEmployees.
+
+Upsert en invoice_lines av type USER_LICENSE.
+
+Oppdater invoices.totalAmount.
+
+Ikke behov for proratering i denne versjonen.
+
+Rolle- og sikkerhet:
+
+Kun admin (inkl. revisor=admin) kan opprette ansatte.
+
+Bruk tenantId fra auth-context.
+
+Kjør inserts/updates i en transaksjon.
+
+Toggle lisens (Admin UI/API):
+
+Ny rute PATCH /employees/:id/license for å sette isLicensed true/false.
+
+true → opprett/vedlikehold registreringer.
+
+false → ingen nye linjer for fremtidige perioder, men behold historikk.
+
+Abonnementsvisning:
+
+Utvid med nytt endepunkt (ikke endre eksisterende):
+
+Admin: ser hovedlisens (2 500) + brukerlisenser (500 × antall) + tilleggsposter.
+
+Systemeier: ser alle selskaper med total summering, ingen klientdata.
+
+Tekniske detaljer
+
+Opprett nye hjelpefunksjoner i et service-lag:
+
+getOrCreateDraftInvoice(tenantId, period)
+
+upsertLicensedEmployee(tenantId, userId, period)
+
+upsertUserLicenseLine(invoiceId, userId, period, price = 500)
+
+Lag ny util currentPeriod(): string → "YYYY-MM".
+
+Bruk transaksjoner for konsistens.
+
+Migrasjon
+
+Lag migrasjoner for nye tabeller/felter.
+
+Ikke rør eksisterende tabeller utover å legge til felt (isLicensed, verifiedAt).
+
+Tester
+
+Opprettelse av ansatt → registrering + fakturalinje opprettes.
+
+Samme ansatt opprettes igjen → ingen duplikat.
+
+Toggle lisens av/på fungerer iht. krav.
+
+Feil → rollback.
+
+Akseptansekriterier
+
+Ny ansatt øker månedssum med 500 NOK.
+
+GET /subscription (ny rute) returnerer hovedlisens + brukerlisenser + tillegg.
+
+Systemeier ser alle tenants summeringer uten klientdata.

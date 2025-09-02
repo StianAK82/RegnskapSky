@@ -18,7 +18,8 @@ export function Sidebar() {
   ];
 
   const adminNavigation = [
-    { name: 'Abonnement', href: '/subscriptions', icon: 'fas fa-credit-card', roles: ['admin'] },
+    { name: 'Abonnement', href: '/subscription', icon: 'fas fa-credit-card', roles: ['admin', 'lisensadmin'] },
+    { name: 'Fakturaer', href: '/subscriptions', icon: 'fas fa-file-invoice-dollar', roles: ['admin'] },
     { name: 'Integrasjoner', href: '/integrations', icon: 'fas fa-plug', roles: ['admin'] },
   ];
 

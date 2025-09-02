@@ -6,6 +6,8 @@ import { authenticateToken, requireRole, requireSameTenant, hashPassword, compar
 import { categorizeDocument, generateAccountingSuggestions, askAccountingQuestion, analyzeDocumentImage } from "./services/openai";
 import { sendTaskNotification, sendWelcomeEmail, sendSubscriptionNotification } from "./services/sendgrid";
 import { bronnoyundService } from "./services/bronnoyund";
+import { registerLicensingRoutes } from "./routes/licensing";
+import { LicensingService } from "./services/licensing";
 import multer from "multer";
 import * as XLSX from "xlsx";
 import * as speakeasy from "speakeasy";
@@ -923,14 +925,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/employees", authenticateToken, requireRole(["admin", "oppdragsansvarlig"]), async (req: AuthRequest, res) => {
     try {
+      const tenantId = req.user!.tenantId;
+      const licensingService = new LicensingService();
+      
       const employeeData = insertEmployeeSchema.parse({
         ...req.body,
-        tenantId: req.user!.tenantId,
+        tenantId,
       });
       
+      // Create employee first
       const employee = await storage.createEmployee(employeeData);
-      res.status(201).json(employee);
+      
+      // Check if a user already exists for this employee email
+      let user = await storage.getUserByEmail(employee.email);
+      
+      if (!user) {
+        // Create a corresponding user account for the employee (if not exists)
+        const userData = insertUserSchema.parse({
+          username: employee.email,
+          email: employee.email,
+          firstName: employee.firstName,
+          lastName: employee.lastName,
+          role: "ansatt", // Default role for employees
+          tenantId,
+          isLicensed: true, // Default to licensed as per requirements
+          isActive: true
+        });
+        
+        user = await storage.createUser(userData);
+      } else {
+        // Update existing user to be licensed
+        await storage.updateUser2FA(user.id, user.twoFactorSecret || '', user.twoFactorBackupCodes || []);
+      }
+      
+      // Process licensing for the new/updated employee
+      await licensingService.processNewEmployeeLicense(tenantId, user.id);
+      
+      res.status(201).json({
+        ...employee,
+        userId: user.id,
+        isLicensed: true
+      });
     } catch (error: any) {
+      console.error('Error creating employee with licensing:', error);
       res.status(400).json({ message: "Feil ved opprettelse av ansatt: " + error.message });
     }
   });
@@ -2185,6 +2222,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     }
   });
+
+  // Register licensing routes
+  registerLicensingRoutes(app);
 
   const httpServer = createServer(app);
   
