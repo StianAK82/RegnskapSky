@@ -261,6 +261,7 @@ export default function Clients() {
           taskType: 'standard',
           description: `${config.frequency} ${taskName.toLowerCase()}`,
           dueDate: config.dueDate ? new Date(config.dueDate).toISOString() : null,
+          interval: 'yearly',
           repeatInterval: config.frequency.toLowerCase(),
           assignedTo: config.assignedTo || null,
           status: 'ikke_startet'

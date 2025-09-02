@@ -150,7 +150,7 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
         title: 'Oppdragsavtale ferdigstilt',
         description: 'PDF-er er generert og engagement er aktivt',
       });
-      console.log('PDF URLs:', data.pdfUrls);
+      console.log('PDF URLs:', (data as any).pdfUrls);
     },
     onError: (error: any) => {
       toast({
