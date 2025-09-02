@@ -18,8 +18,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
-import { Users, FileText } from 'lucide-react';
+import { Users, FileText, Plus } from 'lucide-react';
 import { ExcelImportDialog } from '@/components/clients/ExcelImportDialog';
+import { EngagementDialog } from '@/components/engagements/EngagementDialog';
 
 interface Client {
   id: string;
@@ -1308,10 +1309,27 @@ function ClientListItem({ client, onEdit }: { client: any; onEdit: (client: any)
           </div>
           
           {/* Right section - Action buttons */}
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2">
             <span className="text-xs text-gray-500">
               {new Date(client.createdAt).toLocaleDateString('nb-NO')}
             </span>
+            
+            {/* Engagement Dialog Button */}
+            <EngagementDialog 
+              clientId={client.id}
+              clientName={client.name}
+              trigger={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-orange-600 border-orange-300 hover:bg-orange-50"
+                >
+                  <FileText className="mr-1 h-3 w-3" />
+                  Oppdragsavtale
+                </Button>
+              }
+            />
+            
             <Button
               variant="outline"
               size="sm"

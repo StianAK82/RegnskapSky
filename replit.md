@@ -4,11 +4,14 @@
 Zaldo CRM is a comprehensive Norwegian multi-tenant accounting and client management system designed to streamline financial and client operations. It features strict licensing, robust role-based authentication, and tenant isolation. Key capabilities include automated task generation, AML compliance tracking, forced time registration, comprehensive auditing, and role-specific dashboards. The project aims to provide a complete, secure, and efficient solution for accounting and client management needs, built from scratch with a strong focus on compliance and user experience.
 
 ## Recent Changes (September 2025)
+- **Complete Engagement/Oppdragsavtale System**: Full implementation matching Regnskap Norge specification with 4-step wizard
+- **Frontend Integration**: "Opprett Oppdragsavtale" buttons added to client overview and detail pages
+- **Comprehensive Schema**: All required fields - systems, signatories, scopes, pricing models, DPA compliance
+- **Modular Backend**: Complete API endpoints in `/src/modules/engagements/` with service/controller pattern
+- **PDF Generation**: Placeholder for automatic PDF creation upon engagement finalization
 - **System Owner Billing Module**: Exclusive billing dashboard for system owner (stian@zaldo.no) with comprehensive tenant overview and Excel export
 - **Pricing Structure Fixed**: Corrected to 2500 kr base + 500 kr per licensed user for accurate billing calculations
 - **Excel Export**: Full Excel export functionality for system billing with detailed customer data and revenue breakdown
-- **Modular Architecture Implemented**: Complete restructure with `/src/modules/` organization for better maintainability
-- **Client/Engagement System**: Advanced engagement management with comprehensive schema for Norwegian accounting practices
 - **Test Data**: Created 13 test customers with 19 licensed users across different subscription statuses
 - **Access Control**: Strict security ensuring only system owner can access billing module
 
