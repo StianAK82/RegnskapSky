@@ -137,23 +137,7 @@ function AuthenticatedRoutes() {
         )} 
       />
       
-      <Route 
-        path="/documents-fixed" 
-        component={() => (
-          <ProtectedRoute allowedRoles={['admin', 'ansatt']}>
-            <DocumentsClean />
-          </ProtectedRoute>
-        )} 
-      />
-      
-      <Route 
-        path="/documents-test" 
-        component={() => (
-          <ProtectedRoute allowedRoles={['admin', 'ansatt']}>
-            <DocumentsSimple />
-          </ProtectedRoute>
-        )} 
-      />
+
       
       <Route 
         path="/documenter" 
