@@ -1174,25 +1174,7 @@ export default function Clients() {
 
 // List Item Component for List View
 function ClientListItem({ client, onEdit }: { client: any; onEdit: (client: any) => void }) {
-  const [bilagCount, setBilagCount] = useState<{ count: number; processed: number } | null>(null);
   const { toast } = useToast();
-  
-  // Fetch bilag count when component mounts
-  useEffect(() => {
-    const fetchBilagCount = async () => {
-      try {
-        const response = await apiRequest('GET', `/api/bilag-count/${client.id}`);
-        if (response.ok) {
-          const data = await response.json();
-          setBilagCount(data);
-        }
-      } catch (error) {
-        // Silently handle - not critical for display
-      }
-    };
-    
-    fetchBilagCount();
-  }, [client.id]);
 
   // Accounting system URLs mapping
   const accountingSystemUrls = {
@@ -1298,22 +1280,10 @@ function ClientListItem({ client, onEdit }: { client: any; onEdit: (client: any)
               )}
             </div>
             
-            {/* Bilag count */}
-            <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900">
-                {bilagCount ? bilagCount.count : 0}
-              </div>
-              <div className="text-xs text-gray-500">
-                {bilagCount && bilagCount.processed > 0 ? `${bilagCount.processed} behandlet` : 'behandlet'}
-              </div>
-            </div>
           </div>
           
           {/* Right section - Action buttons */}
           <div className="flex items-center space-x-2">
-            <span className="text-xs text-gray-500">
-              {new Date(client.createdAt).toLocaleDateString('nb-NO')}
-            </span>
             
             {/* Engagement Dialog Button */}
             <EngagementDialog 
