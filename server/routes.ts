@@ -2261,11 +2261,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Enhanced Time Tracking with modal functionality
   app.post("/api/time-entries", authenticateToken, async (req: AuthRequest, res) => {
     try {
+      console.log("DEBUG: Request body:", req.body);
+      console.log("DEBUG: User info:", { id: req.user!.id, tenantId: req.user!.tenantId });
+      
       const timeEntryData = insertTimeEntrySchema.parse({
         ...req.body,
         userId: req.user!.id, // Always use current logged in user
         tenantId: req.user!.tenantId,
       });
+      
+      console.log("DEBUG: Parsed time entry data:", timeEntryData);
       
       const timeEntry = await storage.createTimeEntry(timeEntryData);
       
