@@ -665,6 +665,11 @@ export const insertTimeEntrySchema = createInsertSchema(timeEntries).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  timeSpent: z.union([z.string(), z.number()]).transform((val) => {
+    const num = typeof val === 'string' ? parseFloat(val) : val;
+    return isNaN(num) ? 0 : num;
+  }).refine((val) => val > 0, { message: "Time spent must be greater than 0" })
 });
 
 export const insertDocumentSchema = createInsertSchema(documents).omit({
