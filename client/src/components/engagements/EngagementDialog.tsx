@@ -90,10 +90,19 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
   const queryClient = useQueryClient();
 
   // Fetch client tasks to auto-populate scopes
-  const { data: clientTasks } = useQuery({
+  const { data: clientTasks, isLoading: tasksLoading, error: tasksError } = useQuery({
     queryKey: [`/api/clients/${clientId}/tasks`],
     enabled: !!clientId
   });
+
+  // Debug the API call
+  useEffect(() => {
+    console.log('🔍 API Call Debug:');
+    console.log('🔍 URL:', `/api/clients/${clientId}/tasks`);
+    console.log('🔍 Loading:', tasksLoading);
+    console.log('🔍 Error:', tasksError);
+    console.log('🔍 Data:', clientTasks);
+  }, [clientId, tasksLoading, tasksError, clientTasks]);
 
   // Function to map task names to scope categories
   const mapTaskToScope = (taskName: string) => {
@@ -151,7 +160,12 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
 
   // Auto-populate scopes based on client tasks
   useEffect(() => {
+    console.log('🔍 DEBUG: useEffect triggered');
+    console.log('🔍 clientId:', clientId);
+    console.log('🔍 clientTasks:', clientTasks);
+    
     if (clientTasks && clientTasks.length > 0) {
+      console.log('🔍 Found', clientTasks.length, 'tasks');
       const taskScopes = new Map();
       
       clientTasks.forEach((task: any) => {
