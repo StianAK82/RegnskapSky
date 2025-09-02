@@ -195,9 +195,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get current user info
-  app.get('/api/auth/me', authenticateToken, async (req: AuthRequest, res) => {
+  app.get('/api/auth/me', authenticateToken as any, async (req: AuthRequest, res) => {
     try {
-      const user = await storage.getUser(req.user.userId);
+      const user = await storage.getUser(req.user!.id);
       if (!user) {
         return res.status(404).json({ message: 'Bruker ikke funnet' });
       }
@@ -280,13 +280,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Billing routes for invoicing new customers
-  app.get('/api/billing/invoices', authenticateToken, async (req, res) => {
+  app.get('/api/billing/invoices', authenticateToken as any, async (req, res) => {
     try {
       // For now, return mock invoices - integrate with actual billing system later
       const mockInvoices = [
         {
           id: '1',
-          tenantId: req.user.tenantId,
+          tenantId: req.user!.tenantId,
           customerName: 'Testfirma AS',
           customerEmail: 'test@testfirma.no',
           amount: 799,
@@ -304,7 +304,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/billing/invoices', authenticateToken, async (req, res) => {
+  app.post('/api/billing/invoices', authenticateToken as any, async (req, res) => {
     try {
       const { customerName, customerEmail, amount, description, dueDate } = req.body;
       
@@ -312,7 +312,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Invoice Ninja, or create your own invoice management
       const newInvoice = {
         id: Date.now().toString(),
-        tenantId: req.user.tenantId,
+        tenantId: req.user!.tenantId,
         customerName,
         customerEmail,
         amount,
@@ -333,7 +333,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/billing/invoices/:id/send', authenticateToken, async (req, res) => {
+  app.post('/api/billing/invoices/:id/send', authenticateToken as any, async (req, res) => {
     try {
       const { id } = req.params;
       
@@ -348,10 +348,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Owner dashboard metrics
-  app.get('/api/owner/metrics', authenticateToken, async (req, res) => {
+  app.get('/api/owner/metrics', authenticateToken as any, async (req, res) => {
     try {
       // Check if user is system owner
-      const user = req.user;
+      const user = req.user!;
       if (user.email !== 'stian@zaldo.no') {
         return res.status(403).json({ error: 'Access denied - owner only' });
       }
@@ -485,7 +485,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Dashboard metrics
-  app.get("/api/dashboard/metrics", authenticateToken, async (req: AuthRequest, res) => {
+  app.get("/api/dashboard/metrics", authenticateToken as any, async (req: AuthRequest, res) => {
     try {
       const metrics = await storage.getDashboardMetrics(req.user!.tenantId);
       res.json(metrics);
@@ -495,7 +495,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Client task overview
-  app.get("/api/clients/task-overview", authenticateToken, async (req: AuthRequest, res) => {
+  app.get("/api/clients/task-overview", authenticateToken as any, async (req: AuthRequest, res) => {
     try {
       const clientsOverview = await storage.getClientsWithTaskOverview(req.user!.tenantId);
       res.json(clientsOverview);
@@ -505,7 +505,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Client management
-  app.get("/api/clients", authenticateToken, async (req: AuthRequest, res) => {
+  app.get("/api/clients", authenticateToken as any, async (req: AuthRequest, res) => {
     try {
       const { include } = req.query;
       const clients = await storage.getClientsByTenant(req.user!.tenantId);
@@ -575,7 +575,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/clients", authenticateToken, requireRole(["admin", "oppdragsansvarlig"]), async (req: AuthRequest, res) => {
+  app.post("/api/clients", authenticateToken as any, requireRole(["admin", "oppdragsansvarlig"]) as any, async (req: AuthRequest, res) => {
     try {
       // Validate client data
       const clientData = insertClientSchema.parse({
