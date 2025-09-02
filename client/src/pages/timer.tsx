@@ -43,7 +43,6 @@ export default function Timer() {
   // Form state for adding time entry
   const [newTimeEntry, setNewTimeEntry] = useState({
     clientId: '',
-    employeeId: '',
     description: '',
     date: new Date().toISOString().split('T')[0],
     hours: '',
@@ -155,7 +154,6 @@ export default function Timer() {
       setShowAddTimeDialog(false);
       setNewTimeEntry({
         clientId: '',
-        employeeId: '',
         description: '',
         date: new Date().toISOString().split('T')[0],
         hours: '',
@@ -177,10 +175,10 @@ export default function Timer() {
     const minutes = parseInt(newTimeEntry.minutes || '0');
     const totalHours = hours + (minutes / 60);
     
-    if (!newTimeEntry.clientId || !newTimeEntry.employeeId || !newTimeEntry.description.trim()) {
+    if (!newTimeEntry.clientId || !newTimeEntry.description.trim()) {
       toast({
         title: 'Manglende informasjon',
-        description: 'Vennligst fyll ut klient, ansatt og beskrivelse.',
+        description: 'Vennligst fyll ut klient og beskrivelse.',
         variant: 'destructive',
       });
       return;
@@ -197,7 +195,6 @@ export default function Timer() {
 
     addTimeEntryMutation.mutate({
       clientId: newTimeEntry.clientId,
-      employeeId: newTimeEntry.employeeId, // Keep as employeeId, backend will map to userId
       description: newTimeEntry.description,
       date: new Date(newTimeEntry.date),
       timeSpent: parseFloat(totalHours.toFixed(2)),
@@ -289,35 +286,18 @@ export default function Timer() {
               <DialogTitle>Legg til timeregistrering</DialogTitle>
             </DialogHeader>
             <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="client">Klient</Label>
-                  <Select value={newTimeEntry.clientId} onValueChange={(value) => setNewTimeEntry(prev => ({ ...prev, clientId: value }))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Velg klient" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {allClients.map((client: any) => (
-                        <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="employee">Ansatt</Label>
-                  <Select value={newTimeEntry.employeeId} onValueChange={(value) => setNewTimeEntry(prev => ({ ...prev, employeeId: value }))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Velg ansatt" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {allEmployees.map((employee: any) => (
-                        <SelectItem key={employee.id} value={employee.id}>
-                          {employee.firstName} {employee.lastName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div>
+                <Label htmlFor="client">Klient</Label>
+                <Select value={newTimeEntry.clientId} onValueChange={(value) => setNewTimeEntry(prev => ({ ...prev, clientId: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Velg klient" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {allClients.map((client: any) => (
+                      <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               
               <div>

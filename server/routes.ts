@@ -2261,12 +2261,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Enhanced Time Tracking with modal functionality
   app.post("/api/time-entries", authenticateToken, async (req: AuthRequest, res) => {
     try {
-      // Map employeeId to userId if provided from frontend, otherwise use current user
-      const { employeeId, ...bodyWithoutEmployeeId } = req.body;
-      
       const timeEntryData = insertTimeEntrySchema.parse({
-        ...bodyWithoutEmployeeId,
-        userId: employeeId || req.user!.id, // Use employeeId if provided, otherwise current user  
+        ...req.body,
+        userId: req.user!.id, // Always use current logged in user
         tenantId: req.user!.tenantId,
       });
       
