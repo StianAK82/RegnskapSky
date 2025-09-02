@@ -4,15 +4,13 @@
 Zaldo CRM is a comprehensive Norwegian multi-tenant accounting and client management system designed to streamline financial and client operations. It features strict licensing, robust role-based authentication, and tenant isolation. Key capabilities include automated task generation, AML compliance tracking, forced time registration, comprehensive auditing, and role-specific dashboards. The project aims to provide a complete, secure, and efficient solution for accounting and client management needs, built from scratch with a strong focus on compliance and user experience.
 
 ## Recent Changes (September 2025)
-- **Licensing System**: Comprehensive multi-tenant licensing system fully implemented and tested
-- **Employee License Management**: Real-time toggle functionality for individual employee licenses with instant status badges and cost tracking
-- **Subscription Dashboard**: Live abonnement overview with automatic updates showing accurate license costs, user counts, and billing breakdown
-- **Real-time Integration**: Complete frontend/backend synchronization with cache invalidation and auto-refresh for immediate data updates
-- **Document Management**: Successfully implemented document deletion functionality with trash can icons and confirmation dialogs
-- **AML/KYC Design**: Improved layout with closer positioning of text and Verified logo using bullet separator
-- **Time Registration**: Dashboard time registration working correctly; manual time entry has ongoing validation issues that require further investigation
-- **Server Stability**: Resolved port conflicts and database connection problems
-- **UI Enhancements**: Multiple design improvements and user experience optimizations
+- **System Owner Billing Module**: Exclusive billing dashboard for system owner (stian@zaldo.no) with comprehensive tenant overview
+- **Pricing Structure Fixed**: Corrected to 2500 kr base + 500 kr per licensed user for accurate billing calculations
+- **Excel Export**: Added Excel export functionality for system billing with detailed customer data and revenue breakdown
+- **Test Data**: Created 13 test customers with 19 licensed users across different subscription statuses
+- **Access Control**: Strict security ensuring only system owner can access billing module
+- **Real-time Updates**: Automatic refresh every 30 seconds with accurate license counting and revenue calculations
+- **Architecture Restructure**: Planning new modular structure with `/src/modules/` organization for better code maintainability
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
@@ -36,6 +34,19 @@ Development approach: Focus on completing working features and moving forward wi
 - **Authentication**: JWT-based with bcrypt for password hashing and 2FA.
 - **Access Control**: Middleware-based Role-Based Access Control (RBAC).
 - **API Structure**: RESTful API.
+
+### Planned Modular Structure
+```
+/src
+  /db (database schema + migrations)
+  /modules/engagements (service, repo, controller, templates)
+  /modules/reports (reporting system with AI-powered generation)
+  /modules/clients (client management and AML/KYC workflows)
+  /modules/billing (system owner billing and subscription management)
+  /routes (API route definitions)
+  /ui (form components and client cards for web client)
+  /templates (document and email templates)
+```
 
 ### Database Design
 - **Database**: PostgreSQL with Neon serverless driver.
