@@ -1282,6 +1282,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/clients/:clientId/tasks", authenticateToken, requireRole(["admin", "oppdragsansvarlig", "regnskapsfører"]), async (req: AuthRequest, res) => {
     try {
       const { clientId } = req.params;
+      console.log('Creating task for client:', clientId);
+      console.log('Request body:', JSON.stringify(req.body, null, 2));
+      
       const taskData = insertClientTaskSchema.parse({
         ...req.body,
         clientId,
@@ -1291,6 +1294,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const task = await storage.createClientTask(taskData);
       res.status(201).json(task);
     } catch (error: any) {
+      console.log('Task creation validation error:', error);
       res.status(400).json({ message: "Feil ved opprettelse av klientoppgave: " + error.message });
     }
   });
