@@ -144,14 +144,14 @@ export default function Employees() {
 
   const toggleLicenseMutation = useMutation({
     mutationFn: async ({ employeeId, isLicensed }: { employeeId: string; isLicensed: boolean }) => {
-      const response = await apiRequest('PATCH', `/api/employees/${employeeId}/license`, { isLicensed });
+      const response = await apiRequest('POST', `/api/employees/${employeeId}/toggle-license`, { isLicensed });
       return response.json();
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/employees'] });
       toast({
         title: 'Lisens oppdatert',
-        description: data.isLicensed ? 'Lisens aktivert for ansatt' : 'Lisens deaktivert for ansatt',
+        description: data.message || (data.isLicensed ? 'Lisens aktivert for ansatt' : 'Lisens deaktivert for ansatt'),
       });
     },
     onError: (error: any) => {

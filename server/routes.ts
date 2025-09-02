@@ -917,7 +917,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/employees", authenticateToken, async (req: AuthRequest, res) => {
     try {
       const employees = await storage.getEmployeesByTenant(req.user!.tenantId);
-      res.json(employees);
+      
+      // Enrich employees with user license status
+      const employeesWithLicense = await Promise.all(
+        employees.map(async (employee) => {
+          const user = await storage.getUserByEmail(employee.email);
+          return {
+            ...employee,
+            isLicensed: user?.isLicensed || false,
+            userId: user?.id
+          };
+        })
+      );
+      
+      res.json(employeesWithLicense);
     } catch (error: any) {
       res.status(500).json({ message: "Feil ved henting av ansatte: " + error.message });
     }
@@ -2224,6 +2237,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Register licensing routes
+  // Licensing routes
+  app.get('/api/subscription', authenticateToken, requireRole(['admin', 'lisensadmin']), async (req: AuthRequest, res) => {
+    try {
+      const tenantId = req.user!.tenantId;
+      const licensingService = new LicensingService();
+      
+      const subscriptionSummary = await licensingService.getSubscriptionSummary(tenantId);
+      res.json(subscriptionSummary);
+    } catch (error: any) {
+      console.error('Error fetching subscription summary:', error);
+      res.status(500).json({ message: 'Feil ved henting av abonnementsoversikt: ' + error.message });
+    }
+  });
+
+  app.post('/api/employees/:employeeId/toggle-license', authenticateToken, requireRole(['admin', 'lisensadmin']), async (req: AuthRequest, res) => {
+    try {
+      const { employeeId } = req.params;
+      const { isLicensed } = req.body;
+      const tenantId = req.user!.tenantId;
+      const licensingService = new LicensingService();
+      
+      // Get employee to find associated user
+      const employee = await storage.getEmployeeById(employeeId);
+      if (!employee) {
+        return res.status(404).json({ message: 'Ansatt ikke funnet' });
+      }
+      
+      const user = await storage.getUserByEmail(employee.email);
+      if (!user) {
+        return res.status(404).json({ message: 'Bruker ikke funnet for ansatt' });
+      }
+      
+      await licensingService.toggleEmployeeLicense(tenantId, user.id, isLicensed);
+      
+      res.json({ success: true, message: isLicensed ? 'Lisens aktivert' : 'Lisens deaktivert' });
+    } catch (error: any) {
+      console.error('Error toggling employee license:', error);
+      res.status(500).json({ message: 'Feil ved endring av lisens: ' + error.message });
+    }
+  });
+
   registerLicensingRoutes(app);
 
   const httpServer = createServer(app);

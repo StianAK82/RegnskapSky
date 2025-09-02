@@ -279,19 +279,14 @@ export class LicensingService {
   }
 
   /**
-   * Get subscription summary for tenant
+   * Get subscription summary for frontend display
    */
-  async getSubscriptionSummary(tenantId: string): Promise<{
-    mainLicense: number;
-    userLicenses: number;
-    totalUsers: number;
-    totalAmount: number;
-    period: string;
-  }> {
-    const period = currentPeriod();
+  async getSubscriptionSummary(tenantId: string, period: string = currentPeriod()) {
+    // Get current period invoice
+    const invoice = await this.getOrCreateDraftInvoice(tenantId, period);
     
-    // Count licensed employees for current period
-    const licensedUsers = await db
+    // Get active licensed employees for this period
+    const activeLicenses = await db
       .select()
       .from(licensedEmployees)
       .where(
@@ -302,16 +297,28 @@ export class LicensingService {
         )
       );
 
-    const totalUsers = licensedUsers.length;
-    const userLicensesAmount = totalUsers * USER_LICENSE_PRICE;
-    const totalAmount = BASE_LICENSE_PRICE + userLicensesAmount;
+    const userLicenseCount = activeLicenses.length;
+    const userLicenseAmount = userLicenseCount * USER_LICENSE_PRICE;
+    const totalAmount = BASE_LICENSE_PRICE + userLicenseAmount;
 
     return {
-      mainLicense: BASE_LICENSE_PRICE,
-      userLicenses: userLicensesAmount,
-      totalUsers,
-      totalAmount,
-      period
+      period,
+      mainLicense: {
+        description: 'Hovedlisens RegnskapsAI',
+        amount: BASE_LICENSE_PRICE,
+        currency: 'NOK'
+      },
+      userLicenses: {
+        description: 'Brukerlisenser',
+        unitPrice: USER_LICENSE_PRICE,
+        quantity: userLicenseCount,
+        amount: userLicenseAmount,
+        currency: 'NOK'
+      },
+      total: {
+        amount: totalAmount,
+        currency: 'NOK'
+      }
     };
   }
 }
