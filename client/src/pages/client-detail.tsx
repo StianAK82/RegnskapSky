@@ -224,6 +224,19 @@ export default function ClientDetail() {
     }
   });
 
+  // Map Norwegian frequencies to English enum values
+  const mapFrequencyToInterval = (frequency: string): string => {
+    switch (frequency.toLowerCase()) {
+      case 'daglig': return 'weekly'; // Closest match for daily
+      case 'ukentlig': return 'weekly';
+      case 'månedlig': return 'monthly';
+      case '2 vær mnd': return 'bi-monthly';
+      case 'kvartalsvis': return 'monthly'; // Quarterly not in enum, use monthly
+      case 'årlig': return 'yearly';
+      default: return 'monthly';
+    }
+  };
+
   const saveStandardTasksMutation = useMutation({
     mutationFn: async (schedules: any) => {
       const tasks = Object.entries(schedules)
@@ -233,6 +246,7 @@ export default function ClientDetail() {
           taskType: 'standard',
           description: `${config.frequency} ${taskName.toLowerCase()}`,
           dueDate: config.dueDate ? new Date(config.dueDate).toISOString() : null,
+          interval: mapFrequencyToInterval(config.frequency),
           repeatInterval: config.frequency.toLowerCase(),
           assignedTo: config.assignedTo || null,
           status: 'ikke_startet'
