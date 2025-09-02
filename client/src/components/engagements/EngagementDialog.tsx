@@ -90,19 +90,10 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
   const queryClient = useQueryClient();
 
   // Fetch client tasks to auto-populate scopes
-  const { data: clientTasks, isLoading: tasksLoading, error: tasksError } = useQuery({
+  const { data: clientTasks } = useQuery({
     queryKey: [`/api/clients/${clientId}/tasks`],
     enabled: !!clientId
   });
-
-  // Debug logging
-  useEffect(() => {
-    console.log('EngagementDialog Debug:');
-    console.log('- clientId:', clientId);
-    console.log('- tasksLoading:', tasksLoading);
-    console.log('- tasksError:', tasksError);
-    console.log('- clientTasks:', clientTasks);
-  }, [clientId, tasksLoading, tasksError, clientTasks]);
 
   // Function to map task names to scope categories
   const mapTaskToScope = (taskName: string) => {
@@ -160,18 +151,12 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
 
   // Auto-populate scopes based on client tasks
   useEffect(() => {
-    console.log('Auto-scope useEffect triggered');
-    console.log('clientTasks:', clientTasks);
-    
     if (clientTasks && clientTasks.length > 0) {
-      console.log('Processing', clientTasks.length, 'tasks...');
       const taskScopes = new Map();
       
       clientTasks.forEach((task: any) => {
-        console.log('Processing task:', task.taskName, 'with interval:', task.repeatInterval);
         const scopeKey = mapTaskToScope(task.taskName);
         const frequency = mapIntervalToFrequency(task.repeatInterval);
-        console.log('Mapped to scope:', scopeKey, 'frequency:', frequency);
         
         // Group tasks by scope, use most frequent occurrence
         if (taskScopes.has(scopeKey)) {
@@ -192,14 +177,9 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
         comments: data.comments
       }));
 
-      console.log('Generated autoScopes:', autoScopes);
-
       if (autoScopes.length > 0) {
         form.setValue('scopes', autoScopes);
-        console.log('Set scopes in form:', autoScopes);
       }
-    } else {
-      console.log('No tasks found or tasks array is empty');
     }
   }, [clientTasks, form]);
 
