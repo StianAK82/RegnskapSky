@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -89,6 +89,45 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Fetch client tasks to auto-populate scopes
+  const { data: clientTasks } = useQuery({
+    queryKey: [`/api/clients/${clientId}/tasks`],
+    enabled: !!clientId
+  });
+
+  // Function to map task names to scope categories
+  const mapTaskToScope = (taskName: string) => {
+    const name = taskName.toLowerCase();
+    if (name.includes('bokføring') || name.includes('kontoavstemming') || name.includes('bankavstemming')) {
+      return 'bookkeeping';
+    }
+    if (name.includes('mva')) {
+      return 'mva';
+    }
+    if (name.includes('lønn')) {
+      return 'payroll';
+    }
+    if (name.includes('årsoppgjør')) {
+      return 'year_end';
+    }
+    if (name.includes('faktur')) {
+      return 'invoicing';
+    }
+    return 'other';
+  };
+
+  // Function to map repeatInterval to frequency
+  const mapIntervalToFrequency = (repeatInterval: string) => {
+    if (!repeatInterval) return 'ved_behov';
+    const interval = repeatInterval.toLowerCase();
+    if (interval.includes('daglig')) return 'løpende';
+    if (interval.includes('månedlig')) return 'månedlig';
+    if (interval.includes('kvartal')) return 'kvartalsvis';
+    if (interval.includes('årlig')) return 'årlig';
+    if (interval.includes('2 vær mnd')) return 'månedlig';
+    return 'ved_behov';
+  };
+
   const form = useForm<EngagementFormData>({
     resolver: zodResolver(engagementSchema),
     defaultValues: {
@@ -109,6 +148,40 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
       }]
     }
   });
+
+  // Auto-populate scopes based on client tasks
+  useEffect(() => {
+    if (clientTasks && clientTasks.length > 0) {
+      const taskScopes = new Map();
+      
+      clientTasks.forEach((task: any) => {
+        const scopeKey = mapTaskToScope(task.taskName);
+        const frequency = mapIntervalToFrequency(task.repeatInterval);
+        
+        // Group tasks by scope, use most frequent occurrence
+        if (taskScopes.has(scopeKey)) {
+          const existing = taskScopes.get(scopeKey);
+          // Keep the more frequent one (löpende > månedlig > kvartalsvis > årlig > ved_behov)
+          const frequencyPriority = { 'løpende': 5, 'månedlig': 4, 'kvartalsvis': 3, 'årlig': 2, 'ved_behov': 1 };
+          if (frequencyPriority[frequency] > frequencyPriority[existing.frequency]) {
+            taskScopes.set(scopeKey, { frequency, comments: `Basert på: ${task.taskName}` });
+          }
+        } else {
+          taskScopes.set(scopeKey, { frequency, comments: `Basert på: ${task.taskName}` });
+        }
+      });
+
+      const autoScopes = Array.from(taskScopes.entries()).map(([scopeKey, data]) => ({
+        scopeKey: scopeKey as any,
+        frequency: data.frequency as any,
+        comments: data.comments
+      }));
+
+      if (autoScopes.length > 0) {
+        form.setValue('scopes', autoScopes);
+      }
+    }
+  }, [clientTasks, form]);
 
   const createEngagementMutation = useMutation({
     mutationFn: async (data: EngagementFormData) => {
