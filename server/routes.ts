@@ -1326,6 +1326,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const task = await storage.createClientTask(taskData);
       console.log('✅ SERVER: Oppgave opprettet:', task);
+      
+      // Force cache refresh for task overview
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.status(201).json(task);
     } catch (error: any) {
       console.error('❌ SERVER: Validering feilet:', error);
