@@ -2260,39 +2260,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Enhanced Time Tracking with modal functionality
   app.post("/api/time-entries", authenticateToken, async (req: AuthRequest, res) => {
-    console.log("🔍 Time entry request body:", JSON.stringify(req.body, null, 2));
-    console.log("🔍 timeSpent type:", typeof req.body.timeSpent, "value:", req.body.timeSpent);
-    
     try {
-      // Validate and convert timeSpent
-      let timeSpent = req.body.timeSpent;
-      
-      // Convert string to number if needed
-      if (typeof timeSpent === 'string') {
-        timeSpent = parseFloat(timeSpent);
-      }
-      
-      // Validate timeSpent is not 0 or invalid
-      if (!timeSpent || isNaN(timeSpent) || timeSpent <= 0) {
-        console.log("❌ Invalid timeSpent:", timeSpent);
-        return res.status(400).json({ message: "Feil ved registrering av timer: Tiden må være større enn 0" });
-      }
-      
-      // Prepare data with converted timeSpent
-      const requestData = {
+      const timeEntryData = insertTimeEntrySchema.parse({
         ...req.body,
-        timeSpent,
         userId: req.user!.id,
         tenantId: req.user!.tenantId,
-      };
-      
-      console.log("🔍 Prepared data:", JSON.stringify(requestData, null, 2));
-      
-      const timeEntryData = insertTimeEntrySchema.parse(requestData);
-      console.log("✅ Parsed time entry data successfully");
+      });
       
       const timeEntry = await storage.createTimeEntry(timeEntryData);
-      console.log("✅ Created time entry:", timeEntry.id);
       
       // Send notification if time entry is for a specific task
       if (timeEntry.taskId) {
@@ -2306,7 +2281,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.status(201).json(timeEntry);
     } catch (error: any) {
-      console.error("❌ Time entry error:", error);
       res.status(400).json({ message: "Feil ved registrering av timer: " + error.message });
     }
   });
