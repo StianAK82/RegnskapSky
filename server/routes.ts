@@ -2593,8 +2593,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   };
 
-  // Handle both GET and POST for downloads using standard authentication
-  const downloadHandler = async (req: AuthRequest, res: any) => {
+  // Handle both GET and POST for downloads with flexible token handling
+  const downloadHandler = async (req: any, res: any) => {
+    // First try standard authentication middleware
+    if (req.headers.authorization) {
+      try {
+        // Use the existing authenticateToken logic
+        const token = req.headers.authorization.replace('Bearer ', '');
+        const jwt = require('jsonwebtoken');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET!);
+        req.user = decoded;
+      } catch (error) {
+        return res.status(401).json({ message: 'Invalid authorization token' });
+      }
+    } else {
+      // Fallback to query/body token for direct download links
+      const tokenFromQuery = req.query.token as string;
+      const tokenFromBody = req.body?.token as string;
+      const token = tokenFromQuery || tokenFromBody;
+
+      if (!token) {
+        return res.status(401).json({ message: 'No token provided' });
+      }
+
+      try {
+        const jwt = require('jsonwebtoken');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET!);
+        req.user = decoded;
+      } catch (error) {
+        return res.status(401).json({ message: 'Invalid token' });
+      }
+    }
     try {
       const documentId = req.params.id;
       
@@ -2640,9 +2669,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   };
 
-  // Register both GET and POST handlers for downloads with authentication
-  app.get('/api/documents/:id/download', authenticateToken, downloadHandler);
-  app.post('/api/documents/:id/download', authenticateToken, downloadHandler);
+  // Register both GET and POST handlers for downloads with flexible authentication
+  app.get('/api/documents/:id/download', downloadHandler);
+  app.post('/api/documents/:id/download', downloadHandler);
   
   // Simple test endpoint to verify POST is working
   app.post('/api/test-post', (req, res) => {
