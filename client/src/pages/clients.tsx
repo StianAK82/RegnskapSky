@@ -1221,71 +1221,44 @@ function ClientListItem({ client, onEdit }: { client: any; onEdit: (client: any)
 
   return (
     <Card className="hover:shadow-md transition-all duration-200 border-l-4 border-l-blue-500">
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between">
-          {/* Left section - Client info */}
-          <div className="flex items-center space-x-6 flex-1">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center space-x-3">
-                <h3 className={`text-lg font-semibold truncate ${
-                  client.amlStatus !== 'approved' || client.kycStatus !== 'approved' 
-                    ? 'text-red-600' 
-                    : 'text-gray-900'
-                }`}>
-                  {client.name}
-                </h3>
-                {(client.amlStatus !== 'approved' || client.kycStatus !== 'approved') && (
-                  <div className="flex items-center gap-1 px-2 py-1 bg-red-100 border border-red-300 rounded-md">
-                    <i className="fas fa-exclamation-triangle text-red-600 text-xs"></i>
-                    <span className="text-xs text-red-700 font-medium">Ikke lovlig klient</span>
-                  </div>
-                )}
-                <div className="flex space-x-2">
-                  {getAMLStatusBadge(client.amlStatus)}
-                  {getKYCStatusBadge(client.kycStatus)}
-                </div>
-              </div>
-              {client.orgNumber && (
-                <p className="text-sm text-gray-500 mt-1">Org.nr: {client.orgNumber}</p>
-              )}
+      <CardContent className="p-3">
+        {/* Top Row - Main client info */}
+        <div className="flex items-start justify-between mb-2">
+          <div className="flex-1 min-w-0 mr-4">
+            <div className="flex items-center space-x-2 mb-1">
+              <h3 className={`text-base font-semibold truncate ${
+                client.amlStatus !== 'approved' || client.kycStatus !== 'approved' 
+                  ? 'text-red-600' 
+                  : 'text-gray-900'
+              }`}>
+                {client.name}
+              </h3>
               {(client.amlStatus !== 'approved' || client.kycStatus !== 'approved') && (
-                <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-md">
-                  <p className="text-xs text-red-700 flex items-center">
-                    <i className="fas fa-shield-alt mr-1"></i>
-                    AML/KYC-verifisering må fullføres før klienten kan behandles lovlig
-                  </p>
-                </div>
-              )}
-              {client.responsiblePersonFirstName && (
-                <div className="flex items-center mt-2 text-sm text-gray-600">
-                  <i className="fas fa-user-tie mr-2"></i>
-                  {client.responsiblePersonFirstName} {client.responsiblePersonLastName}
+                <div className="flex items-center gap-1 px-1.5 py-0.5 bg-red-100 border border-red-300 rounded text-xs">
+                  <i className="fas fa-exclamation-triangle text-red-600 text-xs"></i>
+                  <span className="text-red-700 font-medium">Ikke lovlig</span>
                 </div>
               )}
             </div>
-            
-            {/* Center section - Accounting system */}
-            <div className="text-center">
-              {client.accountingSystem ? (
-                <button
-                  onClick={handleAccountingSystemRedirect}
-                  className="flex items-center text-blue-600 hover:text-blue-800 transition-colors"
-                >
-                  <i className="fas fa-calculator mr-2"></i>
-                  {client.accountingSystem}
-                  <i className="fas fa-external-link-alt ml-1 text-xs"></i>
-                </button>
-              ) : (
-                <span className="text-gray-400 text-sm">Ingen system</span>
-              )}
-            </div>
-            
+            {client.orgNumber && (
+              <p className="text-xs text-gray-500">Org.nr: {client.orgNumber}</p>
+            )}
           </div>
           
-          {/* Right section - Action buttons */}
-          <div className="flex items-center space-x-2">
+          {/* Action buttons */}
+          <div className="flex items-center space-x-1.5">
+            {/* Compact accounting system */}
+            {client.accountingSystem && (
+              <button
+                onClick={handleAccountingSystemRedirect}
+                className="flex items-center px-2 py-1 text-xs text-blue-600 hover:text-blue-800 border border-blue-200 rounded hover:bg-blue-50"
+              >
+                <i className="fas fa-calculator mr-1"></i>
+                {client.accountingSystem}
+                <i className="fas fa-external-link-alt ml-1 text-xs"></i>
+              </button>
+            )}
             
-            {/* Engagement Dialog Button */}
             <EngagementDialog 
               clientId={client.id}
               clientName={client.name}
@@ -1293,7 +1266,7 @@ function ClientListItem({ client, onEdit }: { client: any; onEdit: (client: any)
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-orange-600 border-orange-300 hover:bg-orange-50"
+                  className="text-xs px-2 py-1 h-7 text-orange-600 border-orange-300 hover:bg-orange-50"
                 >
                   <FileText className="mr-1 h-3 w-3" />
                   Oppdragsavtale
@@ -1305,39 +1278,55 @@ function ClientListItem({ client, onEdit }: { client: any; onEdit: (client: any)
               variant="outline"
               size="sm"
               onClick={() => window.open('https://www.verified.eu/no', '_blank')}
-              className="text-purple-600 border-purple-300 hover:bg-purple-50 relative"
+              className="text-xs px-2 py-1 h-7 text-purple-600 border-purple-300 hover:bg-purple-50"
             >
-              <div className="flex items-center">
-                <i className="fas fa-shield-alt mr-1"></i>
-                AML/KYC
-                <div className="flex items-center ml-2 pl-2 border-l border-purple-300">
-                  <img 
-                    src="/verified-logo.png" 
-                    alt="Powered by Verified" 
-                    className="h-3 w-auto"
-                  />
-                </div>
-              </div>
+              <i className="fas fa-shield-alt mr-1"></i>
+              AML/KYC
             </Button>
+            
             <Button
               variant="outline"
               size="sm"
               onClick={() => onEdit(client)}
-              className="text-blue-600 border-blue-300 hover:bg-blue-50"
+              className="text-xs px-2 py-1 h-7 text-blue-600 border-blue-300 hover:bg-blue-50"
             >
               <i className="fas fa-edit mr-1"></i>
               Rediger
             </Button>
+            
             <Button
               variant="outline"
               size="sm"
               onClick={() => window.location.href = `/client-detail/${client.id}`}
-              className="text-green-600 border-green-300 hover:bg-green-50"
+              className="text-xs px-2 py-1 h-7 text-green-600 border-green-300 hover:bg-green-50"
             >
               <i className="fas fa-tasks mr-1"></i>
               Oppgaver
             </Button>
           </div>
+        </div>
+
+        {/* Bottom Row - Status badges and warnings */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <div className="flex space-x-1.5">
+              {getAMLStatusBadge(client.amlStatus)}
+              {getKYCStatusBadge(client.kycStatus)}
+            </div>
+            {client.responsiblePersonFirstName && (
+              <div className="flex items-center text-xs text-gray-600">
+                <i className="fas fa-user-tie mr-1"></i>
+                {client.responsiblePersonFirstName} {client.responsiblePersonLastName}
+              </div>
+            )}
+          </div>
+          
+          {(client.amlStatus !== 'approved' || client.kycStatus !== 'approved') && (
+            <div className="text-xs text-red-600 flex items-center">
+              <i className="fas fa-shield-alt mr-1"></i>
+              <span>Krever AML/KYC-verifisering</span>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
