@@ -25,8 +25,11 @@ import {
   Timer,
   BarChart3,
   Shield,
-  UserCheck
+  UserCheck,
+  FileText,
+  Download
 } from 'lucide-react';
+import { EngagementDialog } from '@/components/engagements/EngagementDialog';
 
 interface Client {
   id: string;
@@ -362,6 +365,16 @@ export default function ClientDetail() {
           </div>
         </div>
         <div className="flex items-center space-x-2">
+          <EngagementDialog 
+            clientId={clientId!}
+            clientName={client.name}
+            trigger={
+              <Button variant="outline">
+                <FileText className="mr-2 h-4 w-4" />
+                Opprett Oppdragsavtale
+              </Button>
+            }
+          />
           <Button onClick={() => setIsTimeModalOpen(true)}>
             <Clock className="mr-2 h-4 w-4" />
             Registrer timer
@@ -370,8 +383,9 @@ export default function ClientDetail() {
       </div>
 
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview">Oversikt</TabsTrigger>
+          <TabsTrigger value="engagements">Oppdragsavtaler</TabsTrigger>
           <TabsTrigger value="responsibles">Ansvarlige</TabsTrigger>
           <TabsTrigger value="tasks">Oppgaver</TabsTrigger>
           <TabsTrigger value="time">Timeføring</TabsTrigger>
@@ -468,6 +482,48 @@ export default function ClientDetail() {
           </div>
         </TabsContent>
 
+        {/* Engagements Tab */}
+        <TabsContent value="engagements" className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-semibold">Oppdragsavtaler</h3>
+            <EngagementDialog 
+              clientId={clientId!}
+              clientName={client.name}
+              trigger={
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Ny Oppdragsavtale
+                </Button>
+              }
+            />
+          </div>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Engasjementsoversikt</CardTitle>
+              <CardDescription>
+                Oversikt over alle oppdragsavtaler for denne klienten
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8 text-gray-500">
+                <FileText className="mx-auto h-12 w-12 mb-4 text-gray-300" />
+                <p className="text-lg mb-2">Ingen oppdragsavtaler ennå</p>
+                <p className="text-sm mb-4">Opprett din første oppdragsavtale for å komme i gang</p>
+                <EngagementDialog 
+                  clientId={clientId!}
+                  clientName={client.name}
+                  trigger={
+                    <Button variant="outline">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Opprett første oppdragsavtale
+                    </Button>
+                  }
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="tasks" className="space-y-6">
           <div className="flex justify-between items-center">
