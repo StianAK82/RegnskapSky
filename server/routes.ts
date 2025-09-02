@@ -2527,6 +2527,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete a document
+  app.delete("/api/documents/:id", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const documentId = req.params.id;
+      
+      // Get the document to verify ownership
+      const documents = await storage.getDocumentsByTenant(req.user!.tenantId);
+      const document = documents.find(d => d.id === documentId);
+      
+      if (!document) {
+        return res.status(404).json({ message: "Dokument ikke funnet" });
+      }
+      
+      // Delete the document
+      await storage.deleteDocument(documentId);
+      
+      res.status(200).json({ message: "Dokument slettet" });
+    } catch (error: any) {
+      console.error('Error deleting document:', error);
+      res.status(500).json({ message: 'Feil ved sletting av dokument: ' + error.message });
+    }
+  });
+
   // Generate report data based on time entries grouped by client
   const generateTimeReportData = async (tenantId: string) => {
     try {

@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
-import { FileText, Download, Upload, Search, Filter, Eye } from 'lucide-react';
+import { FileText, Download, Upload, Search, Filter, Eye, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 export default function Documents() {
@@ -101,6 +101,12 @@ export default function Documents() {
     setViewingDocument(document);
   };
 
+  const handleDelete = (document: any) => {
+    if (window.confirm(`Er du sikker på at du vil slette "${document.name}"? Dette kan ikke angres.`)) {
+      deleteMutation.mutate(document.id);
+    }
+  };
+
   const uploadMutation = useMutation({
     mutationFn: async (formData: FormData) => {
       return apiRequest('POST', '/api/documents/upload', formData);
@@ -116,6 +122,26 @@ export default function Documents() {
       toast({
         title: "Feil",
         description: error.message || "Kunne ikke laste opp dokument",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (documentId: string) => {
+      return apiRequest('DELETE', `/api/documents/${documentId}`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Dokument slettet",
+        description: "Dokumentet er permanent slettet",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/documents'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Feil ved sletting",
+        description: error.message || "Kunne ikke slette dokument",
         variant: "destructive",
       });
     },
@@ -279,6 +305,17 @@ export default function Documents() {
                               📊
                             </Button>
                           )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDelete(document)}
+                            className="text-red-600 hover:text-red-700"
+                            title="Slett dokument"
+                            disabled={deleteMutation.isPending}
+                            data-testid={`button-delete-${document.id}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -343,6 +380,17 @@ export default function Documents() {
                   📊 Last ned Excel
                 </Button>
               )}
+              <Button 
+                onClick={() => {
+                  handleDelete(viewingDocument);
+                  setViewingDocument(null);
+                }}
+                variant="destructive"
+                disabled={deleteMutation.isPending}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Slett
+              </Button>
             </div>
           </div>
         </DialogContent>
