@@ -93,7 +93,10 @@ const STANDARD_TASKS = [
   { name: 'MVA', frequency: ['2 vær mnd', 'Kvartalsvis'] },
   { name: 'Lønn', frequency: ['Månedlig'] },
   { name: 'Bankavstemming', frequency: ['Daglig', 'Ukentlig', 'Månedlig'] },
-  { name: 'Kontoavstemming', frequency: ['Månedlig', 'Kvartalsvis'] }
+  { name: 'Kontoavstemming', frequency: ['Månedlig', 'Kvartalsvis'] },
+  { name: 'Aksjonær oppgave', frequency: ['Årlig'] },
+  { name: 'Skattemelding', frequency: ['Årlig'] },
+  { name: 'Årsoppgjør', frequency: ['Årlig'] }
 ];
 
 const REPEAT_INTERVALS = [
