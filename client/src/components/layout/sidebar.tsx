@@ -14,7 +14,6 @@ export function Sidebar() {
     { name: 'Rapporter', href: '/reports', icon: 'fas fa-chart-bar', roles: ['admin', 'ansatt'] },
     { name: 'Timeføring', href: '/timetracking', icon: 'fas fa-clock', roles: ['admin', 'ansatt'] },
     { name: 'Dokumenter', href: '/documents', icon: 'fas fa-file-invoice', roles: ['admin', 'ansatt'] },
-    { name: 'Dokumenter (Fixed)', href: '/documents-fixed', icon: 'fas fa-file-alt', roles: ['admin', 'ansatt'] },
     { name: 'AI-Assistent', href: '/ai-assistant', icon: 'fas fa-robot', roles: ['admin', 'ansatt'] },
   ];
 

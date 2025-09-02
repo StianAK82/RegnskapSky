@@ -88,7 +88,7 @@ export default function DocumentsFixed() {
   };
 
   return (
-    <AppShell title="Dokumenter (Fixed)" subtitle="Administrer og last ned dokumenter">
+    <AppShell title="Dokumenter" subtitle="Administrer og last ned dokumenter">
       <div className="space-y-6">
         {/* Search and Filter */}
         <Card>
@@ -150,67 +150,60 @@ export default function DocumentsFixed() {
                 </p>
               </div>
             ) : (
-              <div className="rounded-md border">
-                <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'white', border: '1px solid #e5e7eb' }}>
-                  <thead>
-                    <tr style={{ backgroundColor: '#f3f4f6' }}>
-                      <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb', fontWeight: 'bold' }}>Dokument</th>
-                      <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb', fontWeight: 'bold' }}>Kategori</th>
-                      <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb', fontWeight: 'bold' }}>Størrelse</th>
-                      <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb', fontWeight: 'bold' }}>Handlinger</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredDocuments.map((document: any) => (
-                      <tr key={document.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                        <td style={{ padding: '12px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <span style={{ fontSize: '24px' }}>{getDocumentIcon(document.category)}</span>
-                            <div>
-                              <div style={{ fontWeight: '500' }}>{document.name}</div>
-                              <div style={{ fontSize: '12px', color: '#6b7280' }}>{document.description}</div>
-                            </div>
+              <div className="space-y-4">
+                {filteredDocuments.map((document: any) => (
+                  <div
+                    key={document.id}
+                    className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div className="flex-shrink-0">
+                          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <FileText className="h-5 w-5 text-blue-600" />
                           </div>
-                        </td>
-                        <td style={{ padding: '12px' }}>
-                          <span style={{ 
-                            backgroundColor: '#e5e7eb', 
-                            padding: '4px 8px', 
-                            borderRadius: '4px',
-                            fontSize: '12px'
-                          }}>
-                            {document.category}
-                          </span>
-                        </td>
-                        <td style={{ padding: '12px', fontSize: '14px', color: '#6b7280' }}>
-                          {document.size ? formatFileSize(document.size) : 'Ukjent'}
-                        </td>
-                        <td style={{ padding: '12px' }}>
-                          <button
-                            onClick={() => handleViewDocument(document)}
-                            title="Vis rapport med ansattdetaljer"
-                            style={{
-                              backgroundColor: '#3B82F6',
-                              color: 'white',
-                              padding: '8px 16px',
-                              borderRadius: '6px',
-                              border: 'none',
-                              cursor: 'pointer',
-                              fontSize: '12px',
-                              fontWeight: '500',
-                              marginRight: '8px',
-                              transition: 'all 0.2s'
-                            }}
-                            onMouseOver={(e) => (e.target as HTMLElement).style.backgroundColor = '#2563EB'}
-                            onMouseOut={(e) => (e.target as HTMLElement).style.backgroundColor = '#3B82F6'}
-                          >
-                            👁️ Vis rapport
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-sm font-medium text-gray-900 truncate">
+                            {document.name}
+                          </h3>
+                          <p className="text-sm text-gray-500 truncate">
+                            {document.description || 'Ingen beskrivelse'}
+                          </p>
+                          <div className="flex items-center space-x-4 mt-1">
+                            {document.category && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                {document.category}
+                              </span>
+                            )}
+                            <span className="text-xs text-gray-500">
+                              {document.size ? formatFileSize(document.size) : 'Ukjent størrelse'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleViewDocument(document)}
+                          className="h-8 gap-2"
+                        >
+                          <Eye className="h-4 w-4" />
+                          Vis
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 gap-2"
+                        >
+                          <Download className="h-4 w-4" />
+                          Last ned
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </CardContent>
