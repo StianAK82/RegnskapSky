@@ -83,21 +83,22 @@ const FREQUENCY_LABELS = {
   ved_behov: 'Ved behov'
 };
 
+// Standard tasks available for all clients (hardcoded configuration)
+const STANDARD_TASKS = [
+  { name: 'Bokföring', frequency: ['Daglig', 'Ukentlig', 'Månedlig'] },
+  { name: 'MVA', frequency: ['Månedlig', 'Kvartalsvis', '2 vær mnd'] },
+  { name: 'Lønn', frequency: ['Månedlig'] },
+  { name: 'Bankavstemming', frequency: ['Daglig', 'Ukentlig'] },
+  { name: 'Kontoavstemming', frequency: ['Månedlig', 'Kvartalsvis'] },
+  { name: 'Regnskapstemming', frequency: ['Månedlig'] }
+];
+
 export function EngagementDialog({ clientId, clientName, open, onOpenChange, trigger }: EngagementDialogProps) {
   console.log('🔍 EngagementDialog render - clientId:', clientId, 'open:', open);
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-
-  // Fetch client tasks to auto-populate scopes
-  const { data: clientTasks, isLoading: tasksLoading, error: tasksError } = useQuery({
-    queryKey: [`/api/clients/${clientId}/tasks`],
-    enabled: !!clientId && !!open
-  });
-  console.log('🔍 useQuery config - enabled:', !!clientId && !!open, 'clientId:', clientId, 'open:', open);
-  console.log('🔍 clientTasks data:', clientTasks);
-  console.log('🔍 tasksLoading:', tasksLoading, 'tasksError:', tasksError);
 
   // Debug the API call
   useEffect(() => {
@@ -163,31 +164,24 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
     }
   });
 
-  // Auto-populate scopes based on client tasks
+  // Auto-populate scopes based on standard tasks
   useEffect(() => {
-    console.log('🔍 DEBUG: useEffect triggered');
-    console.log('🔍 clientId:', clientId);
-    console.log('🔍 clientTasks:', clientTasks);
-    
-    if (clientTasks && clientTasks.length > 0) {
-      console.log('🔍 Found', clientTasks.length, 'tasks');
+    if (open && clientId) {
+      console.log('🔍 Auto-populating scopes from standard tasks:', STANDARD_TASKS);
+      
       const taskScopes = new Map();
       
-      clientTasks.forEach((task: any) => {
-        const scopeKey = mapTaskToScope(task.taskName);
-        const frequency = mapIntervalToFrequency(task.repeatInterval);
+      STANDARD_TASKS.forEach((task) => {
+        const scopeKey = mapTaskToScope(task.name);
+        const firstFreq = task.frequency[0];
+        const frequency = mapIntervalToFrequency(firstFreq);
         
-        // Group tasks by scope, use most frequent occurrence
-        if (taskScopes.has(scopeKey)) {
-          const existing = taskScopes.get(scopeKey);
-          // Keep the more frequent one (löpende > månedlig > kvartalsvis > årlig > ved_behov)
-          const frequencyPriority = { 'løpende': 5, 'månedlig': 4, 'kvartalsvis': 3, 'årlig': 2, 'ved_behov': 1 };
-          if (frequencyPriority[frequency] > frequencyPriority[existing.frequency]) {
-            taskScopes.set(scopeKey, { frequency, comments: `Basert på: ${task.taskName}` });
-          }
-        } else {
-          taskScopes.set(scopeKey, { frequency, comments: `Basert på: ${task.taskName}` });
-        }
+        console.log('🔍 Mapping:', task.name, '→', scopeKey, 'frequency:', firstFreq, '→', frequency);
+        
+        taskScopes.set(scopeKey, { 
+          frequency, 
+          comments: `Automatisk lagt til basert på ${task.name}` 
+        });
       });
 
       const autoScopes = Array.from(taskScopes.entries()).map(([scopeKey, data]) => ({
@@ -196,11 +190,13 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
         comments: data.comments
       }));
 
+      console.log('🔍 Setting auto-populated scopes:', autoScopes);
+      
       if (autoScopes.length > 0) {
         form.setValue('scopes', autoScopes);
       }
     }
-  }, [clientTasks, form]);
+  }, [open, clientId, form]);
 
   const createEngagementMutation = useMutation({
     mutationFn: async (data: EngagementFormData) => {
