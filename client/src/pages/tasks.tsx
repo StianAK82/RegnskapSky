@@ -48,7 +48,7 @@ const completionSchema = z.object({
   timeSpent: z.string().min(1, 'Timer er påkrevd').refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
     message: 'Timer må være et gyldig tall større enn 0'
   }),
-  completionNotes: z.string().optional(),
+  completionNotes: z.string().min(1, 'Beskrivelse av arbeid er påkrevd'),
 });
 
 type TaskFormData = z.infer<typeof taskSchema>;
@@ -698,14 +698,22 @@ export default function Tasks() {
           }}>
             <DialogContent className="max-w-md">
               <DialogHeader>
-                <DialogTitle>Utfør oppgave og registrer tid</DialogTitle>
+                <DialogTitle>Registrer arbeidstid</DialogTitle>
               </DialogHeader>
               
               {completingTask && (
-                <div className="mb-4">
-                  <p className="font-medium text-gray-900">{completingTask.title}</p>
-                  {completingTask.description && (
-                    <p className="text-sm text-gray-600 mt-1">{completingTask.description}</p>
+                <div className="mb-4 space-y-2">
+                  <div>
+                    <span className="text-sm font-medium text-gray-600">Oppgave: </span>
+                    <span className="font-medium text-gray-900">{completingTask.title}</span>
+                  </div>
+                  {completingTask.clientId && clients && (
+                    <div>
+                      <span className="text-sm font-medium text-gray-600">Klient: </span>
+                      <span className="font-medium text-gray-900">
+                        {clients.find(c => c.id === completingTask.clientId)?.name || 'Ukjent klient'}
+                      </span>
+                    </div>
                   )}
                 </div>
               )}
@@ -717,7 +725,7 @@ export default function Tasks() {
                     name="timeSpent"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Timer brukt *</FormLabel>
+                        <FormLabel>Tid brukt (timer) *</FormLabel>
                         <FormControl>
                           <Input 
                             {...field} 
@@ -738,12 +746,12 @@ export default function Tasks() {
                     name="completionNotes"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Kommentarer (valgfritt)</FormLabel>
+                        <FormLabel>Beskrivelse av arbeid *</FormLabel>
                         <FormControl>
                           <Textarea 
                             {...field} 
                             rows={3} 
-                            placeholder="Eventuelle notater om oppgaven..."
+                            placeholder={`Arbeid på oppgave: ${completingTask?.title || ''}`}
                             data-testid="textarea-completion-notes"
                           />
                         </FormControl>
