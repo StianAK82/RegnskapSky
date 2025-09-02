@@ -18,10 +18,10 @@ import {
   insertTimeEntrySchema, insertDocumentSchema, insertNotificationSchema, insertIntegrationSchema,
   insertCompanyRegistryDataSchema, insertAmlProviderSchema, insertAmlDocumentSchema,
   insertAccountingIntegrationSchema, insertClientChecklistSchema,
-  type User, clientTasks
+  type User, clientTasks, tenants, users
 } from "../shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
