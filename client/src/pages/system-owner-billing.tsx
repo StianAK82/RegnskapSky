@@ -66,6 +66,43 @@ export default function SystemOwnerBilling() {
   const activeCustomers = tenants?.filter(t => t.subscriptionStatus === 'active').length || 0;
   const trialCustomers = tenants?.filter(t => t.subscriptionStatus === 'trial').length || 0;
 
+  const handleExportExcel = async () => {
+    try {
+      const response = await fetch('/api/system-owner/billing?format=excel', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Feil ved eksport');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `systemfakturering_${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast({
+        title: "Excel eksportert",
+        description: "Faktureringsoversikten er lastet ned som Excel-fil",
+      });
+    } catch (error) {
+      toast({
+        title: "Eksport feilet",
+        description: "Kunne ikke eksportere til Excel",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <AppShell title="Systemfakturering" subtitle="Oversikt over alle kunder og fakturering">
@@ -122,8 +159,12 @@ export default function SystemOwnerBilling() {
 
         {/* Kundetabell */}
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Alle kunder</CardTitle>
+            <Button onClick={handleExportExcel} variant="outline" size="sm" data-testid="export-excel-button">
+              <i className="fas fa-file-excel mr-2"></i>
+              Eksporter til Excel
+            </Button>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">

@@ -2883,6 +2883,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: 'Kun systemets eier har tilgang til faktureringsdata' });
       }
 
+      const { format } = req.query;
+
       // Hent alle tenants med deres lisensinformasjon
       const tenantsData = await db
         .select({
@@ -2918,6 +2920,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const userLicenseCost = licensedUsers * 500; // 500 kr per lisensiert bruker
           const totalMonthlyAmount = baseRate + userLicenseCost;
 
+          const formatDate = (date: string | null) => {
+            if (!date) return '';
+            return new Date(date).toLocaleDateString('no-NO');
+          };
+
           return {
             ...tenant,
             licensedUsers,
@@ -2925,10 +2932,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
             monthlyRate: baseRate,
             trialEndDate: tenant.trialStartDate ? 
               new Date(new Date(tenant.trialStartDate).getTime() + 30 * 24 * 60 * 60 * 1000).toISOString() : // 30 dagers prøveperiode
-              null
+              null,
+            formattedTrialStart: formatDate(tenant.trialStartDate),
+            formattedTrialEnd: tenant.trialStartDate ? 
+              formatDate(new Date(new Date(tenant.trialStartDate).getTime() + 30 * 24 * 60 * 60 * 1000).toISOString()) : '',
+            formattedCreatedAt: formatDate(tenant.createdAt),
+            formattedLastBilled: formatDate(tenant.lastBilledDate)
           };
         })
       );
+
+      // Hvis Excel-eksport er forespurt
+      if (format === 'excel') {
+        const excelData = enrichedTenants.map(tenant => ({
+          'Bedriftsnavn': tenant.name,
+          'Org.nummer': tenant.orgNumber,
+          'E-post': tenant.email,
+          'Status': tenant.subscriptionStatus,
+          'Lisensierte brukere': tenant.licensedUsers,
+          'Basepris': `${tenant.monthlyRate} kr`,
+          'Brukerkostnad': `${tenant.licensedUsers * 500} kr`,
+          'Total månedlig': `${tenant.totalMonthlyAmount} kr`,
+          'Prøveperiode start': tenant.formattedTrialStart,
+          'Prøveperiode slutt': tenant.formattedTrialEnd,
+          'Opprettet': tenant.formattedCreatedAt,
+          'Sist fakturert': tenant.formattedLastBilled
+        }));
+
+        const workbook = XLSX.utils.book_new();
+        const worksheet = XLSX.utils.json_to_sheet(excelData);
+        
+        // Sett kolonnebredder
+        const columnWidths = [
+          { wch: 25 }, // Bedriftsnavn
+          { wch: 12 }, // Org.nummer
+          { wch: 30 }, // E-post
+          { wch: 12 }, // Status
+          { wch: 15 }, // Lisensierte brukere
+          { wch: 12 }, // Basepris
+          { wch: 15 }, // Brukerkostnad
+          { wch: 15 }, // Total månedlig
+          { wch: 15 }, // Prøveperiode start
+          { wch: 15 }, // Prøveperiode slutt
+          { wch: 12 }, // Opprettet
+          { wch: 15 }  // Sist fakturert
+        ];
+        worksheet['!cols'] = columnWidths;
+
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Systemfakturering');
+        
+        const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+        const filename = `systemfakturering_${new Date().toISOString().split('T')[0]}.xlsx`;
+        
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.send(buffer);
+        return;
+      }
 
       res.json(enrichedTenants);
     } catch (error: any) {
