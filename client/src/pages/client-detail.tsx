@@ -90,7 +90,7 @@ const ACCOUNTING_SYSTEMS = [
 
 const STANDARD_TASKS = [
   { name: 'Bokføring', frequency: ['Daglig', 'Ukentlig', 'Månedlig'] },
-  { name: 'MVA', frequency: ['Månedlig', 'Kvartalsvis'] },
+  { name: 'MVA', frequency: ['2 vær mnd', 'Kvartalsvis'] },
   { name: 'Lønn', frequency: ['Månedlig'] },
   { name: 'Bankavstemming', frequency: ['Daglig', 'Ukentlig'] },
   { name: 'Kontoavstemming', frequency: ['Månedlig', 'Kvartalsvis'] }
@@ -100,6 +100,8 @@ const REPEAT_INTERVALS = [
   { value: 'daglig', label: 'Daglig' },
   { value: 'ukentlig', label: 'Ukentlig' },
   { value: 'månedlig', label: 'Månedlig' },
+  { value: '2 vær mnd', label: '2 vær mnd' },
+  { value: 'kvartalsvis', label: 'Kvartalsvis' },
   { value: 'årlig', label: 'Årlig' }
 ];
 
