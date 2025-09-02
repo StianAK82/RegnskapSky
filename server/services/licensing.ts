@@ -255,39 +255,19 @@ export class LicensingService {
   }
 
   async toggleEmployeeLicense(tenantId: string, userId: string, isLicensed: boolean): Promise<void> {
-    const period = currentPeriod();
+    console.log(`Toggling license for user ${userId} to ${isLicensed}`);
     
-    await db.transaction(async (tx) => {
-      // Update user license status
-      await tx
-        .update(users)
-        .set({ 
-          isLicensed,
-          verifiedAt: isLicensed ? new Date() : null,
-          updatedAt: new Date()
-        })
-        .where(eq(users.id, userId));
+    // Simple update without complex transactions
+    await db
+      .update(users)
+      .set({ 
+        isLicensed,
+        verifiedAt: isLicensed ? new Date() : null,
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, userId));
 
-      if (isLicensed) {
-        // Add license for current period
-        await this.processNewEmployeeLicense(tenantId, userId);
-      } else {
-        // Update licensed employee record to false for future periods
-        await tx
-          .update(licensedEmployees)
-          .set({ isLicensed: false })
-          .where(
-            and(
-              eq(licensedEmployees.tenantId, tenantId),
-              eq(licensedEmployees.userId, userId),
-              eq(licensedEmployees.period, period)
-            )
-          );
-
-        // Note: We don't remove existing invoice lines to maintain billing history
-        // Future periods won't get new license lines
-      }
-    });
+    console.log(`Successfully updated user license status to ${isLicensed}`);
   }
 
   /**
