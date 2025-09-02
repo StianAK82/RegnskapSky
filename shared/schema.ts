@@ -735,6 +735,11 @@ export const insertClientTaskSchema = createInsertSchema(clientTasks).omit({
   updatedAt: true,
 }).extend({
   interval: z.enum(taskIntervals).optional(),
+  dueDate: z.union([
+    z.string().transform((str) => str ? new Date(str) : null),
+    z.date(),
+    z.null()
+  ]).optional(),
 });
 
 export const insertTaskTemplateSchema = createInsertSchema(taskTemplates).omit({
