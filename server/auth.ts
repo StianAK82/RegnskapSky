@@ -43,7 +43,12 @@ export function verifyToken(token: string): JWTPayload {
 
 export async function authenticateToken(req: AuthRequest, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
-  const token = authHeader && authHeader.split(' ')[1];
+  let token = authHeader && authHeader.split(' ')[1];
+  
+  // Also check for token in query params (for downloads)
+  if (!token) {
+    token = req.query.token as string;
+  }
 
   console.log('Auth check:', {
     hasAuthHeader: !!authHeader,
