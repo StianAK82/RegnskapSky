@@ -2262,7 +2262,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/time-entries", authenticateToken, async (req: AuthRequest, res) => {
     try {
       // Validate timeSpent is not 0
-      if (!req.body.timeSpent || req.body.timeSpent <= 0) {
+      if (typeof req.body.timeSpent !== 'number' || req.body.timeSpent <= 0) {
         return res.status(400).json({ message: "Feil ved registrering av timer: Tiden må være større enn 0" });
       }
       
