@@ -195,9 +195,15 @@ export default function ClientDetail() {
       const schedules: Record<string, any> = {};
       
       clientTasks.forEach((task: any) => {
+        // Find the standard task template to get correct frequency options
+        const standardTask = STANDARD_TASKS.find(t => t.name === task.taskName);
+        const validFrequency = standardTask?.frequency.includes(task.repeatInterval) 
+          ? task.repeatInterval 
+          : standardTask?.frequency[0] || 'Månedlig';
+          
         schedules[task.taskName] = {
           enabled: true,
-          frequency: task.repeatInterval || 'Månedlig',
+          frequency: validFrequency,
           dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '',
           assignedTo: task.assignedTo || '',
           nextDueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : ''
