@@ -503,11 +503,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Client Task methods
-  async getClientTasksByClient(clientId: string): Promise<any[]> {
+  async getClientTasksByClient(clientId: string, tenantId?: string): Promise<any[]> {
+    const conditions = [eq(clientTasks.clientId, clientId)];
+    
+    if (tenantId) {
+      conditions.push(eq(clientTasks.tenantId, tenantId));
+    }
+    
     return await db
       .select()
       .from(clientTasks)
-      .where(eq(clientTasks.clientId, clientId))
+      .where(and(...conditions))
       .orderBy(desc(clientTasks.dueDate));
   }
 

@@ -1305,9 +1305,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/clients/:clientId/tasks", authenticateToken, async (req: AuthRequest, res) => {
     try {
       const { clientId } = req.params;
-      const tasks = await storage.getClientTasksByClient(clientId);
+      const tasks = await storage.getClientTasksByClient(clientId, req.user!.tenantId);
+      console.log(`📋 GET /api/clients/${clientId}/tasks: Found ${tasks.length} tasks for tenant ${req.user!.tenantId}`);
       res.json(tasks);
     } catch (error: any) {
+      console.error(`❌ GET /api/clients/${clientId}/tasks error:`, error);
       res.status(500).json({ message: "Feil ved henting av klientoppgaver: " + error.message });
     }
   });
