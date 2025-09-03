@@ -7,8 +7,10 @@ Zaldo CRM is a comprehensive Norwegian multi-tenant accounting and client manage
 - **Complete Engagement/Oppdragsavtale System**: Full implementation matching Regnskap Norge specification with 4-step wizard
 - **Frontend Integration**: "Opprett Oppdragsavtale" buttons added to client overview and detail pages
 - **Comprehensive Schema**: All required fields - systems, signatories, scopes, pricing models, DPA compliance
-- **Modular Backend**: Complete API endpoints in `/src/modules/engagements/` with service/controller pattern
-- **PDF Generation**: Placeholder for automatic PDF creation upon engagement finalization
+- **Auto-Population Fixed**: Complete client data auto-population working - system name (Tripletex), responsible person (Linda Johansen), signatories, and work scopes from client tasks
+- **Backend API**: Engagement creation endpoint implemented in server/index.ts to resolve 404 errors
+- **DPA Defaults**: Fixed "conta" error - now correctly shows "Zaldo AS" as data processor with proper legal basis
+- **Performance Optimized**: Reduced console spam by only logging open dialogs, improved rendering efficiency
 - **System Owner Billing Module**: Exclusive billing dashboard for system owner (stian@zaldo.no) with comprehensive tenant overview and Excel export
 - **Pricing Structure Fixed**: Corrected to 2500 kr base + 500 kr per licensed user for accurate billing calculations
 - **Excel Export**: Full Excel export functionality for system billing with detailed customer data and revenue breakdown

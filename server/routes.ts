@@ -3220,6 +3220,4 @@ function extractKPIsFromQuery(query: string): string[] {
   return kpis;
 }
 
-// TODO: Add engagement routes integration
-// import { engagementRoutes } from "../src/routes/engagements";
-// app.use('/api', engagementRoutes);
+// TODO: Add engagement routes integration when ready
