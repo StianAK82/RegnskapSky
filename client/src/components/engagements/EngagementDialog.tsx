@@ -231,9 +231,9 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
       scopes: [],
       pricing: [],
       dpas: [{
-        processorName: 'Conta',
+        processorName: 'Zaldo AS',
         country: 'Norge',
-        transferBasis: 'N/A'
+        transferBasis: 'GDPR/EU'
       }]
     }
   });
