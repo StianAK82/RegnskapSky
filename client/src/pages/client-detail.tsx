@@ -184,6 +184,25 @@ export default function ClientDetail() {
     queryFn: () => apiRequest('GET', '/api/users').then(res => res.json())
   });
 
+  // Sync standardTaskSchedules with existing clientTasks
+  useEffect(() => {
+    if (clientTasks.length > 0) {
+      const schedules: Record<string, any> = {};
+      
+      clientTasks.forEach((task: any) => {
+        schedules[task.taskName] = {
+          enabled: true,
+          frequency: task.repeatInterval || 'Månedlig',
+          dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '',
+          assignedTo: task.assignedTo || '',
+          nextDueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : ''
+        };
+      });
+      
+      setStandardTaskSchedules(schedules);
+    }
+  }, [clientTasks]);
+
   // Mutations
   const updateClientMutation = useMutation({
     mutationFn: (updates: any) => apiRequest('PATCH', `/api/clients/${clientId}`, updates).then(res => res.json()),
