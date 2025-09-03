@@ -98,6 +98,13 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Debug logging for dialog state
+  console.log('🔍 ENGAGEMENT DIALOG: Props changed -', { clientId, clientName, open });
+  
+  useEffect(() => {
+    console.log('🔍 ENGAGEMENT DIALOG: Dialog opened/closed -', { open, clientId });
+  }, [open, clientId]);
   
   // Fetch full client data for auto-population - try from clients list first
   const { data: allClients } = useQuery({
@@ -112,33 +119,42 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
     queryKey: [`/api/clients/${clientId}`],
     queryFn: async () => {
       console.log('🔍 ENGAGEMENT: Starting to fetch client data for:', clientId);
+      console.log('🔍 ENGAGEMENT: Fallback client from list:', clientFromList);
+      
+      // If we have fallback data, use it immediately to avoid API calls
+      if (clientFromList) {
+        console.log('🔍 ENGAGEMENT: Using client data from fallback immediately:', clientFromList);
+        return clientFromList;
+      }
+      
       try {
         const response = await apiRequest('GET', `/api/clients/${clientId}`);
         if (!response.ok) {
           console.error('🔍 ENGAGEMENT: Client fetch failed with status:', response.status, response.statusText);
-          // If direct fetch fails, try using data from clients list
-          if (clientFromList) {
-            console.log('🔍 ENGAGEMENT: Using client data from list as fallback:', clientFromList);
-            return clientFromList;
-          }
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
         const clientData = await response.json();
-        console.log('🔍 ENGAGEMENT: Successfully fetched client data:', clientData);
+        console.log('🔍 ENGAGEMENT: Successfully fetched client data from API:', clientData);
         return clientData;
       } catch (error) {
-        console.error('🔍 ENGAGEMENT: Failed to fetch client data, trying fallback:', error);
-        // If specific client fetch fails but we have client from list, use that
-        if (clientFromList) {
-          console.log('🔍 ENGAGEMENT: Using fallback client data:', clientFromList);
-          return clientFromList;
-        }
+        console.error('🔍 ENGAGEMENT: Failed to fetch client data:', error);
         throw error;
       }
     },
     enabled: !!clientId && !!open,
     retry: 1
   });
+  
+  // Debug logging for client data state
+  useEffect(() => {
+    console.log('🔍 ENGAGEMENT CLIENT STATE:', {
+      hasClient: !!client,
+      clientLoading,
+      clientError: clientError?.message,
+      clientFromList: !!clientFromList,
+      client: client
+    });
+  }, [client, clientLoading, clientError, clientFromList]);
 
   // Fetch client tasks for auto-populating scopes
   const { data: clientTasks } = useQuery({
