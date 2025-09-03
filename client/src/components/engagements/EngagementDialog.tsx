@@ -173,6 +173,16 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
     enabled: !!clientId && !!isOpen
   });
 
+  // Fetch employees for populating responsible person info
+  const { data: employees } = useQuery({
+    queryKey: ['/api/employees'],
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/employees');
+      return response.json();
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
 
   // Function to map task names to scope categories
   const mapTaskToScope = (taskName: string) => {
@@ -287,6 +297,10 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
           form.setValue('systemName', client.accountingSystem, { shouldValidate: true });
         }
 
+        // Find responsible person from employees
+        const responsiblePerson = employees?.find((emp: any) => emp.id === client.responsiblePersonId);
+        console.log('🔧 ENGAGEMENT: Found responsible person:', responsiblePerson);
+
         // Auto-populate signatories with client and responsible person information
         const signatories = [];
         
@@ -303,9 +317,9 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
         if (client.responsiblePersonId || client.engagementOwnerId) {
           signatories.push({
             role: 'responsible_accountant' as const,
-            name: '', // Will need to fetch this from employees/users
-            email: '',
-            phone: '',
+            name: responsiblePerson ? `${responsiblePerson.firstName} ${responsiblePerson.lastName}` : '',
+            email: responsiblePerson?.email || '',
+            phone: responsiblePerson?.phone || '',
             title: 'Oppdragsansvarlig regnskapsfører'
           });
         }
@@ -325,15 +339,15 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
         form.setValue('pricing', standardPricing, { shouldValidate: true });
       }, 100);
     }
-  }, [open, client, clientTasks, form]);
+  }, [isOpen, client, clientTasks, employees, form]);
 
   // Reset form when dialog closes
   useEffect(() => {
-    if (!open) {
+    if (!isOpen) {
       form.reset();
       setCurrentStep(1);
     }
-  }, [open, form]);
+  }, [isOpen, form]);
 
   const createEngagementMutation = useMutation({
     mutationFn: async (data: EngagementFormData) => {
