@@ -311,8 +311,8 @@ export default function ClientDetail() {
         .filter(([, config]: [string, any]) => config.enabled);
 
       const promises = enabledTasks.map(async ([taskName, config]: [string, any]) => {
-        // Find existing task for this client/taskName combination
-        const existingTask = clientTasks.find((task: any) => 
+        // Find ALL existing tasks for this client/taskName combination
+        const existingTasks = clientTasks.filter((task: any) => 
           task.taskName === taskName && task.clientId === clientId
         );
 
@@ -328,24 +328,29 @@ export default function ClientDetail() {
           interval: mapFrequencyToInterval(config.frequency),
           repeatInterval: config.frequency,
           assignedTo: config.assignedTo || null,
-          status: existingTask?.status || 'ikke_startet'
+          status: 'ikke_startet' // Reset status for consistency
         };
 
-        if (existingTask) {
-          // UPDATE existing task WITH new calculated due date
-          console.log(`🔄 UPDATING existing task: ${taskName} (${existingTask.id}) - NEW due date: ${taskData.dueDate}`);
-          console.log('📤 PATCH data being sent:', taskData);
-          return apiRequest('PATCH', `/api/tasks/${existingTask.id}`, taskData)
-            .then(res => {
-              console.log('✅ PATCH response:', res.status, res.statusText);
-              return res.json();
-            })
-            .catch(error => {
-              console.error('❌ PATCH ERROR:', error);
-              throw error;
-            });
+        if (existingTasks.length > 0) {
+          // UPDATE ALL existing tasks of this type
+          console.log(`🔄 UPDATING ${existingTasks.length} existing ${taskName} tasks with NEW due date: ${taskData.dueDate}`);
+          
+          const updatePromises = existingTasks.map(async (task: any) => {
+            console.log(`📤 UPDATING task ID: ${task.id}`);
+            return apiRequest('PATCH', `/api/tasks/${task.id}`, taskData)
+              .then(res => {
+                console.log(`✅ PATCH ${task.id}: ${res.status} ${res.statusText}`);
+                return res.json();
+              })
+              .catch(error => {
+                console.error(`❌ PATCH ERROR for ${task.id}:`, error);
+                throw error;
+              });
+          });
+          
+          return Promise.all(updatePromises);
         } else {
-          // CREATE new task
+          // CREATE new task if none exist
           console.log(`✅ CREATING new task: ${taskName}`);
           return apiRequest('POST', `/api/clients/${clientId}/tasks`, taskData)
             .then(res => res.json());
