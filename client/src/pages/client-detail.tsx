@@ -157,6 +157,15 @@ export default function ClientDetail() {
     enabled: !!clientId
   });
 
+  // Debug: Log client data to see what fields we get
+  useEffect(() => {
+    if (client) {
+      console.log('🔍 CLIENT DATA:', client);
+      console.log('🔍 AML Status:', client.amlStatus);
+      console.log('🔍 KYC Status:', client.kycStatus);
+    }
+  }, [client]);
+
   const { data: responsibles = [] } = useQuery({
     queryKey: ['/api/clients', clientId, 'responsibles'],
     queryFn: () => apiRequest('GET', `/api/clients/${clientId}/responsibles`).then(res => res.json()),
