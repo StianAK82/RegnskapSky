@@ -332,8 +332,8 @@ export default function ClientDetail() {
         };
 
         if (existingTask) {
-          // UPDATE existing task
-          console.log(`🔄 UPDATING existing task: ${taskName} (${existingTask.id})`);
+          // UPDATE existing task WITH new calculated due date
+          console.log(`🔄 UPDATING existing task: ${taskName} (${existingTask.id}) - NEW due date: ${taskData.dueDate}`);
           console.log('📤 PATCH data being sent:', taskData);
           return apiRequest('PATCH', `/api/tasks/${existingTask.id}`, taskData)
             .then(res => {
@@ -766,7 +766,7 @@ export default function ClientDetail() {
                           <SelectTrigger className="w-full">
                             <SelectValue placeholder="Velg ansvarlig person" />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg">
                             {users.map((user: any) => (
                               <SelectItem key={user.id} value={user.id}>
                                 {user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim()}
