@@ -99,6 +99,12 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
+  // Fetch full client data for auto-population
+  const { data: client } = useQuery({
+    queryKey: [`/api/clients/${clientId}`],
+    queryFn: () => apiRequest('GET', `/api/clients/${clientId}`).then(res => res.json()),
+    enabled: !!clientId && !!open
+  });
 
 
   // Function to map task names to scope categories
@@ -155,11 +161,12 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
     }
   });
 
-  // Auto-populate scopes based on standard tasks
+  // Auto-populate form with client data
   useEffect(() => {
-    if (open && clientId && form.getValues('scopes').length === 0) {
+    if (open && client && form.getValues('scopes').length === 0) {
       // Small delay to ensure form is ready
       setTimeout(() => {
+        // Auto-populate scopes based on standard tasks
         const autoScopes = STANDARD_TASKS.map((task) => {
           const scopeKey = mapTaskToScope(task.name);
           const firstFreq = task.frequency[0];
@@ -173,9 +180,25 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
         });
         
         form.setValue('scopes', autoScopes, { shouldValidate: true });
+
+        // Auto-populate system name if client has one
+        if (client.accountingSystem) {
+          form.setValue('systemName', client.accountingSystem, { shouldValidate: true });
+        }
+
+        // Auto-populate primary signatory with client information
+        const primarySignatory = {
+          role: 'client_representative' as const,
+          name: client.contactPerson || client.name || '',
+          email: client.email || '',
+          phone: client.phone || '',
+          title: 'Kontaktperson'
+        };
+        
+        form.setValue('signatories', [primarySignatory], { shouldValidate: true });
       }, 100);
     }
-  }, [open, clientId, form]);
+  }, [open, client, form]);
 
   // Reset form when dialog closes
   useEffect(() => {
