@@ -891,7 +891,6 @@ export default function ClientDetail() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {console.log('🔍 ENGAGEMENTS DEBUG:', { engagements, length: engagements?.length, type: typeof engagements, isArray: Array.isArray(engagements) })}
               {engagementsLoading ? (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
@@ -937,9 +936,21 @@ export default function ClientDetail() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => {
+                            onClick={async () => {
                               console.log('📄 Downloading engagement:', engagement.id);
-                              window.open(`/api/clients/${clientId}/engagements/${engagement.id}/pdf`, '_blank');
+                              try {
+                                // Create a temporary link element to force download
+                                const link = document.createElement('a');
+                                link.href = `/api/clients/${clientId}/engagements/${engagement.id}/pdf`;
+                                link.download = `oppdragsavtale-${engagement.id}.pdf`;
+                                link.target = '_blank';
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                                console.log('✅ PDF download initiated');
+                              } catch (error) {
+                                console.error('❌ Download failed:', error);
+                              }
                             }}
                           >
                             <Download className="h-4 w-4 mr-1" />
