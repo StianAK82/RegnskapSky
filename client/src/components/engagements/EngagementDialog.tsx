@@ -100,15 +100,25 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
   const queryClient = useQueryClient();
   
   // Fetch full client data for auto-population
-  const { data: client } = useQuery({
+  const { data: client, error: clientError, isLoading: clientLoading } = useQuery({
     queryKey: [`/api/clients/${clientId}`],
     queryFn: async () => {
-      const response = await apiRequest('GET', `/api/clients/${clientId}`);
-      const clientData = await response.json();
-      console.log('🔍 ENGAGEMENT: Fetched client data:', clientData);
-      return clientData;
+      console.log('🔍 ENGAGEMENT: Starting to fetch client data for:', clientId);
+      try {
+        const response = await apiRequest('GET', `/api/clients/${clientId}`);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        const clientData = await response.json();
+        console.log('🔍 ENGAGEMENT: Successfully fetched client data:', clientData);
+        return clientData;
+      } catch (error) {
+        console.error('🔍 ENGAGEMENT: Failed to fetch client data:', error);
+        throw error;
+      }
     },
-    enabled: !!clientId && !!open
+    enabled: !!clientId && !!open,
+    retry: 1
   });
 
   // Fetch client tasks for auto-populating scopes
@@ -177,6 +187,18 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
       }]
     }
   });
+
+  // Show error message if client loading failed
+  useEffect(() => {
+    if (clientError) {
+      console.error('🔍 ENGAGEMENT: Client error:', clientError);
+      toast({
+        title: 'Feil ved henting av klientdata',
+        description: `Kunne ikke hente klientinformasjon: ${clientError.message}`,
+        variant: 'destructive',
+      });
+    }
+  }, [clientError, toast]);
 
   // Auto-populate form with client data
   useEffect(() => {
@@ -419,7 +441,7 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
                         <FormItem>
                           <FormLabel>System navn</FormLabel>
                           <FormControl>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <Select onValueChange={field.onChange} value={field.value || ""}>
                               <SelectTrigger>
                                 <SelectValue placeholder="Velg regnskapssystem" />
                               </SelectTrigger>
@@ -444,7 +466,7 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
                         <FormItem>
                           <FormLabel>Lisenshaver</FormLabel>
                           <FormControl>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <Select onValueChange={field.onChange} value={field.value || ""}>
                               <SelectTrigger>
                                 <SelectValue placeholder="Velg lisenshaver" />
                               </SelectTrigger>
