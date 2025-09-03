@@ -387,7 +387,9 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
         title: '✅ Oppdragsavtale opprettet!',
         description: `Engasjement er opprettet i draft-status (ID: ${(data as any).engagementId || 'opprettet'})`,
       });
-      queryClient.invalidateQueries({ queryKey: [`/api/clients/${clientId}/engagements`] });
+      // Refresh the engagements list
+      queryClient.invalidateQueries({ queryKey: ['/api/clients', clientId, 'engagements'] });
+      props.onSuccess?.();
       
       // Wait 2 seconds before closing dialog to let user see the success message
       setTimeout(() => {

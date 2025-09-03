@@ -870,7 +870,7 @@ export default function ClientDetail() {
               }
               onSuccess={() => {
                 console.log('🔄 Refreshing engagements after creation');
-                refetchEngagements();
+                setTimeout(() => refetchEngagements(), 500);
               }}
             />
           </div>
@@ -899,7 +899,7 @@ export default function ClientDetail() {
                     }
                     onSuccess={() => {
                       console.log('🔄 Refreshing engagements after creation');
-                      refetchEngagements();
+                      setTimeout(() => refetchEngagements(), 500);
                     }}
                   />
                 </div>
