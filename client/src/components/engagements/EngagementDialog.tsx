@@ -104,11 +104,15 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
   const isOpen = open !== undefined ? open : internalOpen;
   const handleOpenChange = onOpenChange || setInternalOpen;
 
-  // Debug logging for dialog state
-  console.log('🔍 ENGAGEMENT DIALOG: Props changed -', { clientId, clientName, open, isOpen });
+  // Only log for dialogs that are actually open to reduce console spam
+  if (isOpen) {
+    console.log('🔍 ENGAGEMENT DIALOG: Props changed -', { clientId, clientName, open, isOpen });
+  }
   
   useEffect(() => {
-    console.log('🔍 ENGAGEMENT DIALOG: Dialog opened/closed -', { open, isOpen, clientId });
+    if (isOpen) {
+      console.log('🔍 ENGAGEMENT DIALOG: Dialog opened/closed -', { open, isOpen, clientId });
+    }
   }, [open, isOpen, clientId]);
   
   // Fetch full client data for auto-population - try from clients list first
@@ -252,7 +256,10 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
 
   // Auto-populate form with client data
   useEffect(() => {
-    if (isOpen && client && form.getValues('scopes').length === 0) {
+    // Early return if dialog is not open - don't waste processing on closed dialogs
+    if (!isOpen) return;
+    
+    if (client && form.getValues('scopes').length === 0) {
       console.log('🔧 ENGAGEMENT: Auto-populating form with client:', client);
       console.log('🔧 ENGAGEMENT: Client tasks:', clientTasks);
       
