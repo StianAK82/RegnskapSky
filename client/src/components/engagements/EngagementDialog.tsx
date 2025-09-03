@@ -242,7 +242,7 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
 
   // Auto-populate form with client data
   useEffect(() => {
-    if (open && client && form.getValues('scopes').length === 0) {
+    if (isOpen && client && form.getValues('scopes').length === 0) {
       console.log('🔧 ENGAGEMENT: Auto-populating form with client:', client);
       console.log('🔧 ENGAGEMENT: Client tasks:', clientTasks);
       
