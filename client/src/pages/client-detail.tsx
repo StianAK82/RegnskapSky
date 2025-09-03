@@ -174,7 +174,7 @@ export default function ClientDetail() {
     enabled: !!clientId,
     retry: 1,
     staleTime: 0, // Always refetch
-    cacheTime: 0  // Don't cache
+    gcTime: 0     // Don't cache (renamed from cacheTime in v5)
   });
 
 
