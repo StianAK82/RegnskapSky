@@ -303,10 +303,10 @@ export default function Clients() {
   });
 
   const onSubmit = async (data: ClientFormData) => {
-    // Transform empty string to undefined for responsiblePersonId
+    // Transform empty string and "none" to undefined for responsiblePersonId
     const cleanedData = {
       ...data,
-      responsiblePersonId: data.responsiblePersonId === '' ? undefined : data.responsiblePersonId
+      responsiblePersonId: (data.responsiblePersonId === '' || data.responsiblePersonId === 'none') ? undefined : data.responsiblePersonId
     };
     
     try {

@@ -193,19 +193,19 @@ export default function ClientDetail() {
   });
 
   const { data: users = [] } = useQuery({
-    queryKey: ['/api/users'],
-    queryFn: () => apiRequest('GET', '/api/users').then(res => res.json())
+    queryKey: ['/api/employees'],
+    queryFn: () => apiRequest('GET', '/api/employees').then(res => res.json())
   });
 
   // Debug: Check users data
   useEffect(() => {
-    console.log('🔍 USERS DATA:', users);
+    console.log('🔍 EMPLOYEES DATA:', users);
     console.log('🔍 RESPONSIBLES DATA:', responsibles);
     if (users && users.length > 0) {
       const availableUsers = users.filter((user: any) => !responsibles.some((r: any) => r.userId === user.id));
-      console.log('🔍 AVAILABLE USERS AFTER FILTERING:', availableUsers);
+      console.log('🔍 AVAILABLE EMPLOYEES AFTER FILTERING:', availableUsers);
     } else {
-      console.log('🔍 NO USERS FOUND IN SYSTEM');
+      console.log('🔍 NO EMPLOYEES FOUND IN SYSTEM');
     }
   }, [users, responsibles]);
 
@@ -590,7 +590,7 @@ export default function ClientDetail() {
     if (!selectedUserId || selectedUserId === 'no-users-available') {
       toast({ 
         title: 'Feil', 
-        description: 'Velg en bruker å legge til som ansvarlig', 
+        description: 'Velg en ansatt å legge til som ansvarlig', 
         variant: 'destructive' 
       });
       return;
@@ -1155,15 +1155,15 @@ export default function ClientDetail() {
                 <DialogHeader>
                   <DialogTitle>Legg til ansvarlig person</DialogTitle>
                   <DialogDescription>
-                    Velg en bruker som skal være ansvarlig for denne klienten.
+                    Velg en ansatt som skal være ansvarlig for denne klienten.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="responsible-select">Velg bruker</Label>
+                    <Label htmlFor="responsible-select">Velg ansatt</Label>
                     <Select value={selectedUserId} onValueChange={setSelectedUserId}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Velg en bruker" />
+                        <SelectValue placeholder="Velg en ansatt" />
                       </SelectTrigger>
                       <SelectContent>
                         {users && users.length > 0 ? (
@@ -1174,10 +1174,10 @@ export default function ClientDetail() {
                               </SelectItem>
                             ))
                           ) : (
-                            <SelectItem value="no-users-available" disabled>Alle brukere er allerede ansvarlige</SelectItem>
+                            <SelectItem value="no-users-available" disabled>Alle ansatte er allerede ansvarlige</SelectItem>
                           )
                         ) : (
-                          <SelectItem value="no-users-available" disabled>Ingen brukere tilgjengelig</SelectItem>
+                          <SelectItem value="no-users-available" disabled>Ingen ansatte tilgjengelig</SelectItem>
                         )}
                       </SelectContent>
                     </Select>
