@@ -102,7 +102,24 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
   // Fetch full client data for auto-population
   const { data: client } = useQuery({
     queryKey: [`/api/clients/${clientId}`],
-    queryFn: () => apiRequest('GET', `/api/clients/${clientId}`).then(res => res.json()),
+    queryFn: async () => {
+      const response = await apiRequest('GET', `/api/clients/${clientId}`);
+      const clientData = await response.json();
+      console.log('🔍 ENGAGEMENT: Fetched client data:', clientData);
+      return clientData;
+    },
+    enabled: !!clientId && !!open
+  });
+
+  // Fetch client tasks for auto-populating scopes
+  const { data: clientTasks } = useQuery({
+    queryKey: [`/api/clients/${clientId}/tasks`],
+    queryFn: async () => {
+      const response = await apiRequest('GET', `/api/clients/${clientId}/tasks`);
+      const tasksData = await response.json();
+      console.log('🔍 ENGAGEMENT: Fetched client tasks:', tasksData);
+      return tasksData;
+    },
     enabled: !!clientId && !!open
   });
 
@@ -164,41 +181,89 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
   // Auto-populate form with client data
   useEffect(() => {
     if (open && client && form.getValues('scopes').length === 0) {
+      console.log('🔧 ENGAGEMENT: Auto-populating form with client:', client);
+      console.log('🔧 ENGAGEMENT: Client tasks:', clientTasks);
+      
       // Small delay to ensure form is ready
       setTimeout(() => {
-        // Auto-populate scopes based on standard tasks
-        const autoScopes = STANDARD_TASKS.map((task) => {
-          const scopeKey = mapTaskToScope(task.name);
-          const firstFreq = task.frequency[0];
-          const frequency = mapIntervalToFrequency(firstFreq);
-          
-          return {
-            scopeKey: scopeKey as any,
-            frequency: frequency as any,
-            comments: task.name
-          };
-        });
+        // Auto-populate scopes based on client tasks first, fallback to standard tasks
+        let autoScopes = [];
         
+        if (clientTasks && clientTasks.length > 0) {
+          // Use actual client tasks
+          autoScopes = clientTasks.slice(0, 8).map((task: any) => {
+            const scopeKey = mapTaskToScope(task.taskName || task.title || '');
+            const frequency = mapIntervalToFrequency(task.repeatInterval || task.interval || '');
+            
+            return {
+              scopeKey: scopeKey as any,
+              frequency: frequency as any,
+              comments: task.description || task.taskName || task.title || ''
+            };
+          });
+        } else {
+          // Fallback to standard tasks
+          autoScopes = STANDARD_TASKS.map((task) => {
+            const scopeKey = mapTaskToScope(task.name);
+            const firstFreq = task.frequency[0];
+            const frequency = mapIntervalToFrequency(firstFreq);
+            
+            return {
+              scopeKey: scopeKey as any,
+              frequency: frequency as any,
+              comments: task.name
+            };
+          });
+        }
+        
+        console.log('🔧 ENGAGEMENT: Setting scopes:', autoScopes);
         form.setValue('scopes', autoScopes, { shouldValidate: true });
 
         // Auto-populate system name if client has one
         if (client.accountingSystem) {
+          console.log('🔧 ENGAGEMENT: Setting accounting system:', client.accountingSystem);
           form.setValue('systemName', client.accountingSystem, { shouldValidate: true });
         }
 
-        // Auto-populate primary signatory with client information
-        const primarySignatory = {
+        // Auto-populate signatories with client and responsible person information
+        const signatories = [];
+        
+        // Primary client representative
+        signatories.push({
           role: 'client_representative' as const,
           name: client.contactPerson || client.name || '',
           email: client.email || '',
           phone: client.phone || '',
-          title: 'Kontaktperson'
-        };
+          title: client.contactPerson ? 'Kontaktperson' : 'Representant'
+        });
+
+        // Add responsible accountant if available
+        if (client.responsiblePersonId || client.engagementOwnerId) {
+          signatories.push({
+            role: 'responsible_accountant' as const,
+            name: '', // Will need to fetch this from employees/users
+            email: '',
+            phone: '',
+            title: 'Oppdragsansvarlig regnskapsfører'
+          });
+        }
+
+        console.log('🔧 ENGAGEMENT: Setting signatories:', signatories);
+        form.setValue('signatories', signatories, { shouldValidate: true });
+
+        // Auto-populate standard pricing
+        const standardPricing = [{
+          area: 'bookkeeping' as const,
+          model: 'hourly' as const,
+          hourlyRateExVat: 950,
+          minTimeUnitMinutes: 15,
+          rushMarkupPercent: 50
+        }];
         
-        form.setValue('signatories', [primarySignatory], { shouldValidate: true });
+        form.setValue('pricing', standardPricing, { shouldValidate: true });
       }, 100);
     }
-  }, [open, client, form]);
+  }, [open, client, clientTasks, form]);
 
   // Reset form when dialog closes
   useEffect(() => {
@@ -760,6 +825,167 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
                           </div>
                         </div>
                       ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* Step 3: IT Systems & DPA */}
+            {currentStep === 3 && (
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Databehandleravtaler (DPA)</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {form.watch('dpas').map((_, index) => (
+                        <div key={index} className="border p-4 rounded-lg relative">
+                          <div className="grid grid-cols-2 gap-4">
+                            <FormField
+                              control={form.control}
+                              name={`dpas.${index}.processorName`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Databehandler navn</FormLabel>
+                                  <FormControl>
+                                    <Input {...field} placeholder="Navn på systemleverandør" />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            <FormField
+                              control={form.control}
+                              name={`dpas.${index}.country`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Land</FormLabel>
+                                  <FormControl>
+                                    <Input {...field} placeholder="Norge" />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            <FormField
+                              control={form.control}
+                              name={`dpas.${index}.transferBasis`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Overføringsgrunnlag</FormLabel>
+                                  <FormControl>
+                                    <Input {...field} placeholder="GDPR/EU" />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Betalingsbetingelser</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <FormLabel>Betalingsfrist</FormLabel>
+                        <Input defaultValue="14 dager" readOnly className="bg-gray-50" />
+                      </div>
+                      <div>
+                        <FormLabel>Fakturafrekvens</FormLabel>
+                        <Input defaultValue="Månedlig" readOnly className="bg-gray-50" />
+                      </div>
+                    </div>
+                    <div>
+                      <FormLabel>Forsinkelsesrente</FormLabel>
+                      <Input defaultValue="Forsinkelsesrente etter forsinkelsesrenteloven" readOnly className="bg-gray-50" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* Step 4: Legal Terms & Summary */}
+            {currentStep === 4 && (
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Lovgrunnlag og juridiske vilkår</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="bg-blue-50 p-4 rounded-lg">
+                      <h4 className="font-semibold mb-2">Lovgrunnlag</h4>
+                      <div className="text-sm space-y-1">
+                        <p>• <strong>Regnskapsloven:</strong> Lov av 17. juli 1998 nr. 56</p>
+                        <p>• <strong>Bokføringsloven:</strong> Lov av 19. november 2004 nr. 73</p>
+                        <p>• <strong>Revisorloven:</strong> Lov av 15. januar 1999 nr. 2</p>
+                        <p>• <strong>Merverdiavgiftsloven:</strong> Lov av 19. juni 2009 nr. 58</p>
+                      </div>
+                    </div>
+
+                    <div className="bg-amber-50 p-4 rounded-lg">
+                      <h4 className="font-semibold mb-2">Oppsigelse og avtalevilkår</h4>
+                      <div className="text-sm space-y-2">
+                        <p><strong>Oppsigelsestid:</strong> 3 måneder fra første i måneden</p>
+                        <p><strong>Oppsigelsesrett:</strong> Begge parter kan si opp avtalen med 3 måneders skriftlig varsel</p>
+                        <p><strong>Mislighold:</strong> Ved vesentlig mislighold kan avtalen sies opp med umiddelbar virkning</p>
+                        <p><strong>Dokumentasjon:</strong> Klienten plikter å levere nødvendig dokumentasjon i henhold til norsk lov</p>
+                      </div>
+                    </div>
+
+                    <div className="bg-green-50 p-4 rounded-lg">
+                      <h4 className="font-semibold mb-2">Ansvar og forsikring</h4>
+                      <div className="text-sm space-y-1">
+                        <p>• Regnskapsfører har yrkesansvarsforsikring</p>
+                        <p>• Ansvar begrenses til direkte tap som følge av feil</p>
+                        <p>• Ansvar gjelder ikke ved force majeure</p>
+                        <p>• Klient har eget ansvar for å kontrollere rapporter</p>
+                      </div>
+                    </div>
+
+                    <div className="bg-red-50 p-4 rounded-lg">
+                      <h4 className="font-semibold mb-2">Taushetsplikt og personvern</h4>
+                      <div className="text-sm space-y-1">
+                        <p>• Regnskapsfører er underlagt lovbestemt taushetsplikt</p>
+                        <p>• Personopplysninger behandles i henhold til GDPR</p>
+                        <p>• Data lagres sikkert og slettes ved avtaleslutt</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Avtalesammendrag</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3 text-sm">
+                      <div className="flex justify-between border-b pb-2">
+                        <span className="font-medium">Klient:</span>
+                        <span>{clientName}</span>
+                      </div>
+                      <div className="flex justify-between border-b pb-2">
+                        <span className="font-medium">Regnskapssystem:</span>
+                        <span>{form.watch('systemName') || 'Ikke valgt'}</span>
+                      </div>
+                      <div className="flex justify-between border-b pb-2">
+                        <span className="font-medium">Omfang:</span>
+                        <span>{form.watch('scopes').length} arbeidsområder</span>
+                      </div>
+                      <div className="flex justify-between border-b pb-2">
+                        <span className="font-medium">Signatører:</span>
+                        <span>{form.watch('signatories').length} personer</span>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
