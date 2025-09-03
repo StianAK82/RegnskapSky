@@ -150,6 +150,9 @@ export default function ClientDetail() {
     kycStatus: 'pending' as 'pending' | 'approved' | 'rejected'
   });
 
+  const [isAddResponsibleOpen, setIsAddResponsibleOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState('');
+
   // Queries
   const { data: client, isLoading } = useQuery({
     queryKey: ['/api/clients', clientId],
@@ -521,6 +524,70 @@ export default function ClientDetail() {
       default:
         return <Badge className="bg-yellow-100 text-yellow-800">Venter</Badge>;
     }
+  };
+
+  // Add responsible person mutation
+  const addResponsibleMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const response = await apiRequest('POST', `/api/clients/${clientId}/responsibles`, {
+        userId: userId
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/clients', clientId, 'responsibles'] });
+      setIsAddResponsibleOpen(false);
+      setSelectedUserId('');
+      toast({
+        title: 'Ansvarlig lagt til',
+        description: 'Ny ansvarlig person er lagt til for klienten',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Feil',
+        description: error.message || 'Kunne ikke legge til ansvarlig person',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Remove responsible person mutation
+  const removeResponsibleMutation = useMutation({
+    mutationFn: async (responsibleId: string) => {
+      const response = await apiRequest('DELETE', `/api/clients/${clientId}/responsibles/${responsibleId}`);
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/clients', clientId, 'responsibles'] });
+      toast({
+        title: 'Ansvarlig fjernet',
+        description: 'Ansvarlig person er fjernet fra klienten',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Feil',
+        description: error.message || 'Kunne ikke fjerne ansvarlig person',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleAddResponsible = () => {
+    if (!selectedUserId) {
+      toast({ 
+        title: 'Feil', 
+        description: 'Velg en bruker å legge til som ansvarlig', 
+        variant: 'destructive' 
+      });
+      return;
+    }
+    addResponsibleMutation.mutate(selectedUserId);
+  };
+
+  const handleRemoveResponsible = (responsibleId: string) => {
+    removeResponsibleMutation.mutate(responsibleId);
   };
 
   const handleTimeSubmit = () => {
@@ -1065,30 +1132,83 @@ export default function ClientDetail() {
         <TabsContent value="responsibles" className="space-y-6">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-semibold">Oppdragsansvarlige</h3>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Legg til ansvarlig
-            </Button>
+            <Dialog open={isAddResponsibleOpen} onOpenChange={setIsAddResponsibleOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Legg til ansvarlig
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Legg til ansvarlig person</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="responsible-select">Velg bruker</Label>
+                    <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Velg en bruker" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {users.filter((user: any) => !responsibles.some((r: any) => r.userId === user.id)).map((user: any) => (
+                          <SelectItem key={user.id} value={user.id}>
+                            {user.firstName} {user.lastName} ({user.email})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex justify-end space-x-2">
+                    <Button variant="outline" onClick={() => setIsAddResponsibleOpen(false)}>
+                      Avbryt
+                    </Button>
+                    <Button onClick={handleAddResponsible} disabled={addResponsibleMutation.isPending}>
+                      {addResponsibleMutation.isPending ? 'Legger til...' : 'Legg til'}
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
 
           <div className="grid gap-4">
-            {responsibles.map((responsible: ClientResponsible) => (
-              <Card key={responsible.id}>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">
-                        {responsible.user?.firstName} {responsible.user?.lastName}
-                      </h4>
-                      <p className="text-sm text-muted-foreground">{responsible.user?.email}</p>
-                    </div>
-                    <Button variant="outline" size="sm">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+            {responsibles.length === 0 ? (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <Users className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Ingen ansvarlige</h3>
+                  <p className="text-gray-500 mb-4">Denne klienten har ingen oppdragsansvarlige ennå.</p>
+                  <Button onClick={() => setIsAddResponsibleOpen(true)}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Legg til første ansvarlige
+                  </Button>
                 </CardContent>
               </Card>
-            ))}
+            ) : (
+              responsibles.map((responsible: ClientResponsible) => (
+                <Card key={responsible.id}>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium">
+                          {responsible.user?.firstName} {responsible.user?.lastName}
+                        </h4>
+                        <p className="text-sm text-muted-foreground">{responsible.user?.email}</p>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleRemoveResponsible(responsible.id)}
+                        disabled={removeResponsibleMutation.isPending}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
           </div>
         </TabsContent>
 
