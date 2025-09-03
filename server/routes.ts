@@ -1305,7 +1305,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/clients/:clientId/tasks", authenticateToken, async (req: AuthRequest, res) => {
     try {
       const { clientId } = req.params;
+      console.log(`🔥 ROUTES: About to call getClientTasksByClient with clientId: ${clientId}, tenantId: ${req.user!.tenantId}`);
       const tasks = await storage.getClientTasksByClient(clientId, req.user!.tenantId);
+      console.log(`🔥 ROUTES: getClientTasksByClient returned:`, tasks);
       console.log(`📋 GET /api/clients/${clientId}/tasks: Found ${tasks.length} tasks for tenant ${req.user!.tenantId}`);
       res.json(tasks);
     } catch (error: any) {
