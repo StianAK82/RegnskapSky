@@ -287,7 +287,7 @@ export default function ClientDetail() {
         nextDate.setDate(nextDate.getDate() + 1 + taskIndex); // Stagger daily tasks by days
         break;
       case 'ukentlig':
-        nextDate.setDate(nextDate.getDate() + 7 + (taskIndex * 2)); // Stagger weekly tasks by 2 days
+        nextDate.setDate(nextDate.getDate() + 7 + (taskIndex * 7)); // Stagger weekly tasks by weeks (same day, different weeks)
         break;
       case 'månedlig':
         nextDate.setMonth(nextDate.getMonth() + 1);
