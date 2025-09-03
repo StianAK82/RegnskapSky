@@ -278,10 +278,28 @@ export default function ClientDetail() {
     }
   };
 
-  // Calculate next due date based on frequency with staggered dates for multiple tasks
-  const calculateNextDueDate = (frequency: string, taskIndex: number = 0): Date => {
+  // Calculate next due date with Norwegian business compliance rules
+  const calculateNextDueDate = (frequency: string, taskIndex: number = 0, taskName: string = ''): Date => {
     const nextDate = new Date();
     
+    // Special Norwegian compliance rules
+    if (taskName === 'MVA' && frequency.toLowerCase() === '2 vær mnd') {
+      // MVA is always on the 10th of every 2nd month
+      const baseDate = new Date();
+      baseDate.setDate(10); // Always 10th
+      baseDate.setMonth(baseDate.getMonth() + 2 + (taskIndex * 2)); // Every 2nd month, staggered
+      return baseDate;
+    }
+    
+    if (taskName === 'Lønn' && frequency.toLowerCase() === 'månedlig') {
+      // Lønn is always on the 5th of every month (Norwegian payroll standard)
+      const baseDate = new Date();
+      baseDate.setDate(5); // Always 5th
+      baseDate.setMonth(baseDate.getMonth() + 1 + taskIndex); // Every month, staggered
+      return baseDate;
+    }
+    
+    // Standard logic for other tasks
     switch (frequency.toLowerCase()) {
       case 'daglig':
         nextDate.setDate(nextDate.getDate() + 1 + taskIndex); // Stagger daily tasks by days
@@ -331,8 +349,8 @@ export default function ClientDetail() {
           console.log(`🔄 UPDATING ${existingTasks.length} existing ${taskName} tasks with STAGGERED due dates`);
           
           const updatePromises = existingTasks.map(async (task: any, taskIndex: number) => {
-            // Calculate staggered due date for each task
-            const staggeredDueDate = calculateNextDueDate(config.frequency, taskIndex);
+            // Calculate staggered due date for each task with Norwegian compliance
+            const staggeredDueDate = calculateNextDueDate(config.frequency, taskIndex, taskName);
             console.log(`📅 Task ${taskIndex + 1} of ${existingTasks.length} - ${taskName} (${config.frequency}): ${staggeredDueDate.toISOString()}`);
 
             const taskData = {
@@ -361,7 +379,7 @@ export default function ClientDetail() {
           return Promise.all(updatePromises);
         } else {
           // CREATE new task if none exist
-          const newDueDate = calculateNextDueDate(config.frequency, 0);
+          const newDueDate = calculateNextDueDate(config.frequency, 0, taskName);
           console.log(`✅ CREATING new task: ${taskName} (${config.frequency}): ${newDueDate.toISOString()}`);
           
           const taskData = {
