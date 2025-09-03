@@ -868,6 +868,10 @@ export default function ClientDetail() {
                   Ny Oppdragsavtale
                 </Button>
               }
+              onSuccess={() => {
+                console.log('🔄 Refreshing engagements after creation');
+                refetchEngagements();
+              }}
             />
           </div>
           
@@ -893,6 +897,10 @@ export default function ClientDetail() {
                         Opprett første oppdragsavtale
                       </Button>
                     }
+                    onSuccess={() => {
+                      console.log('🔄 Refreshing engagements after creation');
+                      refetchEngagements();
+                    }}
                   />
                 </div>
               ) : (
@@ -912,6 +920,17 @@ export default function ClientDetail() {
                           <Badge variant={engagement.status === 'draft' ? 'secondary' : 'default'}>
                             {engagement.status === 'draft' ? 'Utkast' : engagement.status}
                           </Badge>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              console.log('📄 Downloading engagement:', engagement.id);
+                              window.open(`/api/clients/${clientId}/engagements/${engagement.id}/pdf`, '_blank');
+                            }}
+                          >
+                            <Download className="h-4 w-4 mr-1" />
+                            Last ned
+                          </Button>
                         </div>
                       </div>
                       <div className="mt-3 text-sm text-gray-600">

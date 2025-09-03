@@ -37,10 +37,13 @@ app.use((req, res, next) => {
   next();
 });
 
+// In-memory storage for engagements
+const engagementsStorage: any[] = [];
+
 (async () => {
   const server = await registerRoutes(app);
   
-  // Add engagement creation endpoint as temporary fix for 404 error
+  // Add engagement creation endpoint with proper storage
   app.post("/api/clients/:clientId/engagements", async (req, res) => {
     try {
       console.log('🔗 POST /api/clients/:clientId/engagements - Creating engagement');
@@ -48,16 +51,23 @@ app.use((req, res, next) => {
       
       const clientId = req.params.clientId;
       
-      // Create a simple engagement record (placeholder)
+      // Create and store engagement record
       const engagement = {
         id: `eng-${Date.now()}`,
         clientId,
         createdAt: new Date().toISOString(),
         status: 'draft',
+        systemName: req.body.systemName || 'Ukjent system',
+        signatories: req.body.signatories?.length || 0,
+        scopes: req.body.scopes?.length || 0,
         data: req.body
       };
       
-      console.log('✅ Engagement created:', engagement.id);
+      // Store in memory
+      engagementsStorage.push(engagement);
+      
+      console.log('✅ Engagement created and stored:', engagement.id);
+      console.log('📊 Total engagements stored:', engagementsStorage.length);
       res.json({ 
         message: 'Oppdragsavtale opprettet', 
         engagementId: engagement.id,
@@ -77,26 +87,68 @@ app.use((req, res, next) => {
       
       const clientId = req.params.clientId;
       
-      // Return placeholder engagements data
-      const engagements = [
-        {
-          id: 'eng-1756937083556',
-          clientId: clientId,
-          status: 'draft',
-          systemName: 'Tripletex',
-          createdAt: new Date().toISOString(),
-          signatories: 2,
-          scopes: 6
-        }
-      ];
+      // Filter engagements for this client
+      const clientEngagements = engagementsStorage.filter(eng => eng.clientId === clientId);
       
-      res.json(engagements);
+      console.log('🔍 Fetching engagements for client:', clientId);
+      console.log('📊 Found engagements:', clientEngagements.length);
+      
+      res.json(clientEngagements);
       
     } catch (error: any) {
       console.error('❌ Error fetching engagements:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch engagements',
+        error: error.message
+      });
+    }
+  });
+
+  // Add PDF download endpoint
+  app.get("/api/clients/:clientId/engagements/:engagementId/pdf", async (req, res) => {
+    try {
+      console.log('📄 GET /api/clients/:clientId/engagements/:engagementId/pdf - Generating PDF');
+      
+      const { clientId, engagementId } = req.params;
+      
+      // Find the engagement
+      const engagement = engagementsStorage.find(eng => 
+        eng.clientId === clientId && eng.id === engagementId
+      );
+      
+      if (!engagement) {
+        return res.status(404).json({ message: 'Oppdragsavtale ikke funnet' });
+      }
+      
+      // Simple PDF content as text (placeholder for PDF library)
+      const pdfContent = `
+OPPDRAGSAVTALE
+===============
+
+Avtale ID: ${engagement.id}
+System: ${engagement.systemName}
+Opprettet: ${new Date(engagement.createdAt).toLocaleDateString('nb-NO')}
+Status: ${engagement.status}
+
+Signatarer: ${engagement.signatories}
+Arbeidsområder: ${engagement.scopes}
+
+--- Detaljert innhold ---
+${JSON.stringify(engagement.data, null, 2)}
+      `.trim();
+      
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="oppdragsavtale-${engagementId}.txt"`);
+      res.send(pdfContent);
+      
+      console.log('✅ PDF generated for engagement:', engagementId);
+      
+    } catch (error: any) {
+      console.error('❌ Error generating PDF:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to generate PDF',
         error: error.message
       });
     }
