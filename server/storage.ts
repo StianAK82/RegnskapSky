@@ -578,7 +578,24 @@ export class DatabaseStorage implements IStorage {
 
   // Client Responsible methods
   async getClientResponsiblesByClient(clientId: string): Promise<any[]> {
-    return await db.select().from(clientResponsibles).where(eq(clientResponsibles.clientId, clientId));
+    return await db.select({
+      id: clientResponsibles.id,
+      clientId: clientResponsibles.clientId,
+      userId: clientResponsibles.userId,
+      tenantId: clientResponsibles.tenantId,
+      createdAt: clientResponsibles.createdAt,
+      user: {
+        id: employees.id,
+        firstName: employees.firstName,
+        lastName: employees.lastName,
+        email: employees.email,
+        position: employees.position,
+        department: employees.department
+      }
+    })
+    .from(clientResponsibles)
+    .innerJoin(employees, eq(clientResponsibles.userId, employees.id))
+    .where(eq(clientResponsibles.clientId, clientId));
   }
 
   async createClientResponsible(data: any): Promise<any> {

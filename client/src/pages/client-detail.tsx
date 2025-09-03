@@ -197,17 +197,6 @@ export default function ClientDetail() {
     queryFn: () => apiRequest('GET', '/api/employees').then(res => res.json())
   });
 
-  // Debug: Check users data
-  useEffect(() => {
-    console.log('🔍 EMPLOYEES DATA:', users);
-    console.log('🔍 RESPONSIBLES DATA:', responsibles);
-    if (users && users.length > 0) {
-      const availableUsers = users.filter((user: any) => !responsibles.some((r: any) => r.userId === user.id));
-      console.log('🔍 AVAILABLE EMPLOYEES AFTER FILTERING:', availableUsers);
-    } else {
-      console.log('🔍 NO EMPLOYEES FOUND IN SYSTEM');
-    }
-  }, [users, responsibles]);
 
   // Sync standardTaskSchedules with existing clientTasks (preserve user changes)
   useEffect(() => {
