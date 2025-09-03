@@ -378,15 +378,19 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
         version: 1
       });
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({
-        title: 'Engasjement opprettet',
-        description: 'Oppdragsavtale er opprettet i draft-status',
+        title: '✅ Oppdragsavtale opprettet!',
+        description: `Engasjement er opprettet i draft-status (ID: ${(data as any).engagementId || 'opprettet'})`,
       });
       queryClient.invalidateQueries({ queryKey: [`/api/clients/${clientId}/engagements`] });
-      form.reset();
-      setCurrentStep(1);
-      onOpenChange?.(false);
+      
+      // Wait 2 seconds before closing dialog to let user see the success message
+      setTimeout(() => {
+        form.reset();
+        setCurrentStep(1);
+        onOpenChange?.(false);
+      }, 2000);
     },
     onError: (error: any) => {
       toast({
