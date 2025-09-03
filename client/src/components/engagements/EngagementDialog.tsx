@@ -355,6 +355,9 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
         }];
         
         form.setValue('pricing', standardPricing, { shouldValidate: true });
+        
+        // Debug: Log all form values after auto-population
+        console.log('🔧 ENGAGEMENT: All form values after auto-population:', form.getValues());
       }, 100);
     }
   }, [isOpen, client, clientTasks, employees, form]);
@@ -517,7 +520,7 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
                         <FormItem>
                           <FormLabel>System navn</FormLabel>
                           <FormControl>
-                            <Select onValueChange={field.onChange} value={field.value || ""}>
+                            <Select onValueChange={field.onChange} value={field.value}>
                               <SelectTrigger>
                                 <SelectValue placeholder="Velg regnskapssystem" />
                               </SelectTrigger>

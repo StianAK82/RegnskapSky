@@ -197,6 +197,12 @@ export default function ClientDetail() {
     queryFn: () => apiRequest('GET', '/api/employees').then(res => res.json())
   });
 
+  const { data: engagements = [], refetch: refetchEngagements } = useQuery({
+    queryKey: ['/api/clients', clientId, 'engagements'],
+    queryFn: () => apiRequest('GET', `/api/clients/${clientId}/engagements`).then(res => res.json()),
+    enabled: !!clientId
+  });
+
 
   // Sync standardTaskSchedules with existing clientTasks (preserve user changes)
   useEffect(() => {
@@ -855,7 +861,7 @@ export default function ClientDetail() {
             <h3 className="text-lg font-semibold">Oppdragsavtaler</h3>
             <EngagementDialog 
               clientId={clientId!}
-              clientName={client.name}
+              clientName={client?.name || ''}
               trigger={
                 <Button>
                   <Plus className="mr-2 h-4 w-4" />
@@ -873,21 +879,50 @@ export default function ClientDetail() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8 text-gray-500">
-                <FileText className="mx-auto h-12 w-12 mb-4 text-gray-300" />
-                <p className="text-lg mb-2">Ingen oppdragsavtaler ennå</p>
-                <p className="text-sm mb-4">Opprett din første oppdragsavtale for å komme i gang</p>
-                <EngagementDialog 
-                  clientId={clientId!}
-                  clientName={client.name}
-                  trigger={
-                    <Button variant="outline">
-                      <Plus className="mr-2 h-4 w-4" />
-                      Opprett første oppdragsavtale
-                    </Button>
-                  }
-                />
-              </div>
+              {engagements.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <FileText className="mx-auto h-12 w-12 mb-4 text-gray-300" />
+                  <p className="text-lg mb-2">Ingen oppdragsavtaler ennå</p>
+                  <p className="text-sm mb-4">Opprett din første oppdragsavtale for å komme i gang</p>
+                  <EngagementDialog 
+                    clientId={clientId!}
+                    clientName={client?.name || ''}
+                    trigger={
+                      <Button variant="outline">
+                        <Plus className="mr-2 h-4 w-4" />
+                        Opprett første oppdragsavtale
+                      </Button>
+                    }
+                  />
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {engagements.map((engagement: any) => (
+                    <div key={engagement.id} className="border rounded-lg p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-medium">Oppdragsavtale #{engagement.id}</h4>
+                          <div className="text-sm text-gray-600 mt-1">
+                            <span>System: {engagement.systemName}</span>
+                            <span className="mx-2">•</span>
+                            <span>Opprettet: {new Date(engagement.createdAt).toLocaleDateString('nb-NO')}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Badge variant={engagement.status === 'draft' ? 'secondary' : 'default'}>
+                            {engagement.status === 'draft' ? 'Utkast' : engagement.status}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="mt-3 text-sm text-gray-600">
+                        <span>{engagement.signatories} signatarer</span>
+                        <span className="mx-2">•</span>
+                        <span>{engagement.scopes} arbeidsområder</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

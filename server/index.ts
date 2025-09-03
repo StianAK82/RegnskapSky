@@ -70,6 +70,38 @@ app.use((req, res, next) => {
     }
   });
 
+  // Add GET endpoint for fetching engagements
+  app.get("/api/clients/:clientId/engagements", async (req, res) => {
+    try {
+      console.log('🔍 GET /api/clients/:clientId/engagements - Fetching engagements');
+      
+      const clientId = req.params.clientId;
+      
+      // Return placeholder engagements data
+      const engagements = [
+        {
+          id: 'eng-1756937083556',
+          clientId: clientId,
+          status: 'draft',
+          systemName: 'Tripletex',
+          createdAt: new Date().toISOString(),
+          signatories: 2,
+          scopes: 6
+        }
+      ];
+      
+      res.json(engagements);
+      
+    } catch (error: any) {
+      console.error('❌ Error fetching engagements:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch engagements',
+        error: error.message
+      });
+    }
+  });
+
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
