@@ -199,11 +199,13 @@ export default function ClientDetail() {
 
   // Debug: Check users data
   useEffect(() => {
+    console.log('🔍 USERS DATA:', users);
+    console.log('🔍 RESPONSIBLES DATA:', responsibles);
     if (users && users.length > 0) {
-      console.log('🔍 USERS DATA:', users);
-      console.log('🔍 RESPONSIBLES DATA:', responsibles);
       const availableUsers = users.filter((user: any) => !responsibles.some((r: any) => r.userId === user.id));
       console.log('🔍 AVAILABLE USERS AFTER FILTERING:', availableUsers);
+    } else {
+      console.log('🔍 NO USERS FOUND IN SYSTEM');
     }
   }, [users, responsibles]);
 
