@@ -287,7 +287,30 @@ export default function ClientDetail() {
       // MVA is always on the 10th of every 2nd month
       const baseDate = new Date();
       baseDate.setDate(10); // Always 10th
-      baseDate.setMonth(baseDate.getMonth() + 2 + (taskIndex * 2)); // Every 2nd month, staggered
+      
+      // Calculate next MVA period (starting from next available period)
+      const currentMonth = baseDate.getMonth();
+      let nextMvaMonth;
+      
+      // MVA periods: Jan, Mar, May, Jul, Sep, Nov (every 2nd month)
+      const mvaMonths = [0, 2, 4, 6, 8, 10]; // Jan=0, Mar=2, May=4, Jul=6, Sep=8, Nov=10
+      
+      // Find next available MVA month
+      nextMvaMonth = mvaMonths.find(month => month > currentMonth);
+      if (!nextMvaMonth) {
+        // If no month left this year, start with January next year
+        nextMvaMonth = 0;
+        baseDate.setFullYear(baseDate.getFullYear() + 1);
+      }
+      
+      // Add taskIndex * 2 months for staggering
+      const targetMonth = nextMvaMonth + (taskIndex * 2);
+      const yearsToAdd = Math.floor(targetMonth / 12);
+      const finalMonth = targetMonth % 12;
+      
+      baseDate.setMonth(finalMonth);
+      baseDate.setFullYear(baseDate.getFullYear() + yearsToAdd);
+      
       return baseDate;
     }
     
