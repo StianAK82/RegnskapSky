@@ -869,8 +869,13 @@ export default function ClientDetail() {
                 </Button>
               }
               onSuccess={() => {
-                console.log('🔄 Refreshing engagements after creation');
-                setTimeout(() => refetchEngagements(), 500);
+                console.log('🔄 Force refreshing engagements after creation');
+                // Force a hard refresh of the engagements data
+                queryClient.invalidateQueries({ queryKey: ['/api/clients', clientId, 'engagements'] });
+                setTimeout(() => {
+                  refetchEngagements();
+                  window.location.reload(); // Last resort - reload page to show new data
+                }, 1000);
               }}
             />
           </div>
@@ -898,8 +903,13 @@ export default function ClientDetail() {
                       </Button>
                     }
                     onSuccess={() => {
-                      console.log('🔄 Refreshing engagements after creation');
-                      setTimeout(() => refetchEngagements(), 500);
+                      console.log('🔄 Force refreshing engagements after creation');
+                      // Force a hard refresh of the engagements data
+                      queryClient.invalidateQueries({ queryKey: ['/api/clients', clientId, 'engagements'] });
+                      setTimeout(() => {
+                        refetchEngagements();
+                        window.location.reload(); // Last resort - reload page to show new data
+                      }, 1000);
                     }}
                   />
                 </div>
