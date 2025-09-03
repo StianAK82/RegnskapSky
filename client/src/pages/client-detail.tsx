@@ -197,10 +197,18 @@ export default function ClientDetail() {
     queryFn: () => apiRequest('GET', '/api/employees').then(res => res.json())
   });
 
-  const { data: engagements = [], refetch: refetchEngagements } = useQuery({
+  const { data: engagements = [], refetch: refetchEngagements, isLoading: engagementsLoading } = useQuery({
     queryKey: ['/api/clients', clientId, 'engagements'],
-    queryFn: () => apiRequest('GET', `/api/clients/${clientId}/engagements`).then(res => res.json()),
-    enabled: !!clientId
+    queryFn: async () => {
+      console.log('🔄 Fetching engagements for client:', clientId);
+      const response = await apiRequest('GET', `/api/clients/${clientId}/engagements`);
+      const data = await response.json();
+      console.log('✅ Engagements data received:', data);
+      return data;
+    },
+    enabled: !!clientId,
+    staleTime: 0, // Always fetch fresh data
+    cacheTime: 0  // Don't cache
   });
 
 
@@ -869,13 +877,8 @@ export default function ClientDetail() {
                 </Button>
               }
               onSuccess={() => {
-                console.log('🔄 Force refreshing engagements after creation');
-                // Force a hard refresh of the engagements data
-                queryClient.invalidateQueries({ queryKey: ['/api/clients', clientId, 'engagements'] });
-                setTimeout(() => {
-                  refetchEngagements();
-                  window.location.reload(); // Last resort - reload page to show new data
-                }, 1000);
+                console.log('🔄 Reloading page to show new engagement');
+                setTimeout(() => window.location.reload(), 500);
               }}
             />
           </div>
@@ -888,7 +891,13 @@ export default function ClientDetail() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {engagements.length === 0 ? (
+              {console.log('🔍 ENGAGEMENTS DEBUG:', { engagements, length: engagements?.length, type: typeof engagements, isArray: Array.isArray(engagements) })}
+              {engagementsLoading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="mt-2 text-gray-500">Laster oppdragsavtaler...</p>
+                </div>
+              ) : !engagements || engagements.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   <FileText className="mx-auto h-12 w-12 mb-4 text-gray-300" />
                   <p className="text-lg mb-2">Ingen oppdragsavtaler ennå</p>
@@ -903,13 +912,8 @@ export default function ClientDetail() {
                       </Button>
                     }
                     onSuccess={() => {
-                      console.log('🔄 Force refreshing engagements after creation');
-                      // Force a hard refresh of the engagements data
-                      queryClient.invalidateQueries({ queryKey: ['/api/clients', clientId, 'engagements'] });
-                      setTimeout(() => {
-                        refetchEngagements();
-                        window.location.reload(); // Last resort - reload page to show new data
-                      }, 1000);
+                      console.log('🔄 Reloading page to show new engagement');
+                      setTimeout(() => window.location.reload(), 500);
                     }}
                   />
                 </div>
