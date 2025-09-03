@@ -99,7 +99,15 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  // Fetch full client data for auto-population
+  // Fetch full client data for auto-population - try from clients list first
+  const { data: allClients } = useQuery({
+    queryKey: ['/api/clients'],
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Get client from the existing clients query first as fallback
+  const clientFromList = allClients?.find((c: any) => c.id === clientId);
+
   const { data: client, error: clientError, isLoading: clientLoading } = useQuery({
     queryKey: [`/api/clients/${clientId}`],
     queryFn: async () => {
@@ -107,13 +115,24 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
       try {
         const response = await apiRequest('GET', `/api/clients/${clientId}`);
         if (!response.ok) {
+          console.error('🔍 ENGAGEMENT: Client fetch failed with status:', response.status, response.statusText);
+          // If direct fetch fails, try using data from clients list
+          if (clientFromList) {
+            console.log('🔍 ENGAGEMENT: Using client data from list as fallback:', clientFromList);
+            return clientFromList;
+          }
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
         const clientData = await response.json();
         console.log('🔍 ENGAGEMENT: Successfully fetched client data:', clientData);
         return clientData;
       } catch (error) {
-        console.error('🔍 ENGAGEMENT: Failed to fetch client data:', error);
+        console.error('🔍 ENGAGEMENT: Failed to fetch client data, trying fallback:', error);
+        // If specific client fetch fails but we have client from list, use that
+        if (clientFromList) {
+          console.log('🔍 ENGAGEMENT: Using fallback client data:', clientFromList);
+          return clientFromList;
+        }
         throw error;
       }
     },

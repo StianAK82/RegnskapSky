@@ -646,8 +646,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!client) {
         return res.status(404).json({ message: "Klient ikke funnet" });
       }
+      
+      // Ensure tenant security - client must belong to user's tenant
+      if (client.tenantId !== req.user!.tenantId) {
+        return res.status(404).json({ message: "Klient ikke funnet" });
+      }
+      
       res.json(client);
     } catch (error: any) {
+      console.error('Error fetching client by ID:', error);
       res.status(500).json({ message: "Feil ved henting av klient: " + error.message });
     }
   });
