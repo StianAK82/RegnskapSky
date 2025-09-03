@@ -3221,5 +3221,5 @@ function extractKPIsFromQuery(query: string): string[] {
 }
 
 // TODO: Add engagement routes integration
-// const { engagementRoutes } = require("../src/routes/engagements");
+// import { engagementRoutes } from "../src/routes/engagements";
 // app.use('/api', engagementRoutes);
