@@ -298,8 +298,16 @@ export default function ClientDetail() {
         if (existingTask) {
           // UPDATE existing task
           console.log(`🔄 UPDATING existing task: ${taskName} (${existingTask.id})`);
+          console.log('📤 PATCH data being sent:', taskData);
           return apiRequest('PATCH', `/api/tasks/${existingTask.id}`, taskData)
-            .then(res => res.json());
+            .then(res => {
+              console.log('✅ PATCH response:', res.status, res.statusText);
+              return res.json();
+            })
+            .catch(error => {
+              console.error('❌ PATCH ERROR:', error);
+              throw error;
+            });
         } else {
           // CREATE new task
           console.log(`✅ CREATING new task: ${taskName}`);
