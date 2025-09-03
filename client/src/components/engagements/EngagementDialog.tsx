@@ -291,7 +291,7 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
         <DialogHeader>
           <DialogTitle>Opprett Oppdragsavtale</DialogTitle>
           <DialogDescription>
-            Klient: <strong>{clientName}</strong> - Opprett en komplett oppdragsavtale etter Regnskap Norge-mal
+            Klient: <strong>{clientName}</strong>
           </DialogDescription>
         </DialogHeader>
 
