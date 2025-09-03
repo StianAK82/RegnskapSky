@@ -273,6 +273,38 @@ export default function ClientDetail() {
     }
   };
 
+  // Calculate next due date based on frequency (same logic as backend)
+  const calculateNextDueDate = (frequency: string): Date => {
+    const nextDate = new Date();
+    
+    switch (frequency.toLowerCase()) {
+      case 'daglig':
+        nextDate.setDate(nextDate.getDate() + 1);
+        break;
+      case 'ukentlig':
+        nextDate.setDate(nextDate.getDate() + 7);
+        break;
+      case 'månedlig':
+        nextDate.setMonth(nextDate.getMonth() + 1);
+        break;
+      case '2 vær mnd':
+        nextDate.setMonth(nextDate.getMonth() + 2);
+        break;
+      case 'kvartalsvis':
+        nextDate.setMonth(nextDate.getMonth() + 3);
+        break;
+      case 'årlig':
+        nextDate.setFullYear(nextDate.getFullYear() + 1);
+        break;
+      default:
+        // Som standard, legg til 1 måned
+        nextDate.setMonth(nextDate.getMonth() + 1);
+        console.log(`⚠️ Ukjent frekvens: ${frequency}, bruker månedlig som standard`);
+    }
+    
+    return nextDate;
+  };
+
   const saveStandardTasksMutation = useMutation({
     mutationFn: async (schedules: any) => {
       const enabledTasks = Object.entries(schedules)
@@ -284,11 +316,15 @@ export default function ClientDetail() {
           task.taskName === taskName && task.clientId === clientId
         );
 
+        // Calculate proper due date based on frequency
+        const nextDueDate = calculateNextDueDate(config.frequency);
+        console.log(`📅 Calculated due date for ${taskName} (${config.frequency}): ${nextDueDate.toISOString()}`);
+
         const taskData = {
           taskName,
           taskType: 'standard',
           description: `${config.frequency} ${taskName.toLowerCase()}`,
-          dueDate: config.dueDate ? new Date(config.dueDate).toISOString() : null,
+          dueDate: nextDueDate.toISOString(),
           interval: mapFrequencyToInterval(config.frequency),
           repeatInterval: config.frequency,
           assignedTo: config.assignedTo || null,
@@ -733,7 +769,7 @@ export default function ClientDetail() {
                           <SelectContent>
                             {users.map((user: any) => (
                               <SelectItem key={user.id} value={user.id}>
-                                {user.firstName} {user.lastName}
+                                {user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim()}
                               </SelectItem>
                             ))}
                           </SelectContent>
