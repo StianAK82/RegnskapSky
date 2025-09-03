@@ -56,7 +56,7 @@ export interface IStorage {
   getAllTasksForTenant(tenantId: string): Promise<any[]>;
 
   // Client Task management
-  getClientTasksByClient(clientId: string): Promise<any[]>;
+  getClientTasksByClient(clientId: string, tenantId?: string): Promise<any[]>;
   createClientTask(task: any): Promise<any>;
   updateClientTask(id: string, updates: any): Promise<any>;
   deleteClientTask(id: string): Promise<void>;
