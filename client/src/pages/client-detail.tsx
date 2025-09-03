@@ -197,6 +197,16 @@ export default function ClientDetail() {
     queryFn: () => apiRequest('GET', '/api/users').then(res => res.json())
   });
 
+  // Debug: Check users data
+  useEffect(() => {
+    if (users && users.length > 0) {
+      console.log('🔍 USERS DATA:', users);
+      console.log('🔍 RESPONSIBLES DATA:', responsibles);
+      const availableUsers = users.filter((user: any) => !responsibles.some((r: any) => r.userId === user.id));
+      console.log('🔍 AVAILABLE USERS AFTER FILTERING:', availableUsers);
+    }
+  }, [users, responsibles]);
+
   // Sync standardTaskSchedules with existing clientTasks (preserve user changes)
   useEffect(() => {
     if (clientTasks.length > 0) {
@@ -1151,11 +1161,15 @@ export default function ClientDetail() {
                         <SelectValue placeholder="Velg en bruker" />
                       </SelectTrigger>
                       <SelectContent>
-                        {users.filter((user: any) => !responsibles.some((r: any) => r.userId === user.id)).map((user: any) => (
-                          <SelectItem key={user.id} value={user.id}>
-                            {user.firstName} {user.lastName} ({user.email})
-                          </SelectItem>
-                        ))}
+                        {users && users.length > 0 ? (
+                          users.filter((user: any) => !responsibles.some((r: any) => r.userId === user.id)).map((user: any) => (
+                            <SelectItem key={user.id} value={user.id}>
+                              {user.firstName} {user.lastName} ({user.email})
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="" disabled>Ingen brukere tilgjengelig</SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
