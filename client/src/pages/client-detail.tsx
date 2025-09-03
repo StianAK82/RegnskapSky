@@ -275,22 +275,38 @@ export default function ClientDetail() {
 
   const saveStandardTasksMutation = useMutation({
     mutationFn: async (schedules: any) => {
-      const tasks = Object.entries(schedules)
-        .filter(([, config]: [string, any]) => config.enabled)
-        .map(([taskName, config]: [string, any]) => ({
+      const enabledTasks = Object.entries(schedules)
+        .filter(([, config]: [string, any]) => config.enabled);
+
+      const promises = enabledTasks.map(async ([taskName, config]: [string, any]) => {
+        // Find existing task for this client/taskName combination
+        const existingTask = clientTasks.find((task: any) => 
+          task.taskName === taskName && task.clientId === clientId
+        );
+
+        const taskData = {
           taskName,
           taskType: 'standard',
           description: `${config.frequency} ${taskName.toLowerCase()}`,
           dueDate: config.dueDate ? new Date(config.dueDate).toISOString() : null,
           interval: mapFrequencyToInterval(config.frequency),
-          repeatInterval: config.frequency.toLowerCase(),
+          repeatInterval: config.frequency,
           assignedTo: config.assignedTo || null,
-          status: 'ikke_startet'
-        }));
+          status: existingTask?.status || 'ikke_startet'
+        };
 
-      const promises = tasks.map(task => 
-        apiRequest('POST', `/api/clients/${clientId}/tasks`, task).then(res => res.json())
-      );
+        if (existingTask) {
+          // UPDATE existing task
+          console.log(`🔄 UPDATING existing task: ${taskName} (${existingTask.id})`);
+          return apiRequest('PATCH', `/api/tasks/${existingTask.id}`, taskData)
+            .then(res => res.json());
+        } else {
+          // CREATE new task
+          console.log(`✅ CREATING new task: ${taskName}`);
+          return apiRequest('POST', `/api/clients/${clientId}/tasks`, taskData)
+            .then(res => res.json());
+        }
+      });
       
       return Promise.all(promises);
     },
