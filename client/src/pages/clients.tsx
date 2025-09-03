@@ -336,45 +336,8 @@ export default function Clients() {
   };
 
   const handleEdit = (client: Client) => {
-    setEditingClient(client);
-    setRegistrationStep(2); // Go directly to step 2 for editing
-    // Initialize task schedules for existing tasks
-    const clientTasks = client.tasks || [];
-    const initialSchedules: Record<string, any> = {};
-    clientTasks.forEach((taskName: string) => {
-      const taskOption = TASK_OPTIONS.find(t => t.value === taskName);
-      if (taskOption) {
-        initialSchedules[taskName] = {
-          enabled: true,
-          frequency: taskOption.frequency[0],
-          assignedTo: client.responsiblePersonId || '',
-          dueDate: ''
-        };
-      }
-    });
-    setTaskSchedules(initialSchedules);
-    
-    form.reset({
-      name: client.name,
-      orgNumber: client.orgNumber || '',
-      email: client.email || '',
-      phone: client.phone || '',
-      address: client.address || '',
-      postalAddress: client.postalAddress || '',
-      postalCode: client.postalCode || '',
-      city: client.city || '',
-      contactPerson: client.contactPerson || '',
-      amlStatus: client.amlStatus,
-      accountingSystem: client.accountingSystem || '',
-      kycStatus: client.kycStatus || 'pending',
-      amlDocuments: client.amlDocuments,
-      tasks: client.tasks || [],
-      responsiblePersonId: client.responsiblePersonId || undefined,
-      recurringTasks: client.recurringTasks,
-      hourlyReportNotes: client.hourlyReportNotes || '',
-      checklistStatus: client.checklistStatus || '',
-      notes: client.notes || '',
-    });
+    // Navigate to client detail page instead of opening modal
+    setLocation(`/clients/${client.id}`);
   };
 
   const handleDialogClose = () => {
