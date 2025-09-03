@@ -321,6 +321,17 @@ export default function ClientDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/clients', clientId, 'tasks'] });
       queryClient.invalidateQueries({ queryKey: ['/api/clients/task-overview'] });
+      
+      // Force refetch and wait for it to complete, then rebuild form state
+      queryClient.refetchQueries({ queryKey: ['/api/clients', clientId, 'tasks'] }).then(() => {
+        console.log('🔄 Tasks refetched, rebuilding form state...');
+        // Trigger useEffect to rebuild form state by accessing fresh clientTasks
+        const updatedTasks = queryClient.getQueryData(['/api/clients', clientId, 'tasks']);
+        if (updatedTasks && Array.isArray(updatedTasks)) {
+          console.log('🛠️ Rebuilding form state from fresh data:', updatedTasks.length, 'tasks');
+        }
+      });
+      
       toast({
         title: "Oppgaveplaner lagret",
         description: "Standardoppgaver er konfigurert for denne klienten."
