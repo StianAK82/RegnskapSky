@@ -1,0 +1,33 @@
+🔍 FRONTEND: Fetching tasks for client 158689a8-4f38-4013-86b8-2605ae13faed
+🔍 ENGAGEMENT DIALOG: Props changed - 
+Object {clientId: "158689a8-4f38-4013-86b8-2605ae13faed", clientName: "Stavanger Fisk & Skalldyr AS", open: undefined}
+🔍 ENGAGEMENT DIALOG: Dialog opened/closed - 
+Object {open: undefined, clientId: "158689a8-4f38-4013-86b8-2605ae13faed"}
+🔍 ENGAGEMENT CLIENT STATE: 
+Object {hasClient: false, clientLoading: false, clientError: undefined, clientFromList: true, client: undefined}
+🔍 ENGAGEMENT DIALOG: Props changed - 
+Object {clientId: "158689a8-4f38-4013-86b8-2605ae13faed", clientName: "Stavanger Fisk & Skalldyr AS", open: undefined}
+🔍 FRONTEND: Got 30 tasks: 
+(30) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+🔍 ENGAGEMENT DIALOG: Props changed - 
+Object {clientId: "158689a8-4f38-4013-86b8-2605ae13faed", clientName: "Stavanger Fisk & Skalldyr AS", open: undefined}
+🔍 ENGAGEMENT DIALOG: Props changed - 
+Object {clientId: "158689a8-4f38-4013-86b8-2605ae13faed", clientName: "Stavanger Fisk & Skalldyr AS", open: undefined}
+🔍 ENGAGEMENT DIALOG: Props changed - 
+Object {clientId: "158689a8-4f38-4013-86b8-2605ae13faed", clientName: "Stavanger Fisk & Skalldyr AS", open: undefined}
+🔍 ENGAGEMENT DIALOG: Props changed - 
+Object {clientId: "158689a8-4f38-4013-86b8-2605ae13faed", clientName: "Stavanger Fisk & Skalldyr AS", open: undefined}
+🔍 ENGAGEMENT DIALOG: Dialog opened/closed - 
+Object {open: undefined, clientId: "158689a8-4f38-4013-86b8-2605ae13faed"}
+🔍 ENGAGEMENT CLIENT STATE: 
+Object {hasClient: false, clientLoading: false, clientError: undefined, clientFromList: true, client: undefined}
+🔍 ENGAGEMENT DIALOG: Dialog opened/closed - 
+Object {open: undefined, clientId: "158689a8-4f38-4013-86b8-2605ae13faed"}
+🔍 ENGAGEMENT CLIENT STATE: 
+Object {hasClient: false, clientLoading: false, clientError: undefined, clientFromList: true, client: undefined}
+🔍 ENGAGEMENT DIALOG: Props changed - 
+Object {clientId: "158689a8-4f38-4013-86b8-2605ae13faed", clientName: "Stavanger Fisk & Skalldyr AS", open: undefined}
+🔍 ENGAGEMENT DIALOG: Props changed - 
+Object {clientId: "158689a8-4f38-4013-86b8-2605ae13faed", clientName: "Stavanger Fisk & Skalldyr AS", open: undefined}
+🔍 ENGAGEMENT DIALOG: Props changed - 
+Object {clientId: "158689a8-4f38-4013-86b8-2605ae13faed", clientName: "Stavanger Fisk & Skalldyr AS", open: undefined}

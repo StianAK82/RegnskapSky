@@ -99,12 +99,17 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Internal state for when open/onOpenChange not provided
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isOpen = open !== undefined ? open : internalOpen;
+  const handleOpenChange = onOpenChange || setInternalOpen;
+
   // Debug logging for dialog state
-  console.log('🔍 ENGAGEMENT DIALOG: Props changed -', { clientId, clientName, open });
+  console.log('🔍 ENGAGEMENT DIALOG: Props changed -', { clientId, clientName, open, isOpen });
   
   useEffect(() => {
-    console.log('🔍 ENGAGEMENT DIALOG: Dialog opened/closed -', { open, clientId });
-  }, [open, clientId]);
+    console.log('🔍 ENGAGEMENT DIALOG: Dialog opened/closed -', { open, isOpen, clientId });
+  }, [open, isOpen, clientId]);
   
   // Fetch full client data for auto-population - try from clients list first
   const { data: allClients } = useQuery({
@@ -141,7 +146,7 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
         throw error;
       }
     },
-    enabled: !!clientId && !!open,
+    enabled: !!clientId && !!isOpen,
     retry: 1
   });
   
@@ -165,7 +170,7 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
       console.log('🔍 ENGAGEMENT: Fetched client tasks:', tasksData);
       return tasksData;
     },
-    enabled: !!clientId && !!open
+    enabled: !!clientId && !!isOpen
   });
 
 
@@ -430,7 +435,7 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
