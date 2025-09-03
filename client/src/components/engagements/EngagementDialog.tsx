@@ -303,11 +303,12 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
           console.log('🔧 ENGAGEMENT: Setting accounting system:', client.accountingSystem);
           // Map the system name to match dropdown options
           const systemMapping: Record<string, string> = {
-            'tripletex': 'tripletex',
-            'visma': 'visma_business', 
-            'poweroffice': 'poweroffice_go',
-            'fiken': 'fiken',
-            'mamut': 'mamut_one'
+            'tripletex': 'Tripletex',
+            'visma': 'Unimicro', 
+            'poweroffice': 'PowerOffice',
+            'fiken': 'Fiken',
+            'conta': 'Conta',
+            'mamut': 'Unimicro'
           };
           const mappedSystem = systemMapping[client.accountingSystem.toLowerCase()] || client.accountingSystem;
           form.setValue('systemName', mappedSystem, { shouldValidate: true });
