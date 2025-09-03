@@ -162,14 +162,19 @@ export default function ClientDetail() {
   const { data: clientTasks = [], isLoading: isTasksLoading, error: tasksError } = useQuery({
     queryKey: ['/api/clients', clientId, 'tasks'],
     queryFn: async () => {
+      console.log(`🔍 FRONTEND: Fetching tasks for client ${clientId}`);
       const response = await apiRequest('GET', `/api/clients/${clientId}/tasks`);
       if (!response.ok) {
         throw new Error('Failed to fetch client tasks');
       }
-      return response.json();
+      const data = await response.json();
+      console.log(`🔍 FRONTEND: Got ${data.length} tasks:`, data);
+      return data;
     },
     enabled: !!clientId,
-    retry: 1
+    retry: 1,
+    staleTime: 0, // Always refetch
+    cacheTime: 0  // Don't cache
   });
 
 
