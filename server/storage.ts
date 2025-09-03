@@ -504,17 +504,24 @@ export class DatabaseStorage implements IStorage {
 
   // Client Task methods
   async getClientTasksByClient(clientId: string, tenantId?: string): Promise<any[]> {
+    console.log(`🔍 STORAGE: getClientTasksByClient called with clientId: ${clientId}, tenantId: ${tenantId}`);
+    
     const conditions = [eq(clientTasks.clientId, clientId)];
     
     if (tenantId) {
       conditions.push(eq(clientTasks.tenantId, tenantId));
+      console.log(`🔍 STORAGE: Added tenant filter for: ${tenantId}`);
     }
     
-    return await db
+    const results = await db
       .select()
       .from(clientTasks)
       .where(and(...conditions))
       .orderBy(desc(clientTasks.dueDate));
+      
+    console.log(`🔍 STORAGE: Found ${results.length} tasks:`, results.map(t => ({ id: t.id, taskName: t.taskName, tenantId: t.tenantId })));
+    
+    return results;
   }
 
   async createClientTask(task: any): Promise<any> {
