@@ -1,7 +1,7 @@
 import { 
   users, tenants, clients, employees, tasks, timeEntries, documents, notifications, integrations,
   clientTasks, clientResponsibles, companyRegistryData, amlDocuments, amlProviders, amlChecks, accountingIntegrations,
-  checklistTemplates, clientChecklists, plugins, pluginConfigurations,
+  checklistTemplates, clientChecklists, plugins, pluginConfigurations, engagements,
   type User, type InsertUser, type Tenant, type InsertTenant, type Client, type InsertClient,
   type Employee, type InsertEmployee, type Task, type InsertTask, 
   type TimeEntry, type InsertTimeEntry, type Document, type InsertDocument,
@@ -10,8 +10,8 @@ import {
   type AmlProvider, type InsertAmlProvider, type AmlCheck, type InsertAmlCheck,
   type AccountingIntegration, type InsertAccountingIntegration, type ChecklistTemplate, type InsertChecklistTemplate,
   type ClientChecklist, type InsertClientChecklist, type Plugin, type InsertPlugin,
-  type PluginConfiguration, type InsertPluginConfiguration,
-  insertClientTaskSchema, insertClientResponsibleSchema
+  type PluginConfiguration, type InsertPluginConfiguration, type Engagement, type InsertEngagement,
+  insertClientTaskSchema, insertClientResponsibleSchema, insertEngagementSchema
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, count, sql, gte, lte, lt } from "drizzle-orm";
@@ -174,6 +174,13 @@ export interface IStorage {
   getPluginConfigurationsByTenant(tenantId: string): Promise<PluginConfiguration[]>;
   createPluginConfiguration(config: InsertPluginConfiguration): Promise<PluginConfiguration>;
   updatePluginConfiguration(id: string, config: Partial<InsertPluginConfiguration>): Promise<PluginConfiguration>;
+
+  // Engagement management
+  getEngagementsByClient(clientId: string): Promise<Engagement[]>;
+  getEngagement(id: string): Promise<Engagement | undefined>;
+  createEngagement(engagement: InsertEngagement): Promise<Engagement>;
+  updateEngagement(id: string, updates: Partial<Engagement>): Promise<Engagement>;
+  deleteEngagement(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1582,6 +1589,34 @@ export class DatabaseStorage implements IStorage {
       console.error('Error generating upcoming tasks:', error);
       return 0;
     }
+  }
+
+  // Engagement management implementation
+  async getEngagementsByClient(clientId: string): Promise<Engagement[]> {
+    return await db.select().from(engagements).where(eq(engagements.clientId, clientId)).orderBy(desc(engagements.createdAt));
+  }
+
+  async getEngagement(id: string): Promise<Engagement | undefined> {
+    const [engagement] = await db.select().from(engagements).where(eq(engagements.id, id));
+    return engagement || undefined;
+  }
+
+  async createEngagement(engagement: InsertEngagement): Promise<Engagement> {
+    const [created] = await db.insert(engagements).values(engagement).returning();
+    return created;
+  }
+
+  async updateEngagement(id: string, updates: Partial<Engagement>): Promise<Engagement> {
+    const [updated] = await db
+      .update(engagements)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(engagements.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteEngagement(id: string): Promise<void> {
+    await db.delete(engagements).where(eq(engagements.id, id));
   }
 }
 

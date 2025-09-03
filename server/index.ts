@@ -1,6 +1,8 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { TaskSchedulerService } from "./services/task-scheduler";
+import { authenticateToken } from "./auth";
+import { storage } from "./storage";
 import path from "path";
 
 const app = express();
@@ -37,40 +39,51 @@ app.use((req, res, next) => {
   next();
 });
 
-// In-memory storage for engagements
-const engagementsStorage: any[] = [];
 
 (async () => {
   const server = await registerRoutes(app);
   
-  // Add engagement creation endpoint with proper storage
-  app.post("/api/clients/:clientId/engagements", async (req, res) => {
+  // Add engagement creation endpoint with database storage
+  app.post("/api/clients/:clientId/engagements", authenticateToken as any, async (req, res) => {
     try {
       console.log('🔗 POST /api/clients/:clientId/engagements - Creating engagement');
       console.log('📋 Request body:', JSON.stringify(req.body, null, 2));
       
-      const clientId = req.params.clientId;
+      const { clientId } = req.params;
+      const user = req.user as any;
+      const engagementData = req.body;
       
-      // Create and store engagement record
-      const engagement = {
-        id: `eng-${Date.now()}`,
+      // Generate engagement ID
+      const engagementId = `eng-${Date.now()}`;
+      
+      // Create engagement object for database
+      const newEngagement = {
+        id: engagementId,
         clientId,
-        createdAt: new Date().toISOString(),
-        status: 'draft',
-        systemName: req.body.systemName || 'Ukjent system',
-        signatories: req.body.signatories?.length || 0,
-        scopes: req.body.scopes?.length || 0,
-        data: req.body
+        tenantId: user.tenantId,
+        systemName: engagementData.systemName || 'Ukjent system',
+        licenseHolder: engagementData.licenseHolder || '',
+        adminAccess: engagementData.adminAccess || false,
+        signatories: engagementData.signatories || [],
+        scopes: engagementData.scopes || [],
+        pricing: engagementData.pricing || [],
+        dpas: engagementData.dpas || [],
+        status: engagementData.status || 'draft',
+        validFrom: new Date(engagementData.validFrom || new Date()),
+        includeStandardTerms: engagementData.includeStandardTerms || true,
+        includeDpa: engagementData.includeDpa || true,
+        includeItBilag: engagementData.includeItBilag || true,
+        version: engagementData.version || 1
       };
       
-      // Store in memory
-      engagementsStorage.push(engagement);
+      // Store in database
+      const createdEngagement = await storage.createEngagement(newEngagement);
       
-      console.log('✅ Engagement created and stored:', engagement.id);
-      console.log('📊 Total engagements stored:', engagementsStorage.length);
+      console.log('✅ Engagement created and stored in database:', engagementId);
+      
       res.json({ 
         message: 'Oppdragsavtale opprettet', 
-        engagementId: engagement.id,
+        engagementId: createdEngagement.id,
         status: 'success' 
       });
       
@@ -80,20 +93,46 @@ const engagementsStorage: any[] = [];
     }
   });
 
-  // Add GET endpoint for fetching engagements
-  app.get("/api/clients/:clientId/engagements", async (req, res) => {
+  // Add GET endpoint for fetching engagements from database
+  app.get("/api/clients/:clientId/engagements", authenticateToken as any, async (req, res) => {
     try {
       console.log('🔍 GET /api/clients/:clientId/engagements - Fetching engagements');
       
-      const clientId = req.params.clientId;
+      const { clientId } = req.params;
       
-      // Filter engagements for this client
-      const clientEngagements = engagementsStorage.filter(eng => eng.clientId === clientId);
+      // Fetch engagements from database
+      const clientEngagements = await storage.getEngagementsByClient(clientId);
+      
+      // Transform for frontend compatibility
+      const transformedEngagements = clientEngagements.map(e => ({
+        id: e.id,
+        clientId: e.clientId,
+        createdAt: e.createdAt,
+        status: e.status,
+        systemName: e.systemName,
+        signatories: Array.isArray(e.signatories) ? e.signatories.length : 0,
+        scopes: Array.isArray(e.scopes) ? e.scopes.length : 0,
+        data: {
+          systemName: e.systemName,
+          licenseHolder: e.licenseHolder,
+          adminAccess: e.adminAccess,
+          signatories: e.signatories,
+          scopes: e.scopes,
+          pricing: e.pricing,
+          dpas: e.dpas,
+          status: e.status,
+          validFrom: e.validFrom,
+          includeStandardTerms: e.includeStandardTerms,
+          includeDpa: e.includeDpa,
+          includeItBilag: e.includeItBilag,
+          version: e.version
+        }
+      }));
       
       console.log('🔍 Fetching engagements for client:', clientId);
-      console.log('📊 Found engagements:', clientEngagements.length);
+      console.log('📊 Found engagements:', transformedEngagements.length);
       
-      res.json(clientEngagements);
+      res.json(transformedEngagements);
       
     } catch (error: any) {
       console.error('❌ Error fetching engagements:', error);
@@ -105,19 +144,17 @@ const engagementsStorage: any[] = [];
     }
   });
 
-  // Add PDF download endpoint
-  app.get("/api/clients/:clientId/engagements/:engagementId/pdf", async (req, res) => {
+  // Add PDF download endpoint using database storage
+  app.get("/api/clients/:clientId/engagements/:engagementId/pdf", authenticateToken as any, async (req, res) => {
     try {
       console.log('📄 GET /api/clients/:clientId/engagements/:engagementId/pdf - Generating PDF');
       
       const { clientId, engagementId } = req.params;
       
-      // Find the engagement
-      const engagement = engagementsStorage.find(eng => 
-        eng.clientId === clientId && eng.id === engagementId
-      );
+      // Find the engagement in database
+      const engagement = await storage.getEngagement(engagementId);
       
-      if (!engagement) {
+      if (!engagement || engagement.clientId !== clientId) {
         return res.status(404).json({ message: 'Oppdragsavtale ikke funnet' });
       }
       
@@ -131,11 +168,14 @@ System: ${engagement.systemName}
 Opprettet: ${new Date(engagement.createdAt).toLocaleDateString('nb-NO')}
 Status: ${engagement.status}
 
-Signatarer: ${engagement.signatories}
-Arbeidsområder: ${engagement.scopes}
+Signatarer: ${Array.isArray(engagement.signatories) ? engagement.signatories.length : 0}
+Arbeidsområder: ${Array.isArray(engagement.scopes) ? engagement.scopes.length : 0}
 
 --- Detaljert innhold ---
-${JSON.stringify(engagement.data, null, 2)}
+System: ${engagement.systemName}
+Lisensholder: ${engagement.licenseHolder}
+Admin-tilgang: ${engagement.adminAccess ? 'Ja' : 'Nei'}
+Gyldig fra: ${new Date(engagement.validFrom).toLocaleDateString('nb-NO')}
       `.trim();
       
       res.setHeader('Content-Type', 'text/plain; charset=utf-8');

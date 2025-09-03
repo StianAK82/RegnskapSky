@@ -498,6 +498,28 @@ export const amlChecks = pgTable("aml_checks", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Engagement contracts table
+export const engagements = pgTable("engagements", {
+  id: text("id").primaryKey(), // Custom format like "eng-123456789"
+  clientId: uuid("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  systemName: text("system_name").notNull(),
+  licenseHolder: text("license_holder").notNull(),
+  adminAccess: boolean("admin_access").notNull().default(false),
+  signatories: jsonb("signatories").notNull(), // Array of signatory objects
+  scopes: jsonb("scopes").notNull(), // Array of scope objects
+  pricing: jsonb("pricing").notNull(), // Array of pricing objects
+  dpas: jsonb("dpas").notNull(), // Array of DPA objects
+  status: text("status").notNull().default("draft"), // draft, active, expired, cancelled
+  validFrom: timestamp("valid_from", { withTimezone: true }).notNull(),
+  includeStandardTerms: boolean("include_standard_terms").notNull().default(true),
+  includeDpa: boolean("include_dpa").notNull().default(true),
+  includeItBilag: boolean("include_it_bilag").notNull().default(true),
+  version: integer("version").notNull().default(1),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ one, many }) => ({
   tenant: one(tenants, {
@@ -515,6 +537,7 @@ export const tenantsRelations = relations(tenants, ({ many }) => ({
   documents: many(documents),
   notifications: many(notifications),
   integrations: many(integrations),
+  engagements: many(engagements),
 }));
 
 export const employeesRelations = relations(employees, ({ one }) => ({
@@ -540,6 +563,7 @@ export const clientsRelations = relations(clients, ({ one, many }) => ({
   timeEntries: many(timeEntries),
   taskTemplates: many(taskTemplates),
   taskInstances: many(taskInstances),
+  engagements: many(engagements),
   engagementOwner: one(users, {
     fields: [clients.engagementOwnerId],
     references: [users.id],
@@ -690,6 +714,17 @@ export const invoiceLinesRelations = relations(invoiceLines, ({ one }) => ({
   invoice: one(invoices, {
     fields: [invoiceLines.invoiceId],
     references: [invoices.id],
+  }),
+}));
+
+export const engagementsRelations = relations(engagements, ({ one }) => ({
+  client: one(clients, {
+    fields: [engagements.clientId],
+    references: [clients.id],
+  }),
+  tenant: one(tenants, {
+    fields: [engagements.tenantId],
+    references: [tenants.id],
   }),
 }));
 
@@ -886,6 +921,11 @@ export const insertInvoiceLineSchema = createInsertSchema(invoiceLines).omit({
   type: z.enum(invoiceLineTypes),
 });
 
+export const insertEngagementSchema = createInsertSchema(engagements).omit({
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -937,3 +977,7 @@ export type Invoice = typeof invoices.$inferSelect;
 export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
 export type InvoiceLine = typeof invoiceLines.$inferSelect;
 export type InsertInvoiceLine = z.infer<typeof insertInvoiceLineSchema>;
+
+// Engagement types  
+export type Engagement = typeof engagements.$inferSelect;
+export type InsertEngagement = z.infer<typeof insertEngagementSchema>;
