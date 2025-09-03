@@ -42,6 +42,8 @@ interface Client {
   accountingSystem?: string;
   accountingSystemUrl?: string;
   notes: string;
+  amlStatus: 'pending' | 'approved' | 'rejected';
+  kycStatus: 'pending' | 'approved' | 'rejected';
   isActive: boolean;
 }
 
@@ -143,7 +145,9 @@ export default function ClientDetail() {
 
   const [clientUpdates, setClientUpdates] = useState({
     accountingSystem: '',
-    accountingSystemUrl: ''
+    accountingSystemUrl: '',
+    amlStatus: 'pending' as 'pending' | 'approved' | 'rejected',
+    kycStatus: 'pending' as 'pending' | 'approved' | 'rejected'
   });
 
   // Queries
@@ -455,7 +459,9 @@ export default function ClientDetail() {
     if (client) {
       setClientUpdates({
         accountingSystem: client.accountingSystem || '',
-        accountingSystemUrl: client.accountingSystemUrl || ''
+        accountingSystemUrl: client.accountingSystemUrl || '',
+        amlStatus: client.amlStatus || 'pending',
+        kycStatus: client.kycStatus || 'pending'
       });
     }
   }, [client]);
@@ -463,6 +469,7 @@ export default function ClientDetail() {
   const handleAccountingSystemChange = (value: string) => {
     const system = ACCOUNTING_SYSTEMS.find(s => s.value === value);
     setClientUpdates({
+      ...clientUpdates,
       accountingSystem: value,
       accountingSystemUrl: value === 'annet' ? clientUpdates.accountingSystemUrl : (system?.url || '')
     });
@@ -470,6 +477,49 @@ export default function ClientDetail() {
 
   const saveAccountingSystem = () => {
     updateClientMutation.mutate(clientUpdates);
+  };
+
+  const handleAMLStatusChange = (value: 'pending' | 'approved' | 'rejected') => {
+    setClientUpdates({
+      ...clientUpdates,
+      amlStatus: value
+    });
+  };
+
+  const handleKYCStatusChange = (value: 'pending' | 'approved' | 'rejected') => {
+    setClientUpdates({
+      ...clientUpdates,
+      kycStatus: value
+    });
+  };
+
+  const saveComplianceStatus = () => {
+    updateClientMutation.mutate({
+      amlStatus: clientUpdates.amlStatus,
+      kycStatus: clientUpdates.kycStatus
+    });
+  };
+
+  const getAMLStatusBadge = (status: string) => {
+    switch (status) {
+      case 'approved':
+        return <Badge className="bg-green-100 text-green-800">Godkjent</Badge>;
+      case 'rejected':
+        return <Badge className="bg-red-100 text-red-800">Avvist</Badge>;
+      default:
+        return <Badge className="bg-yellow-100 text-yellow-800">Venter</Badge>;
+    }
+  };
+
+  const getKYCStatusBadge = (status: string) => {
+    switch (status) {
+      case 'approved':
+        return <Badge className="bg-green-100 text-green-800">Godkjent</Badge>;
+      case 'rejected':
+        return <Badge className="bg-red-100 text-red-800">Avvist</Badge>;
+      default:
+        return <Badge className="bg-yellow-100 text-yellow-800">Venter</Badge>;
+    }
   };
 
   const handleTimeSubmit = () => {
@@ -667,6 +717,63 @@ export default function ClientDetail() {
                       Åpne system
                     </Button>
                   )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* AML/KYC Compliance Status */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Shield className="mr-2 h-5 w-5" />
+                  AML/KYC Compliance
+                </CardTitle>
+                <CardDescription>
+                  Administrer Anti-Money Laundering og Know Your Customer status
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>AML-status</Label>
+                    <div className="flex items-center space-x-2 mt-1 mb-2">
+                      {client && getAMLStatusBadge(client.amlStatus)}
+                    </div>
+                    <Select value={clientUpdates.amlStatus} onValueChange={handleAMLStatusChange}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">Venter</SelectItem>
+                        <SelectItem value="approved">Godkjent</SelectItem>
+                        <SelectItem value="rejected">Avvist</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label>KYC-status</Label>
+                    <div className="flex items-center space-x-2 mt-1 mb-2">
+                      {client && getKYCStatusBadge(client.kycStatus)}
+                    </div>
+                    <Select value={clientUpdates.kycStatus} onValueChange={handleKYCStatusChange}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">Venter</SelectItem>
+                        <SelectItem value="approved">Godkjent</SelectItem>
+                        <SelectItem value="rejected">Avvist</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div>
+                  <Button onClick={saveComplianceStatus} disabled={updateClientMutation.isPending}>
+                    <UserCheck className="mr-2 h-4 w-4" />
+                    Lagre compliance-status
+                  </Button>
                 </div>
               </CardContent>
             </Card>
