@@ -189,28 +189,33 @@ export default function ClientDetail() {
     queryFn: () => apiRequest('GET', '/api/users').then(res => res.json())
   });
 
-  // Sync standardTaskSchedules with existing clientTasks
+  // Sync standardTaskSchedules with existing clientTasks (preserve user changes)
   useEffect(() => {
     if (clientTasks.length > 0) {
-      const schedules: Record<string, any> = {};
-      
-      clientTasks.forEach((task: any) => {
-        // Find the standard task template to get correct frequency options
-        const standardTask = STANDARD_TASKS.find(t => t.name === task.taskName);
-        const validFrequency = standardTask?.frequency.includes(task.repeatInterval) 
-          ? task.repeatInterval 
-          : standardTask?.frequency[0] || 'Månedlig';
+      setStandardTaskSchedules(prevSchedules => {
+        const schedules: Record<string, any> = {};
+        
+        clientTasks.forEach((task: any) => {
+          // Find the standard task template to get correct frequency options
+          const standardTask = STANDARD_TASKS.find(t => t.name === task.taskName);
+          const validFrequency = standardTask?.frequency.includes(task.repeatInterval) 
+            ? task.repeatInterval 
+            : standardTask?.frequency[0] || 'Månedlig';
           
-        schedules[task.taskName] = {
-          enabled: true,
-          frequency: validFrequency,
-          dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '',
-          assignedTo: task.assignedTo || '',
-          nextDueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : ''
-        };
+          // Preserve user changes if they exist, otherwise use DB data
+          const existingUserConfig = prevSchedules[task.taskName];
+          
+          schedules[task.taskName] = {
+            enabled: existingUserConfig?.enabled !== undefined ? existingUserConfig.enabled : true,
+            frequency: existingUserConfig?.frequency || validFrequency,
+            dueDate: existingUserConfig?.dueDate || (task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : ''),
+            assignedTo: existingUserConfig?.assignedTo || task.assignedTo || '',
+            nextDueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : ''
+          };
+        });
+        
+        return schedules;
       });
-      
-      setStandardTaskSchedules(schedules);
     }
   }, [clientTasks]);
 
@@ -273,32 +278,37 @@ export default function ClientDetail() {
     }
   };
 
-  // Calculate next due date based on frequency (same logic as backend)
-  const calculateNextDueDate = (frequency: string): Date => {
+  // Calculate next due date based on frequency with staggered dates for multiple tasks
+  const calculateNextDueDate = (frequency: string, taskIndex: number = 0): Date => {
     const nextDate = new Date();
     
     switch (frequency.toLowerCase()) {
       case 'daglig':
-        nextDate.setDate(nextDate.getDate() + 1);
+        nextDate.setDate(nextDate.getDate() + 1 + taskIndex); // Stagger daily tasks by days
         break;
       case 'ukentlig':
-        nextDate.setDate(nextDate.getDate() + 7);
+        nextDate.setDate(nextDate.getDate() + 7 + (taskIndex * 2)); // Stagger weekly tasks by 2 days
         break;
       case 'månedlig':
         nextDate.setMonth(nextDate.getMonth() + 1);
+        nextDate.setDate(nextDate.getDate() + (taskIndex * 7)); // Stagger monthly tasks by weeks
         break;
       case '2 vær mnd':
         nextDate.setMonth(nextDate.getMonth() + 2);
+        nextDate.setDate(nextDate.getDate() + (taskIndex * 14)); // Stagger bi-monthly tasks by 2 weeks
         break;
       case 'kvartalsvis':
         nextDate.setMonth(nextDate.getMonth() + 3);
+        nextDate.setDate(nextDate.getDate() + (taskIndex * 30)); // Stagger quarterly tasks by months
         break;
       case 'årlig':
         nextDate.setFullYear(nextDate.getFullYear() + 1);
+        nextDate.setDate(nextDate.getDate() + (taskIndex * 30)); // Stagger yearly tasks by months
         break;
       default:
         // Som standard, legg til 1 måned
         nextDate.setMonth(nextDate.getMonth() + 1);
+        nextDate.setDate(nextDate.getDate() + (taskIndex * 7));
         console.log(`⚠️ Ukjent frekvens: ${frequency}, bruker månedlig som standard`);
     }
     
@@ -316,26 +326,26 @@ export default function ClientDetail() {
           task.taskName === taskName && task.clientId === clientId
         );
 
-        // Calculate proper due date based on frequency
-        const nextDueDate = calculateNextDueDate(config.frequency);
-        console.log(`📅 Calculated due date for ${taskName} (${config.frequency}): ${nextDueDate.toISOString()}`);
-
-        const taskData = {
-          taskName,
-          taskType: 'standard',
-          description: `${config.frequency} ${taskName.toLowerCase()}`,
-          dueDate: nextDueDate.toISOString(),
-          interval: mapFrequencyToInterval(config.frequency),
-          repeatInterval: config.frequency,
-          assignedTo: config.assignedTo || null,
-          status: 'ikke_startet' // Reset status for consistency
-        };
-
         if (existingTasks.length > 0) {
-          // UPDATE ALL existing tasks of this type
-          console.log(`🔄 UPDATING ${existingTasks.length} existing ${taskName} tasks with NEW due date: ${taskData.dueDate}`);
+          // UPDATE ALL existing tasks of this type with staggered due dates
+          console.log(`🔄 UPDATING ${existingTasks.length} existing ${taskName} tasks with STAGGERED due dates`);
           
-          const updatePromises = existingTasks.map(async (task: any) => {
+          const updatePromises = existingTasks.map(async (task: any, taskIndex: number) => {
+            // Calculate staggered due date for each task
+            const staggeredDueDate = calculateNextDueDate(config.frequency, taskIndex);
+            console.log(`📅 Task ${taskIndex + 1} of ${existingTasks.length} - ${taskName} (${config.frequency}): ${staggeredDueDate.toISOString()}`);
+
+            const taskData = {
+              taskName,
+              taskType: 'standard',
+              description: `${config.frequency} ${taskName.toLowerCase()}`,
+              dueDate: staggeredDueDate.toISOString(),
+              interval: mapFrequencyToInterval(config.frequency),
+              repeatInterval: config.frequency,
+              assignedTo: config.assignedTo || null,
+              status: task.status || 'ikke_startet' // Preserve existing status
+            };
+
             console.log(`📤 UPDATING task ID: ${task.id}`);
             return apiRequest('PATCH', `/api/tasks/${task.id}`, taskData)
               .then(res => {
@@ -351,7 +361,20 @@ export default function ClientDetail() {
           return Promise.all(updatePromises);
         } else {
           // CREATE new task if none exist
-          console.log(`✅ CREATING new task: ${taskName}`);
+          const newDueDate = calculateNextDueDate(config.frequency, 0);
+          console.log(`✅ CREATING new task: ${taskName} (${config.frequency}): ${newDueDate.toISOString()}`);
+          
+          const taskData = {
+            taskName,
+            taskType: 'standard',
+            description: `${config.frequency} ${taskName.toLowerCase()}`,
+            dueDate: newDueDate.toISOString(),
+            interval: mapFrequencyToInterval(config.frequency),
+            repeatInterval: config.frequency,
+            assignedTo: config.assignedTo || null,
+            status: 'ikke_startet'
+          };
+
           return apiRequest('POST', `/api/clients/${clientId}/tasks`, taskData)
             .then(res => res.json());
         }
