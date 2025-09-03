@@ -585,7 +585,7 @@ export default function ClientDetail() {
   });
 
   const handleAddResponsible = () => {
-    if (!selectedUserId) {
+    if (!selectedUserId || selectedUserId === 'no-users-available') {
       toast({ 
         title: 'Feil', 
         description: 'Velg en bruker å legge til som ansvarlig', 
@@ -1152,6 +1152,9 @@ export default function ClientDetail() {
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Legg til ansvarlig person</DialogTitle>
+                  <DialogDescription>
+                    Velg en bruker som skal være ansvarlig for denne klienten.
+                  </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
                   <div>
@@ -1162,13 +1165,17 @@ export default function ClientDetail() {
                       </SelectTrigger>
                       <SelectContent>
                         {users && users.length > 0 ? (
-                          users.filter((user: any) => !responsibles.some((r: any) => r.userId === user.id)).map((user: any) => (
-                            <SelectItem key={user.id} value={user.id}>
-                              {user.firstName} {user.lastName} ({user.email})
-                            </SelectItem>
-                          ))
+                          users.filter((user: any) => !responsibles.some((r: any) => r.userId === user.id)).length > 0 ? (
+                            users.filter((user: any) => !responsibles.some((r: any) => r.userId === user.id)).map((user: any) => (
+                              <SelectItem key={user.id} value={user.id}>
+                                {user.firstName} {user.lastName} ({user.email})
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <SelectItem value="no-users-available" disabled>Alle brukere er allerede ansvarlige</SelectItem>
+                          )
                         ) : (
-                          <SelectItem value="" disabled>Ingen brukere tilgjengelig</SelectItem>
+                          <SelectItem value="no-users-available" disabled>Ingen brukere tilgjengelig</SelectItem>
                         )}
                       </SelectContent>
                     </Select>
