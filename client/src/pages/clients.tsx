@@ -1209,12 +1209,6 @@ function ClientListItem({ client, onEdit }: { client: any; onEdit: (client: any)
               }`}>
                 {client.name}
               </h3>
-              {(client.amlStatus !== 'approved' || client.kycStatus !== 'approved') && (
-                <div className="flex items-center gap-1 px-1.5 py-0.5 bg-red-100 border border-red-300 rounded text-xs">
-                  <i className="fas fa-exclamation-triangle text-red-600 text-xs"></i>
-                  <span className="text-red-700 font-medium">Ikke lovlig</span>
-                </div>
-              )}
             </div>
             {client.orgNumber && (
               <p className="text-xs text-gray-500 -mt-1">Org.nr: {client.orgNumber}</p>
