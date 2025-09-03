@@ -549,17 +549,27 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateClientTask(id: string, updates: any): Promise<any> {
-    const [updatedTask] = await db
-      .update(clientTasks)
-      .set({ ...updates, updatedAt: new Date() })
-      .where(eq(clientTasks.id, id))
-      .returning();
-    
-    if (!updatedTask) {
-      throw new Error("Client task not found");
+    try {
+      // Ensure dueDate is properly formatted (same as createClientTask)
+      if (updates.dueDate && typeof updates.dueDate === 'string') {
+        updates.dueDate = new Date(updates.dueDate);
+      }
+      
+      const [updatedTask] = await db
+        .update(clientTasks)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(eq(clientTasks.id, id))
+        .returning();
+      
+      if (!updatedTask) {
+        throw new Error("Client task not found");
+      }
+      
+      return updatedTask;
+    } catch (error: any) {
+      console.error('Error updating client task:', error);
+      throw new Error(`Failed to update client task: ${error.message}`);
     }
-    
-    return updatedTask;
   }
 
   async deleteClientTask(id: string): Promise<void> {
