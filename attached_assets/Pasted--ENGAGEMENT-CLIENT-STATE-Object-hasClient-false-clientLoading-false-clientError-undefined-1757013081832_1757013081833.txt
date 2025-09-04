@@ -1,0 +1,32 @@
+🔍 ENGAGEMENT CLIENT STATE: 
+Object {hasClient: false, clientLoading: false, clientError: undefined, clientFromList: true, client: undefined}
+🔍 ENGAGEMENT CLIENT STATE: 
+Object {hasClient: false, clientLoading: false, clientError: undefined, clientFromList: true, client: undefined}
+🔍 ENGAGEMENT CLIENT STATE: 
+Object {hasClient: false, clientLoading: false, clientError: undefined, clientFromList: true, client: undefined}
+🔍 ENGAGEMENT CLIENT STATE: 
+Object {hasClient: false, clientLoading: false, clientError: undefined, clientFromList: true, client: undefined}
+🔍 ENGAGEMENT CLIENT STATE: 
+Object {hasClient: false, clientLoading: false, clientError: undefined, clientFromList: true, client: undefined}
+🔍 ENGAGEMENT CLIENT STATE: 
+Object {hasClient: false, clientLoading: false, clientError: undefined, clientFromList: true, client: undefined}
+🔍 ENGAGEMENT CLIENT STATE: 
+Object {hasClient: false, clientLoading: false, clientError: undefined, clientFromList: true, client: undefined}
+🔍 ENGAGEMENT CLIENT STATE: 
+Object {hasClient: false, clientLoading: false, clientError: undefined, clientFromList: true, client: undefined}
+🔍 ENGAGEMENT CLIENT STATE: 
+Object {hasClient: false, clientLoading: false, clientError: undefined, clientFromList: true, client: undefined}
+🔍 ENGAGEMENT CLIENT STATE: 
+Object {hasClient: false, clientLoading: false, clientError: undefined, clientFromList: true, client: undefined}
+🔍 ENGAGEMENT CLIENT STATE: 
+Object {hasClient: false, clientLoading: false, clientError: undefined, clientFromList: true, client: undefined}
+🔍 ENGAGEMENT CLIENT STATE: 
+Object {hasClient: false, clientLoading: false, clientError: undefined, clientFromList: true, client: undefined}
+🔍 FRONTEND: Fetching tasks for client a4767d98-0674-49d9-850e-6c937bc213c1
+🔍 ENGAGEMENT CLIENT STATE: 
+Object {hasClient: false, clientLoading: false, clientError: undefined, clientFromList: true, client: undefined}
+🔍 FRONTEND: Got 6 tasks: 
+(6) [{…}, {…}, {…}, {…}, {…}, {…}]
+🔍 ENGAGEMENT CLIENT STATE: 
+Object {hasClient: false, clientLoading: false, clientError: undefined, clientFromList: true, client: undefined}
+📄 Downloading engagement: eng-1757012189542
