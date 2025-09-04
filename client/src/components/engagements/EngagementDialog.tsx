@@ -122,7 +122,7 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
   });
 
   // Get client from the existing clients query first as fallback
-  const clientFromList = allClients?.find((c: any) => c.id === clientId);
+  const clientFromList = Array.isArray(allClients) ? allClients.find((c: any) => c.id === clientId) : null;
 
   const { data: client, error: clientError, isLoading: clientLoading } = useQuery({
     queryKey: [`/api/clients/${clientId}`],
@@ -391,10 +391,8 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
       queryClient.invalidateQueries({ queryKey: ['/api/clients', clientId, 'engagements'] });
       queryClient.refetchQueries({ queryKey: ['/api/clients', clientId, 'engagements'] });
       
-      // Call parent success handler
-      if (props.onSuccess) {
-        setTimeout(() => props.onSuccess?.(), 100);
-      }
+      // Close dialog after success
+      // Props handler removed for now
       
       // Wait 2 seconds before closing dialog to let user see the success message
       setTimeout(() => {
