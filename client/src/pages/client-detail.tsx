@@ -936,26 +936,33 @@ export default function ClientDetail() {
                                 const token = localStorage.getItem('token');
                                 const finalToken = authToken || token;
                                 
-                                if (!finalToken) {
+                                console.log('🔍 Token debug:', { 
+                                  authToken: authToken ? 'exists' : 'null', 
+                                  token: token ? 'exists' : 'null',
+                                  finalToken: finalToken ? 'exists' : 'null'
+                                });
+                                
+                                if (!finalToken || finalToken === 'null' || finalToken === 'undefined') {
                                   toast({
                                     title: "Ikke innlogget",
                                     description: "Du må være innlogget for å laste ned oppdragsavtale",
                                     variant: "destructive"
                                   });
+                                  console.error('❌ No valid token found for download');
                                   return;
                                 }
                                 
                                 // Create download URL with authentication token
                                 const downloadUrl = `/api/clients/${clientId}/engagements/${engagement.id}/pdf?token=${encodeURIComponent(finalToken)}`;
+                                console.log('🔗 Download URL:', downloadUrl);
                                 
-                                // Create a temporary link element to force download
-                                const link = document.createElement('a');
-                                link.href = downloadUrl;
-                                link.download = `oppdragsavtale-${engagement.id}.pdf`;
-                                link.target = '_blank';
-                                document.body.appendChild(link);
-                                link.click();
-                                document.body.removeChild(link);
+                                // Use window.open instead of creating link element
+                                const newWindow = window.open(downloadUrl, '_blank');
+                                if (newWindow) {
+                                  console.log('✅ PDF download window opened');
+                                } else {
+                                  console.error('❌ Failed to open download window - popup blocked?');
+                                }
                                 console.log('✅ PDF download initiated');
                               } catch (error) {
                                 console.error('❌ Download failed:', error);
