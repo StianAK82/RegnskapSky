@@ -984,11 +984,29 @@ export default function ClientDetail() {
                             {engagement.status === 'draft' ? 'Utkast' : engagement.status}
                           </Badge>
                           {clientId && (
-                            <DownloadButton 
-                              clientId={clientId} 
-                              engagementId={engagement.id} 
-                              clientName={client?.name}
-                            />
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                alert('🚨 DIRECT CLICK TEST! Engagement ID: ' + engagement.id);
+                                console.log('🚨 DIRECT CLICK! engagement:', engagement.id);
+                                
+                                const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
+                                if (!token) {
+                                  alert('❌ NO TOKEN!');
+                                  return;
+                                }
+                                
+                                const url = `/api/clients/${clientId}/engagements/${engagement.id}/pdf?token=${encodeURIComponent(token)}`;
+                                alert('🚨 OPENING: ' + url);
+                                window.location.href = url;
+                              }}
+                              style={{ backgroundColor: 'orange', color: 'black', border: '3px solid red' }}
+                            >
+                              🚨 DIRECT TEST
+                            </Button>
                           )}
                         </div>
                       </div>
