@@ -957,8 +957,16 @@ export default function ClientDetail() {
                                 const downloadUrl = `/api/clients/${clientId}/engagements/${engagement.id}/pdf?token=${encodeURIComponent(finalToken)}`;
                                 console.log('🔗 Download URL:', downloadUrl);
                                 
-                                // Use fetch to download with proper error handling
-                                const response = await fetch(downloadUrl);
+                                // Use fetch with Authorization header instead of query parameter
+                                const response = await fetch(`/api/clients/${clientId}/engagements/${engagement.id}/pdf`, {
+                                  method: 'GET',
+                                  headers: {
+                                    'Authorization': `Bearer ${finalToken}`
+                                  }
+                                });
+                                
+                                console.log('🔗 Response status:', response.status);
+                                
                                 if (!response.ok) {
                                   const errorText = await response.text();
                                   console.error('❌ Download request failed:', response.status, errorText);
@@ -981,7 +989,6 @@ export default function ClientDetail() {
                                 document.body.removeChild(link);
                                 window.URL.revokeObjectURL(url);
                                 console.log('✅ PDF download completed successfully');
-                                console.log('✅ PDF download initiated');
                               } catch (error) {
                                 console.error('❌ Download failed:', error);
                               }
