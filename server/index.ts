@@ -209,108 +209,212 @@ ${Array.isArray(engagement.pricing) ? engagement.pricing.map((price: any) => `- 
       const doc = new jsPDF();
       let yPos = 20;
       
-      // Header
-      doc.setFontSize(18);
-      doc.text('OPPDRAGSAVTALE FOR REGNSKAPSOPPDRAG', 20, yPos);
-      yPos += 20;
+      // Main header - centered and bold
+      doc.setFontSize(22);
+      doc.setFont('helvetica', 'bold');
+      const headerText = 'OPPDRAGSAVTALE';
+      const headerWidth = doc.getTextWidth(headerText);
+      const pageWidth = doc.internal.pageSize.getWidth();
+      doc.text(headerText, (pageWidth - headerWidth) / 2, yPos);
+      
+      // Underline the header
+      const underlineY = yPos + 2;
+      doc.line((pageWidth - headerWidth) / 2, underlineY, (pageWidth - headerWidth) / 2 + headerWidth, underlineY);
+      yPos += 25;
+      
+      // Add content table
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('INNHOLDSFORTEGNELSE', 20, yPos);
+      doc.line(20, yPos + 2, 20 + doc.getTextWidth('INNHOLDSFORTEGNELSE'), yPos + 2);
+      yPos += 15;
+      
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'normal');
+      const tableOfContents = [
+        '1. Klientinformasjon .................................................. 2',
+        '2. System og teknisk informasjon .................................. 2', 
+        '3. Representanter og signatarer .................................... 2',
+        '4. Arbeidsområder og omfang ........................................ 3',
+        '5. Honorar og betalingsbetingelser ................................. 3',
+        '6. Databehandleravtale (DPA) ....................................... 4',
+        '7. Leveransevilkår for regnskapsoppdrag ............................ 5'
+      ];
+      
+      tableOfContents.forEach(line => {
+        doc.text(line, 25, yPos);
+        yPos += 6;
+      });
+      
+      yPos += 10;
       
       // Client information
       doc.setFontSize(14);
-      doc.text('KLIENTINFORMASJON', 20, yPos);
-      yPos += 10;
+      doc.setFont('helvetica', 'bold');
+      doc.text('1. KLIENTINFORMASJON', 20, yPos);
+      doc.line(20, yPos + 2, 20 + doc.getTextWidth('1. KLIENTINFORMASJON'), yPos + 2);
+      yPos += 12;
       
       doc.setFontSize(11);
-      doc.text(`Firma: ${client?.name || 'N/A'}`, 20, yPos);
-      yPos += 7;
-      doc.text(`Organisasjonsnummer: ${client?.orgNumber || 'N/A'}`, 20, yPos);
-      yPos += 7;
-      doc.text(`Adresse: ${client?.address || 'N/A'}`, 20, yPos);
-      yPos += 7;
-      doc.text(`Kontaktperson: ${client?.contactPerson || 'N/A'}`, 20, yPos);
-      yPos += 7;
-      doc.text(`E-post: ${client?.email || 'N/A'}`, 20, yPos);
-      yPos += 7;
-      doc.text(`Telefon: ${client?.phone || 'N/A'}`, 20, yPos);
-      yPos += 15;
+      doc.setFont('helvetica', 'normal');
+      
+      // Create a table for client info
+      const clientInfo = [
+        ['Firma:', client?.name || 'N/A'],
+        ['Organisasjonsnummer:', client?.orgNumber || 'N/A'],
+        ['Adresse:', client?.address || 'N/A'],
+        ['Kontaktperson:', client?.contactPerson || 'N/A'],
+        ['E-post:', client?.email || 'N/A'],
+        ['Telefon:', client?.phone || 'N/A']
+      ];
+      
+      clientInfo.forEach(([label, value]) => {
+        doc.setFont('helvetica', 'bold');
+        doc.text(label, 25, yPos);
+        doc.setFont('helvetica', 'normal');
+        doc.text(value, 80, yPos);
+        yPos += 8;
+      });
+      yPos += 10;
 
       // System information 
       doc.setFontSize(14);
-      doc.text('SYSTEM OG TEKNISK INFORMASJON', 20, yPos);
-      yPos += 10;
+      doc.setFont('helvetica', 'bold');
+      doc.text('2. SYSTEM OG TEKNISK INFORMASJON', 20, yPos);
+      doc.line(20, yPos + 2, 20 + doc.getTextWidth('2. SYSTEM OG TEKNISK INFORMASJON'), yPos + 2);
+      yPos += 12;
       
       doc.setFontSize(11);
-      doc.text(`Regnskapssystem: ${engagement.systemName || 'N/A'}`, 20, yPos);
-      yPos += 7;
-      doc.text(`Lisensholder: ${engagement.licenseHolder === 'client' ? 'Klient' : 'Regnskapsfirma'}`, 20, yPos);
-      yPos += 7;
-      doc.text(`Admin-tilgang: ${engagement.adminAccess ? 'Ja' : 'Nei'}`, 20, yPos);
-      yPos += 7;
-      doc.text(`Opprettet: ${new Date(engagement.createdAt).toLocaleDateString('nb-NO')}`, 20, yPos);
-      yPos += 15;
+      doc.setFont('helvetica', 'normal');
+      
+      const systemInfo = [
+        ['Regnskapssystem:', engagement.systemName || 'N/A'],
+        ['Lisensholder:', engagement.licenseHolder === 'client' ? 'Klient' : 'Regnskapsfirma'],
+        ['Admin-tilgang:', engagement.adminAccess ? 'Ja' : 'Nei'],
+        ['Opprettet:', new Date(engagement.createdAt).toLocaleDateString('nb-NO')]
+      ];
+      
+      systemInfo.forEach(([label, value]) => {
+        doc.setFont('helvetica', 'bold');
+        doc.text(label, 25, yPos);
+        doc.setFont('helvetica', 'normal');
+        doc.text(value, 80, yPos);
+        yPos += 8;
+      });
+      yPos += 10;
       
       // Signatories
       doc.setFontSize(14);
-      doc.text('REPRESENTANTER OG SIGNATARER', 20, yPos);
-      yPos += 10;
+      doc.setFont('helvetica', 'bold');
+      doc.text('3. REPRESENTANTER OG SIGNATARER', 20, yPos);
+      doc.line(20, yPos + 2, 20 + doc.getTextWidth('3. REPRESENTANTER OG SIGNATARER'), yPos + 2);
+      yPos += 12;
       
       doc.setFontSize(11);
+      doc.setFont('helvetica', 'normal');
+      
       if (engagement.signatories && Array.isArray(engagement.signatories)) {
-        engagement.signatories.forEach((sig: any, index: number) => {
-          const roleMap = {
-            'client_representative': 'Klientrepresentant',
-            'responsible_accountant': 'Oppdragsansvarlig regnskapsfører', 
-            'managing_director': 'Daglig leder'
-          };
-          doc.text(`${index + 1}. ${sig.name} - ${roleMap[sig.role] || sig.role}`, 20, yPos);
-          yPos += 7;
-          doc.text(`   E-post: ${sig.email}`, 25, yPos);
-          yPos += 7;
+        // Table header
+        doc.setFont('helvetica', 'bold');
+        doc.text('Navn', 25, yPos);
+        doc.text('Rolle', 80, yPos);
+        doc.text('E-post', 130, yPos);
+        doc.line(25, yPos + 2, 180, yPos + 2);
+        yPos += 10;
+        
+        doc.setFont('helvetica', 'normal');
+        const roleMap = {
+          'client_representative': 'Klientrepresentant',
+          'responsible_accountant': 'Oppdragsansvarlig regnskapsfører', 
+          'managing_director': 'Daglig leder'
+        };
+        
+        engagement.signatories.forEach((sig: any) => {
+          doc.text(sig.name || 'N/A', 25, yPos);
+          doc.text(roleMap[sig.role] || sig.role || 'N/A', 80, yPos);
+          doc.text(sig.email || 'N/A', 130, yPos);
+          yPos += 8;
           if (sig.phone) {
-            doc.text(`   Telefon: ${sig.phone}`, 25, yPos);
-            yPos += 7;
-          }
-          if (sig.title) {
-            doc.text(`   Tittel: ${sig.title}`, 25, yPos);
-            yPos += 7;
-          }
-          yPos += 5;
-        });
-      }
-      yPos += 10;
-      
-      // Work scopes
-      doc.setFontSize(14);
-      doc.text('ARBEIDSOMRÅDER OG OMFANG', 20, yPos);
-      yPos += 10;
-      
-      doc.setFontSize(11);
-      if (engagement.scopes && Array.isArray(engagement.scopes)) {
-        engagement.scopes.forEach((scope: any, index: number) => {
-          const scopeMap = {
-            'bookkeeping': 'Bokføring',
-            'year_end': 'Årsoppgjør', 
-            'payroll': 'Lønn',
-            'mva': 'MVA',
-            'invoicing': 'Fakturering',
-            'period_reports': 'Perioderapporter',
-            'project': 'Prosjekt',
-            'other': 'Annet'
-          };
-          doc.text(`${index + 1}. ${scopeMap[scope.scopeKey] || scope.scopeKey} - ${scope.frequency}`, 20, yPos);
-          yPos += 7;
-          if (scope.comments) {
-            doc.text(`   Beskrivelse: ${scope.comments}`, 25, yPos);
-            yPos += 7;
+            doc.setFont('helvetica', 'italic');
+            doc.text(`Tel: ${sig.phone}`, 130, yPos);
+            doc.setFont('helvetica', 'normal');
+            yPos += 6;
           }
           yPos += 3;
         });
       }
       yPos += 10;
       
+      // Work scopes
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('4. ARBEIDSOMRÅDER OG OMFANG', 20, yPos);
+      doc.line(20, yPos + 2, 20 + doc.getTextWidth('4. ARBEIDSOMRÅDER OG OMFANG'), yPos + 2);
+      yPos += 12;
+      
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'normal');
+      
+      if (engagement.scopes && Array.isArray(engagement.scopes)) {
+        // Table header
+        doc.setFont('helvetica', 'bold');
+        doc.text('Arbeidsområde', 25, yPos);
+        doc.text('Frekvens', 100, yPos);
+        doc.text('Beskrivelse', 140, yPos);
+        doc.line(25, yPos + 2, 190, yPos + 2);
+        yPos += 10;
+        
+        doc.setFont('helvetica', 'normal');
+        const scopeMap = {
+          'bookkeeping': 'Bokføring',
+          'year_end': 'Årsoppgjør', 
+          'payroll': 'Lønn',
+          'mva': 'MVA',
+          'invoicing': 'Fakturering',
+          'period_reports': 'Perioderapporter',
+          'project': 'Prosjekt',
+          'other': 'Annet'
+        };
+        
+        engagement.scopes.forEach((scope: any) => {
+          const scopeName = scopeMap[scope.scopeKey] || scope.scopeKey;
+          doc.text(scopeName, 25, yPos);
+          doc.text(scope.frequency || 'N/A', 100, yPos);
+          
+          // Handle long descriptions by wrapping text
+          if (scope.comments) {
+            const maxWidth = 50;
+            const words = scope.comments.split(' ');
+            let line = '';
+            let lineY = yPos;
+            
+            words.forEach((word: string) => {
+              const testLine = line + word + ' ';
+              if (doc.getTextWidth(testLine) > maxWidth && line !== '') {
+                doc.text(line.trim(), 140, lineY);
+                line = word + ' ';
+                lineY += 6;
+              } else {
+                line = testLine;
+              }
+            });
+            if (line.trim()) {
+              doc.text(line.trim(), 140, lineY);
+            }
+          } else {
+            doc.text('N/A', 140, yPos);
+          }
+          yPos += 12;
+        });
+      }
+      yPos += 10;
+      
       // Pricing
       doc.setFontSize(14);
-      doc.text('HONORAR OG BETALINGSBETINGELSER', 20, yPos);
-      yPos += 10;
+      doc.setFont('helvetica', 'bold');
+      doc.text('5. HONORAR OG BETALINGSBETINGELSER', 20, yPos);
+      doc.line(20, yPos + 2, 20 + doc.getTextWidth('5. HONORAR OG BETALINGSBETINGELSER'), yPos + 2);
+      yPos += 12;
       
       doc.setFontSize(11);
       if (engagement.pricing && Array.isArray(engagement.pricing)) {
@@ -326,7 +430,8 @@ ${Array.isArray(engagement.pricing) ? engagement.pricing.map((price: any) => `- 
             'other': 'Annet'
           };
           
-          doc.text(`${index + 1}. ${areaMap[price.area] || price.area}:`, 20, yPos);
+          // Create pricing table format
+          doc.text(areaMap[price.area] || price.area, 25, yPos);
           yPos += 7;
           
           if (price.model === 'hourly') {
@@ -360,7 +465,9 @@ ${Array.isArray(engagement.pricing) ? engagement.pricing.map((price: any) => `- 
       // DPA Information
       if (engagement.dpas && Array.isArray(engagement.dpas) && engagement.dpas.length > 0) {
         doc.setFontSize(14);
-        doc.text('DATABEHANDLERAVTALE (DPA)', 20, yPos);
+        doc.setFont('helvetica', 'bold');
+        doc.text('6. DATABEHANDLERAVTALE (DPA)', 20, yPos);
+        doc.line(20, yPos + 2, 20 + doc.getTextWidth('6. DATABEHANDLERAVTALE (DPA)'), yPos + 2);
         yPos += 10;
         
         doc.setFontSize(11);
@@ -380,7 +487,9 @@ ${Array.isArray(engagement.pricing) ? engagement.pricing.map((price: any) => `- 
       
       // Legal terms header
       doc.setFontSize(16);
-      doc.text('LEVERANSEVILKÅR FOR REGNSKAPSOPPDRAG', 20, yPos);
+      doc.setFont('helvetica', 'bold');
+      doc.text('7. LEVERANSEVILKÅR FOR REGNSKAPSOPPDRAG', 20, yPos);
+      doc.line(20, yPos + 2, 20 + doc.getTextWidth('7. LEVERANSEVILKÅR FOR REGNSKAPSOPPDRAG'), yPos + 2);
       yPos += 15;
       
       // Legal terms content (without "Regnskap Norge" references)
