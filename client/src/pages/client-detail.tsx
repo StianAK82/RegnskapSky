@@ -928,93 +928,58 @@ export default function ClientDetail() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={async (e) => {
-                              e.preventDefault();
-                              console.log('📄 Downloading engagement:', engagement.id);
+                            type="button"
+                            onClick={() => {
+                              console.log('📄 Download button clicked!');
                               
-                              try {
-                                console.log('🔍 Starting PDF download for:', engagement.id);
-                                console.log('🔍 Client data available:', !!client);
-                                
-                                // Get current client data if not available
-                                const currentClient = client || clientQuery.data;
-                                console.log('🔍 Current client for filename:', { name: currentClient?.name, orgNumber: currentClient?.orgNumber });
-                                
-                                // Get token manually for debugging
-                                const authToken = localStorage.getItem('auth_token');
-                                const token = localStorage.getItem('token');
-                                const finalToken = authToken || token;
-                                
-                                console.log('🔍 localStorage contents:', Object.keys(localStorage));
-                                console.log('🔍 Final token chosen:', finalToken ? 'EXISTS' : 'MISSING');
-                                
-                                if (!finalToken || finalToken === 'null' || finalToken === 'undefined') {
-                                  console.error('❌ No valid token found for download');
-                                  toast({
-                                    title: "Ikke innlogget",
-                                    description: "Du må være innlogget for å laste ned oppdragsavtale",
-                                    variant: "destructive"
-                                  });
-                                  return;
-                                }
-                                
-                                // Use manual fetch with explicit Authorization header
-                                const downloadUrl = `/api/clients/${clientId}/engagements/${engagement.id}/pdf`;
-                                console.log('🔗 Fetching from:', downloadUrl);
-                                
-                                const headers = {
-                                  'Authorization': `Bearer ${finalToken}`
-                                };
-                                console.log('🔑 Sending Authorization header');
-                                
-                                const response = await fetch(downloadUrl, {
-                                  method: 'GET',
-                                  headers: headers,
-                                  credentials: 'include'
-                                });
-                                
-                                console.log('📊 Response status:', response.status, response.statusText);
-                                
-                                if (!response.ok) {
-                                  const errorText = await response.text();
-                                  console.error('❌ Download failed:', response.status, errorText);
-                                  toast({
-                                    title: "Nedlasting feilet",
-                                    description: `Serverfeil: ${response.status} - ${errorText}`,
-                                    variant: "destructive"
-                                  });
-                                  return;
-                                }
-                                
-                                // Get the blob and create download link with company name
-                                const blob = await response.blob();
-                                const url = window.URL.createObjectURL(blob);
-                                const link = document.createElement('a');
-                                link.href = url;
-                                
-                                // Use company name for filename instead of engagement ID
-                                const companyName = currentClient?.name?.replace(/[^a-zA-Z0-9\sÆØÅæøå]/g, '').replace(/\s+/g, '_') || 'oppdragsavtale';
-                                link.download = `${companyName}_oppdragsavtale.txt`;
-                                
-                                document.body.appendChild(link);
-                                link.click();
-                                document.body.removeChild(link);
-                                window.URL.revokeObjectURL(url);
-                                
-                                console.log(`✅ PDF downloaded as: ${companyName}_oppdragsavtale.txt`);
-                                
+                              // Get token
+                              const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
+                              console.log('📄 Token exists:', !!token);
+                              
+                              if (!token) {
+                                console.log('📄 No token found');
                                 toast({
-                                  title: "Nedlasting fullført",
-                                  description: `Oppdragsavtale for ${currentClient?.name} er lastet ned`,
-                                });
-                              } catch (error) {
-                                console.error('❌ Download failed:', error);
-                                toast({
-                                  title: "Nedlasting feilet",
-                                  description: "En feil oppstod under nedlasting",
+                                  title: "Ikke innlogget",
+                                  description: "Du må være innlogget for å laste ned oppdragsavtale",
                                   variant: "destructive"
                                 });
+                                return;
                               }
+                              
+                              console.log('📄 Making download request...');
+                              
+                              // Use apiRequest which handles auth automatically
+                              apiRequest('GET', `/api/clients/${clientId}/engagements/${engagement.id}/pdf`)
+                                .then(response => response.blob())
+                                .then(blob => {
+                                  console.log('📄 Got blob, creating download link');
+                                  const url = window.URL.createObjectURL(blob);
+                                  const link = document.createElement('a');
+                                  link.href = url;
+                                  
+                                  // Use client name for filename
+                                  const companyName = client?.name?.replace(/[^a-zA-Z0-9\sÆØÅæøå]/g, '').replace(/\s+/g, '_') || 'oppdragsavtale';
+                                  link.download = `${companyName}_oppdragsavtale.txt`;
+                                  
+                                  document.body.appendChild(link);
+                                  link.click();
+                                  document.body.removeChild(link);
+                                  window.URL.revokeObjectURL(url);
+                                  
+                                  console.log('✅ Download completed successfully');
+                                  toast({
+                                    title: "Nedlasting fullført",
+                                    description: `Oppdragsavtale for ${client?.name} lastet ned`,
+                                  });
+                                })
+                                .catch(error => {
+                                  console.error('❌ Download error:', error);
+                                  toast({
+                                    title: "Nedlasting feilet", 
+                                    description: error.message,
+                                    variant: "destructive"
+                                  });
+                                });
                             }}
                           >
                             <Download className="h-4 w-4 mr-1" />
