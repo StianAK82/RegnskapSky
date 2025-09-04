@@ -937,9 +937,10 @@ export default function ClientDetail() {
                                 const finalToken = authToken || token;
                                 
                                 console.log('🔍 Token debug:', { 
-                                  authToken: authToken ? 'exists' : 'null', 
-                                  token: token ? 'exists' : 'null',
-                                  finalToken: finalToken ? 'exists' : 'null'
+                                  authToken: authToken ? authToken.substring(0, 20) + '...' : 'null', 
+                                  token: token ? token.substring(0, 20) + '...' : 'null',
+                                  finalToken: finalToken ? finalToken.substring(0, 20) + '...' : 'null',
+                                  tokenLength: finalToken ? finalToken.length : 0
                                 });
                                 
                                 if (!finalToken || finalToken === 'null' || finalToken === 'undefined') {
@@ -956,13 +957,30 @@ export default function ClientDetail() {
                                 const downloadUrl = `/api/clients/${clientId}/engagements/${engagement.id}/pdf?token=${encodeURIComponent(finalToken)}`;
                                 console.log('🔗 Download URL:', downloadUrl);
                                 
-                                // Use window.open instead of creating link element
-                                const newWindow = window.open(downloadUrl, '_blank');
-                                if (newWindow) {
-                                  console.log('✅ PDF download window opened');
-                                } else {
-                                  console.error('❌ Failed to open download window - popup blocked?');
+                                // Use fetch to download with proper error handling
+                                const response = await fetch(downloadUrl);
+                                if (!response.ok) {
+                                  const errorText = await response.text();
+                                  console.error('❌ Download request failed:', response.status, errorText);
+                                  toast({
+                                    title: "Nedlasting feilet",
+                                    description: `Server feil: ${response.status} - ${errorText}`,
+                                    variant: "destructive"
+                                  });
+                                  return;
                                 }
+                                
+                                // Get the blob and create download link
+                                const blob = await response.blob();
+                                const url = window.URL.createObjectURL(blob);
+                                const link = document.createElement('a');
+                                link.href = url;
+                                link.download = `oppdragsavtale-${engagement.id}.txt`;
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                                window.URL.revokeObjectURL(url);
+                                console.log('✅ PDF download completed successfully');
                                 console.log('✅ PDF download initiated');
                               } catch (error) {
                                 console.error('❌ Download failed:', error);
