@@ -158,24 +158,46 @@ app.use((req, res, next) => {
         return res.status(404).json({ message: 'Oppdragsavtale ikke funnet' });
       }
       
-      // Simple PDF content as text (placeholder for PDF library)
+      // Fetch client data to get company name and organization number
+      const client = await storage.getClient(clientId);
+      
+      if (!client) {
+        return res.status(404).json({ message: 'Klient ikke funnet' });
+      }
+      
+      // Generate comprehensive PDF content with company information
       const pdfContent = `
 OPPDRAGSAVTALE
 ===============
 
+KLIENTINFORMASJON
+-----------------
+Selskap: ${client.name}
+Organisasjonsnummer: ${client.orgNumber || 'Ikke oppgitt'}
+E-post: ${client.email || 'Ikke oppgitt'}
+Telefon: ${client.phone || 'Ikke oppgitt'}
+
+AVTALEDETALJER  
+--------------
 Avtale ID: ${engagement.id}
 System: ${engagement.systemName}
-Opprettet: ${new Date(engagement.createdAt).toLocaleDateString('nb-NO')}
-Status: ${engagement.status}
-
-Signatarer: ${Array.isArray(engagement.signatories) ? engagement.signatories.length : 0}
-Arbeidsområder: ${Array.isArray(engagement.scopes) ? engagement.scopes.length : 0}
-
---- Detaljert innhold ---
-System: ${engagement.systemName}
-Lisensholder: ${engagement.licenseHolder}
+Lisensholder: ${engagement.licenseHolder || 'Ikke oppgitt'}
 Admin-tilgang: ${engagement.adminAccess ? 'Ja' : 'Nei'}
+Status: ${engagement.status}
+Opprettet: ${new Date(engagement.createdAt).toLocaleDateString('nb-NO')}
 Gyldig fra: ${new Date(engagement.validFrom).toLocaleDateString('nb-NO')}
+
+SIGNATARER (${Array.isArray(engagement.signatories) ? engagement.signatories.length : 0})
+----------
+${Array.isArray(engagement.signatories) ? engagement.signatories.map((sig: any) => `- ${sig.name || 'Ukjent'} (${sig.role || 'Ukjent rolle'})`).join('\n') : 'Ingen signatarer oppgitt'}
+
+ARBEIDSOMRÅDER (${Array.isArray(engagement.scopes) ? engagement.scopes.length : 0})
+--------------
+${Array.isArray(engagement.scopes) ? engagement.scopes.map((scope: any) => `- ${scope.name || 'Ukjent område'}: ${scope.description || 'Ingen beskrivelse'}`).join('\n') : 'Ingen arbeidsområder oppgitt'}
+
+PRISING
+-------
+${Array.isArray(engagement.pricing) ? engagement.pricing.map((price: any) => `- ${price.description || 'Ukjent'}: ${price.amount || 0} kr ${price.unit || ''}`).join('\n') : 'Ingen prising oppgitt'}
       `.trim();
       
       res.setHeader('Content-Type', 'text/plain; charset=utf-8');

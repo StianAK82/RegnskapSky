@@ -208,7 +208,7 @@ export default function ClientDetail() {
     },
     enabled: !!clientId,
     staleTime: 0, // Always fetch fresh data
-    cacheTime: 0  // Don't cache
+    gcTime: 0  // Don't cache (renamed from cacheTime in v5)
   });
 
 
@@ -876,10 +876,6 @@ export default function ClientDetail() {
                   Ny Oppdragsavtale
                 </Button>
               }
-              onSuccess={() => {
-                console.log('🔄 Reloading page to show new engagement');
-                setTimeout(() => window.location.reload(), 500);
-              }}
             />
           </div>
           
@@ -910,10 +906,6 @@ export default function ClientDetail() {
                         Opprett første oppdragsavtale
                       </Button>
                     }
-                    onSuccess={() => {
-                      console.log('🔄 Reloading page to show new engagement');
-                      setTimeout(() => window.location.reload(), 500);
-                    }}
                   />
                 </div>
               ) : (
@@ -939,9 +931,26 @@ export default function ClientDetail() {
                             onClick={async () => {
                               console.log('📄 Downloading engagement:', engagement.id);
                               try {
+                                // Get authentication token for download
+                                const authToken = localStorage.getItem('auth_token');
+                                const token = localStorage.getItem('token');
+                                const finalToken = authToken || token;
+                                
+                                if (!finalToken) {
+                                  toast({
+                                    title: "Ikke innlogget",
+                                    description: "Du må være innlogget for å laste ned oppdragsavtale",
+                                    variant: "destructive"
+                                  });
+                                  return;
+                                }
+                                
+                                // Create download URL with authentication token
+                                const downloadUrl = `/api/clients/${clientId}/engagements/${engagement.id}/pdf?token=${encodeURIComponent(finalToken)}`;
+                                
                                 // Create a temporary link element to force download
                                 const link = document.createElement('a');
-                                link.href = `/api/clients/${clientId}/engagements/${engagement.id}/pdf`;
+                                link.href = downloadUrl;
                                 link.download = `oppdragsavtale-${engagement.id}.pdf`;
                                 link.target = '_blank';
                                 document.body.appendChild(link);
