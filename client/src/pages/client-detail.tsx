@@ -928,11 +928,17 @@ export default function ClientDetail() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={async () => {
+                            onClick={async (e) => {
+                              e.preventDefault();
                               console.log('📄 Downloading engagement:', engagement.id);
+                              
                               try {
                                 console.log('🔍 Starting PDF download for:', engagement.id);
-                                console.log('🔍 Client data for filename:', { name: client?.name, orgNumber: client?.orgNumber });
+                                console.log('🔍 Client data available:', !!client);
+                                
+                                // Get current client data if not available
+                                const currentClient = client || clientQuery.data;
+                                console.log('🔍 Current client for filename:', { name: currentClient?.name, orgNumber: currentClient?.orgNumber });
                                 
                                 // Get token manually for debugging
                                 const authToken = localStorage.getItem('auth_token');
@@ -940,19 +946,10 @@ export default function ClientDetail() {
                                 const finalToken = authToken || token;
                                 
                                 console.log('🔍 localStorage contents:', Object.keys(localStorage));
-                                console.log('🔍 Auth token raw:', authToken);
-                                console.log('🔍 Token raw:', token);
-                                console.log('🔍 Final token chosen:', finalToken);
-                                
-                                console.log('🔍 Token details:', {
-                                  hasAuthToken: !!authToken,
-                                  hasToken: !!token,
-                                  finalTokenLength: finalToken?.length || 0,
-                                  finalTokenStart: finalToken?.substring(0, 50) + '...' || 'none',
-                                  isValidJWT: finalToken?.startsWith('eyJ') || false
-                                });
+                                console.log('🔍 Final token chosen:', finalToken ? 'EXISTS' : 'MISSING');
                                 
                                 if (!finalToken || finalToken === 'null' || finalToken === 'undefined') {
+                                  console.error('❌ No valid token found for download');
                                   toast({
                                     title: "Ikke innlogget",
                                     description: "Du må være innlogget for å laste ned oppdragsavtale",
@@ -966,10 +963,9 @@ export default function ClientDetail() {
                                 console.log('🔗 Fetching from:', downloadUrl);
                                 
                                 const headers = {
-                                  'Authorization': `Bearer ${finalToken}`,
-                                  'Content-Type': 'application/json'
+                                  'Authorization': `Bearer ${finalToken}`
                                 };
-                                console.log('🔑 Headers to send:', headers);
+                                console.log('🔑 Sending Authorization header');
                                 
                                 const response = await fetch(downloadUrl, {
                                   method: 'GET',
@@ -978,7 +974,6 @@ export default function ClientDetail() {
                                 });
                                 
                                 console.log('📊 Response status:', response.status, response.statusText);
-                                console.log('📊 Response headers:', Array.from(response.headers.entries()));
                                 
                                 if (!response.ok) {
                                   const errorText = await response.text();
@@ -998,7 +993,7 @@ export default function ClientDetail() {
                                 link.href = url;
                                 
                                 // Use company name for filename instead of engagement ID
-                                const companyName = client?.name?.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_') || 'oppdragsavtale';
+                                const companyName = currentClient?.name?.replace(/[^a-zA-Z0-9\sÆØÅæøå]/g, '').replace(/\s+/g, '_') || 'oppdragsavtale';
                                 link.download = `${companyName}_oppdragsavtale.txt`;
                                 
                                 document.body.appendChild(link);
@@ -1010,10 +1005,15 @@ export default function ClientDetail() {
                                 
                                 toast({
                                   title: "Nedlasting fullført",
-                                  description: `Oppdragsavtale for ${client?.name} er lastet ned`,
+                                  description: `Oppdragsavtale for ${currentClient?.name} er lastet ned`,
                                 });
                               } catch (error) {
                                 console.error('❌ Download failed:', error);
+                                toast({
+                                  title: "Nedlasting feilet",
+                                  description: "En feil oppstod under nedlasting",
+                                  variant: "destructive"
+                                });
                               }
                             }}
                           >
