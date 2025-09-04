@@ -146,15 +146,9 @@ app.use((req, res, next) => {
 
   // Add PDF download endpoint using database storage
   app.get("/api/clients/:clientId/engagements/:engagementId/pdf", (req, res, next) => {
-    console.log('📄 PDF ENDPOINT DEBUG:');
-    console.log('🔍 All headers:', req.headers);
-    console.log('🔍 Authorization header:', req.headers.authorization);
-    console.log('🔍 Query params:', req.query);
-    console.log('🔍 URL:', req.url);
     authenticateToken(req as any, res, next);
   }, async (req, res) => {
     try {
-      console.log('📄 GET /api/clients/:clientId/engagements/:engagementId/pdf - Generating PDF');
       
       const { clientId, engagementId } = req.params;
       
@@ -265,8 +259,6 @@ ${Array.isArray(engagement.pricing) ? engagement.pricing.map((price: any) => `- 
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="${companyFileName}_oppdragsavtale.pdf"`);
       res.send(pdfBuffer);
-      
-      console.log('✅ PDF generated for engagement:', engagementId);
       
     } catch (error: any) {
       console.error('❌ Error generating PDF:', error);
