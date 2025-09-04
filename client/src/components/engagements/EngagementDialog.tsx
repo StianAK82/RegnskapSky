@@ -182,7 +182,9 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
     queryKey: ['/api/employees'],
     queryFn: async () => {
       const response = await apiRequest('GET', '/api/employees');
-      return response.json();
+      const data = await response.json();
+      console.log('🔧 ENGAGEMENT: Fetched employees:', data);
+      return data;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -316,9 +318,25 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
           console.log('🔧 ENGAGEMENT: Mapped system name to:', mappedSystem);
         }
 
-        // Find responsible person from employees
-        const responsiblePerson = employees?.find((emp: any) => emp.id === client.responsiblePersonId);
-        console.log('🔧 ENGAGEMENT: Found responsible person:', responsiblePerson);
+        // Find responsible person from employees - try multiple matching approaches
+        console.log('🔧 ENGAGEMENT: Looking for responsible person ID:', client.responsiblePersonId);
+        console.log('🔧 ENGAGEMENT: Available employees:', employees?.map((e: any) => ({ id: e.id, name: `${e.firstName} ${e.lastName}`, userId: e.userId })));
+        
+        let responsiblePerson = employees?.find((emp: any) => emp.id === client.responsiblePersonId);
+        
+        // If not found by employee ID, try matching by userId (in case responsiblePersonId is actually a userId)
+        if (!responsiblePerson && client.responsiblePersonId) {
+          responsiblePerson = employees?.find((emp: any) => emp.userId === client.responsiblePersonId);
+          console.log('🔧 ENGAGEMENT: Tried userId matching, found:', responsiblePerson);
+        }
+        
+        // If still not found, try engagementOwnerId
+        if (!responsiblePerson && client.engagementOwnerId) {
+          responsiblePerson = employees?.find((emp: any) => emp.id === client.engagementOwnerId || emp.userId === client.engagementOwnerId);
+          console.log('🔧 ENGAGEMENT: Tried engagementOwnerId matching, found:', responsiblePerson);
+        }
+        
+        console.log('🔧 ENGAGEMENT: Final responsible person found:', responsiblePerson);
 
         // Auto-populate signatories with client and responsible person information
         const signatories = [];

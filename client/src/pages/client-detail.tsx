@@ -271,12 +271,13 @@ export default function ClientDetail() {
   });
 
 
-  // Sync standardTaskSchedules with existing clientTasks (preserve user changes)
+  // Sync standardTaskSchedules with existing clientTasks AND missing standard tasks (preserve user changes)
   useEffect(() => {
-    if (clientTasks.length > 0) {
-      setStandardTaskSchedules(prevSchedules => {
-        const schedules: Record<string, any> = {};
-        
+    setStandardTaskSchedules(prevSchedules => {
+      const schedules: Record<string, any> = {};
+      
+      // First, add all existing client tasks
+      if (clientTasks && clientTasks.length > 0) {
         clientTasks.forEach((task: any) => {
           // Find the standard task template to get correct frequency options
           const standardTask = STANDARD_TASKS.find(t => t.name === task.taskName);
@@ -291,15 +292,32 @@ export default function ClientDetail() {
             enabled: existingUserConfig?.enabled !== undefined ? existingUserConfig.enabled : true,
             frequency: existingUserConfig?.frequency || validFrequency,
             dueDate: existingUserConfig?.dueDate || (task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : ''),
-            assignedTo: existingUserConfig?.assignedTo || task.assignedTo || '',
+            // AUTO-ASSIGN to client's responsible person if no assignment exists
+            assignedTo: existingUserConfig?.assignedTo || task.assignedTo || client?.responsiblePersonId || '',
             nextDueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : ''
           };
         });
-        
-        return schedules;
+      }
+      
+      // Then, add any missing standard tasks that aren't in client tasks yet
+      STANDARD_TASKS.forEach((standardTask) => {
+        if (!schedules[standardTask.name]) {
+          const existingUserConfig = prevSchedules[standardTask.name];
+          schedules[standardTask.name] = {
+            enabled: existingUserConfig?.enabled !== undefined ? existingUserConfig.enabled : false, // Default disabled for new tasks
+            frequency: existingUserConfig?.frequency || standardTask.frequency[0],
+            dueDate: existingUserConfig?.dueDate || '',
+            // AUTO-ASSIGN to client's responsible person for new tasks
+            assignedTo: existingUserConfig?.assignedTo || client?.responsiblePersonId || '',
+            nextDueDate: ''
+          };
+        }
       });
-    }
-  }, [clientTasks]);
+      
+      console.log('🛠️ TASK SCHEDULES: Built schedules for tasks:', Object.keys(schedules));
+      return schedules;
+    });
+  }, [clientTasks, client]);
 
   // Mutations
   const updateClientMutation = useMutation({
@@ -468,7 +486,8 @@ export default function ClientDetail() {
               dueDate: staggeredDueDate.toISOString(),
               interval: mapFrequencyToInterval(config.frequency),
               repeatInterval: config.frequency,
-              assignedTo: config.assignedTo || null,
+              // Auto-assign to responsible person if no specific assignment
+              assignedTo: config.assignedTo || client?.responsiblePersonId || null,
               status: task.status || 'ikke_startet' // Preserve existing status
             };
 
@@ -497,7 +516,8 @@ export default function ClientDetail() {
             dueDate: newDueDate.toISOString(),
             interval: mapFrequencyToInterval(config.frequency),
             repeatInterval: config.frequency,
-            assignedTo: config.assignedTo || null,
+            // Auto-assign to responsible person if no specific assignment
+            assignedTo: config.assignedTo || client?.responsiblePersonId || null,
             status: 'ikke_startet'
           };
 
