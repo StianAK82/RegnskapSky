@@ -929,27 +929,50 @@ export default function ClientDetail() {
                             size="sm"
                             variant="outline"
                             onClick={() => {
-                              const authToken = localStorage.getItem('auth_token');
-                              const token = localStorage.getItem('token'); 
-                              const finalToken = authToken || token;
+                              console.log('🚀 PDF Button clicked!');
                               
-                              if (!finalToken) {
+                              try {
+                                const authToken = localStorage.getItem('auth_token');
+                                const token = localStorage.getItem('token'); 
+                                const finalToken = authToken || token;
+                                
+                                console.log('🚀 Token check result:', {
+                                  hasAuthToken: !!authToken,
+                                  hasToken: !!token,
+                                  hasFinalToken: !!finalToken
+                                });
+                                
+                                if (!finalToken) {
+                                  console.log('🚀 No token found - showing error');
+                                  toast({
+                                    title: "Ikke innlogget",
+                                    description: "Du må være innlogget for å laste ned oppdragsavtale",
+                                    variant: "destructive",
+                                  });
+                                  return;
+                                }
+                                
+                                // Use window.open with token in URL - same solution as documents
+                                const downloadUrl = `/api/clients/${clientId}/engagements/${engagement.id}/pdf?token=${encodeURIComponent(finalToken)}`;
+                                console.log('🚀 Opening URL:', downloadUrl.substring(0, 100) + '...');
+                                
+                                window.open(downloadUrl, '_blank');
+                                console.log('🚀 window.open called successfully');
+                                
                                 toast({
-                                  title: "Ikke innlogget",
-                                  description: "Du må være innlogget for å laste ned oppdragsavtale",
+                                  title: "Nedlasting startet",
+                                  description: `Oppdragsavtale for ${client?.name} blir lastet ned`,
+                                });
+                                
+                                console.log('🚀 Everything completed successfully');
+                              } catch (error) {
+                                console.error('🚀 Error in click handler:', error);
+                                toast({
+                                  title: "Feil",
+                                  description: "En feil oppstod ved nedlasting",
                                   variant: "destructive",
                                 });
-                                return;
                               }
-                              
-                              // Use window.open with token in URL - same solution as documents
-                              const downloadUrl = `/api/clients/${clientId}/engagements/${engagement.id}/pdf?token=${encodeURIComponent(finalToken)}`;
-                              window.open(downloadUrl, '_blank');
-                              
-                              toast({
-                                title: "Nedlasting startet",
-                                description: `Oppdragsavtale for ${client?.name} blir lastet ned`,
-                              });
                             }}
                           >
                             <Download className="h-4 w-4 mr-1" />
