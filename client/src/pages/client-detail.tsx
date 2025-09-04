@@ -39,16 +39,20 @@ function DownloadButton({ clientId, engagementId, clientName }: { clientId: stri
     e.preventDefault();
     e.stopPropagation();
     
+    // Force alert to confirm button works
+    alert('🔧 DownloadButton clicked! Check console for details.');
     console.log('🔧 DownloadButton clicked:', { clientId, engagementId });
     
     const authToken = localStorage.getItem('auth_token');
     const token = localStorage.getItem('token'); 
     const finalToken = authToken || token;
     
-    console.log('🔧 Token check:', { hasAuthToken: !!authToken, hasToken: !!token, hasFinalToken: !!finalToken });
+    console.log('🔧 Token found:', finalToken ? 'YES' : 'NO');
+    console.log('🔧 Token value (first 20 chars):', finalToken ? finalToken.substring(0, 20) + '...' : 'NONE');
     
     if (!finalToken) {
-      console.log('🔧 No token found');
+      console.log('🔧 No token found - showing error');
+      alert('🔧 ERROR: No token found!');
       toast({
         title: "Ikke innlogget",
         description: "Du må være innlogget for å laste ned oppdragsavtale",
@@ -59,15 +63,11 @@ function DownloadButton({ clientId, engagementId, clientName }: { clientId: stri
     
     const downloadUrl = `/api/clients/${clientId}/engagements/${engagementId}/pdf?token=${encodeURIComponent(finalToken)}`;
     console.log('🔧 Opening URL:', downloadUrl);
+    alert('🔧 About to open URL: ' + downloadUrl);
     
-    // Try window.open first, then fallback to location.href
-    try {
-      window.open(downloadUrl, '_blank');
-      console.log('🔧 window.open successful');
-    } catch (error) {
-      console.log('🔧 window.open failed, using location.href');
-      window.location.href = downloadUrl;
-    }
+    // Force navigation
+    window.location.href = downloadUrl;
+    console.log('🔧 window.location.href set');
     
     toast({
       title: "Nedlasting startet", 
@@ -81,9 +81,10 @@ function DownloadButton({ clientId, engagementId, clientName }: { clientId: stri
       variant="outline"
       onClick={handleClick}
       type="button"
+      style={{ backgroundColor: 'red', color: 'white' }}
     >
       <Download className="h-4 w-4 mr-1" />
-      Last ned
+      🔧 TEST Last ned
     </Button>
   );
 }
