@@ -204,54 +204,261 @@ ${Array.isArray(engagement.pricing) ? engagement.pricing.map((price: any) => `- 
       // Use company name for filename
       const companyFileName = client.name?.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_') || 'oppdragsavtale';
       
-      // Generate actual PDF using jsPDF
+      // Generate comprehensive PDF using jsPDF
       const { jsPDF } = require('jspdf');
       const doc = new jsPDF();
+      let yPos = 20;
       
-      // Add content to PDF with proper formatting
-      doc.setFontSize(16);
-      doc.text('OPPDRAGSAVTALE', 20, 20);
+      // Header
+      doc.setFontSize(18);
+      doc.text('OPPDRAGSAVTALE FOR REGNSKAPSOPPDRAG', 20, yPos);
+      yPos += 20;
       
-      doc.setFontSize(12);
-      doc.text(`Klient: ${client?.name || 'N/A'}`, 20, 40);
-      doc.text(`Org.nr: ${client?.orgNumber || 'N/A'}`, 20, 50);
-      doc.text(`System: ${engagement.systemName || 'N/A'}`, 20, 60);
-      doc.text(`Opprettet: ${new Date(engagement.createdAt).toLocaleDateString('nb-NO')}`, 20, 70);
+      // Client information
+      doc.setFontSize(14);
+      doc.text('KLIENTINFORMASJON', 20, yPos);
+      yPos += 10;
       
-      doc.text('SIGNATARER:', 20, 90);
-      let yPos = 100;
+      doc.setFontSize(11);
+      doc.text(`Firma: ${client?.name || 'N/A'}`, 20, yPos);
+      yPos += 7;
+      doc.text(`Organisasjonsnummer: ${client?.orgNumber || 'N/A'}`, 20, yPos);
+      yPos += 7;
+      doc.text(`Adresse: ${client?.address || 'N/A'}`, 20, yPos);
+      yPos += 7;
+      doc.text(`Kontaktperson: ${client?.contactPerson || 'N/A'}`, 20, yPos);
+      yPos += 7;
+      doc.text(`E-post: ${client?.email || 'N/A'}`, 20, yPos);
+      yPos += 7;
+      doc.text(`Telefon: ${client?.phone || 'N/A'}`, 20, yPos);
+      yPos += 15;
+
+      // System information 
+      doc.setFontSize(14);
+      doc.text('SYSTEM OG TEKNISK INFORMASJON', 20, yPos);
+      yPos += 10;
       
+      doc.setFontSize(11);
+      doc.text(`Regnskapssystem: ${engagement.systemName || 'N/A'}`, 20, yPos);
+      yPos += 7;
+      doc.text(`Lisensholder: ${engagement.licenseHolder === 'client' ? 'Klient' : 'Regnskapsfirma'}`, 20, yPos);
+      yPos += 7;
+      doc.text(`Admin-tilgang: ${engagement.adminAccess ? 'Ja' : 'Nei'}`, 20, yPos);
+      yPos += 7;
+      doc.text(`Opprettet: ${new Date(engagement.createdAt).toLocaleDateString('nb-NO')}`, 20, yPos);
+      yPos += 15;
+      
+      // Signatories
+      doc.setFontSize(14);
+      doc.text('REPRESENTANTER OG SIGNATARER', 20, yPos);
+      yPos += 10;
+      
+      doc.setFontSize(11);
       if (engagement.signatories && Array.isArray(engagement.signatories)) {
         engagement.signatories.forEach((sig: any, index: number) => {
-          doc.text(`${index + 1}. ${sig.name} (${sig.role})`, 20, yPos);
-          doc.text(`   Email: ${sig.email}`, 20, yPos + 10);
-          if (sig.phone) doc.text(`   Telefon: ${sig.phone}`, 20, yPos + 20);
-          yPos += 30;
+          const roleMap = {
+            'client_representative': 'Klientrepresentant',
+            'responsible_accountant': 'Oppdragsansvarlig regnskapsfører', 
+            'managing_director': 'Daglig leder'
+          };
+          doc.text(`${index + 1}. ${sig.name} - ${roleMap[sig.role] || sig.role}`, 20, yPos);
+          yPos += 7;
+          doc.text(`   E-post: ${sig.email}`, 25, yPos);
+          yPos += 7;
+          if (sig.phone) {
+            doc.text(`   Telefon: ${sig.phone}`, 25, yPos);
+            yPos += 7;
+          }
+          if (sig.title) {
+            doc.text(`   Tittel: ${sig.title}`, 25, yPos);
+            yPos += 7;
+          }
+          yPos += 5;
         });
       }
+      yPos += 10;
       
-      doc.text('ARBEIDSOMRÅDER:', 20, yPos + 10);
-      yPos += 20;
+      // Work scopes
+      doc.setFontSize(14);
+      doc.text('ARBEIDSOMRÅDER OG OMFANG', 20, yPos);
+      yPos += 10;
       
+      doc.setFontSize(11);
       if (engagement.scopes && Array.isArray(engagement.scopes)) {
         engagement.scopes.forEach((scope: any, index: number) => {
-          doc.text(`${index + 1}. ${scope.scopeKey} (${scope.frequency})`, 20, yPos);
-          if (scope.comments) doc.text(`   ${scope.comments}`, 20, yPos + 10);
-          yPos += 20;
+          const scopeMap = {
+            'bookkeeping': 'Bokføring',
+            'year_end': 'Årsoppgjør', 
+            'payroll': 'Lønn',
+            'mva': 'MVA',
+            'invoicing': 'Fakturering',
+            'period_reports': 'Perioderapporter',
+            'project': 'Prosjekt',
+            'other': 'Annet'
+          };
+          doc.text(`${index + 1}. ${scopeMap[scope.scopeKey] || scope.scopeKey} - ${scope.frequency}`, 20, yPos);
+          yPos += 7;
+          if (scope.comments) {
+            doc.text(`   Beskrivelse: ${scope.comments}`, 25, yPos);
+            yPos += 7;
+          }
+          yPos += 3;
         });
       }
+      yPos += 10;
       
-      doc.text('PRISING:', 20, yPos + 10);
-      yPos += 20;
+      // Pricing
+      doc.setFontSize(14);
+      doc.text('HONORAR OG BETALINGSBETINGELSER', 20, yPos);
+      yPos += 10;
       
+      doc.setFontSize(11);
       if (engagement.pricing && Array.isArray(engagement.pricing)) {
         engagement.pricing.forEach((price: any, index: number) => {
-          doc.text(`${index + 1}. ${price.area}: ${price.model}`, 20, yPos);
-          if (price.hourlyRateExVat) doc.text(`   Timesats: ${price.hourlyRateExVat} kr (eks. mva)`, 20, yPos + 10);
-          if (price.fixedAmountExVat) doc.text(`   Fastpris: ${price.fixedAmountExVat} kr (eks. mva)`, 20, yPos + 10);
-          yPos += 20;
+          const areaMap = {
+            'bookkeeping': 'Bokføring',
+            'year_end': 'Årsoppgjør',
+            'payroll': 'Lønn', 
+            'mva': 'MVA',
+            'invoicing': 'Fakturering',
+            'period_reports': 'Perioderapporter',
+            'project': 'Prosjekt',
+            'other': 'Annet'
+          };
+          
+          doc.text(`${index + 1}. ${areaMap[price.area] || price.area}:`, 20, yPos);
+          yPos += 7;
+          
+          if (price.model === 'hourly') {
+            doc.text(`   Timepris: ${price.hourlyRateExVat || 0} kr (eks. mva)`, 25, yPos);
+            yPos += 7;
+            doc.text(`   Minimum tid: ${price.minTimeUnitMinutes || 15} minutter`, 25, yPos);
+            yPos += 7;
+            doc.text(`   Hastetilag: ${price.rushMarkupPercent || 50}%`, 25, yPos);
+            yPos += 7;
+          } else if (price.model === 'fixed') {
+            doc.text(`   Fastpris: ${price.fixedAmountExVat || 0} kr (eks. mva)`, 25, yPos);
+            yPos += 7;
+            doc.text(`   Periode: ${price.fixedPeriod || 'N/A'}`, 25, yPos);
+            yPos += 7;
+          } else if (price.model === 'volume') {
+            doc.text(`   Volumbasert: ${price.volumeUnitPriceExVat || 0} kr per ${price.volumeUnitLabel || 'enhet'}`, 25, yPos);
+            yPos += 7;
+          }
+          yPos += 5;
         });
       }
+      
+      // Standard payment terms
+      doc.text('Betalingsfrist: 14 dager', 20, yPos);
+      yPos += 7;
+      doc.text('Fakturafrekvens: Månedlig', 20, yPos);
+      yPos += 7;
+      doc.text('Forsinkelsesrente: Etter forsinkelsesrenteloven', 20, yPos);
+      yPos += 15;
+      
+      // DPA Information
+      if (engagement.dpas && Array.isArray(engagement.dpas) && engagement.dpas.length > 0) {
+        doc.setFontSize(14);
+        doc.text('DATABEHANDLERAVTALE (DPA)', 20, yPos);
+        yPos += 10;
+        
+        doc.setFontSize(11);
+        engagement.dpas.forEach((dpa: any, index: number) => {
+          doc.text(`${index + 1}. Databehandler: ${dpa.processorName}`, 20, yPos);
+          yPos += 7;
+          doc.text(`   Land: ${dpa.country}`, 25, yPos);
+          yPos += 7;
+          doc.text(`   Overføringsgrunnlag: ${dpa.transferBasis}`, 25, yPos);
+          yPos += 10;
+        });
+      }
+      
+      // Add new page for legal terms
+      doc.addPage();
+      yPos = 20;
+      
+      // Legal terms header
+      doc.setFontSize(16);
+      doc.text('LEVERANSEVILKÅR FOR REGNSKAPSOPPDRAG', 20, yPos);
+      yPos += 15;
+      
+      // Legal terms content (without "Regnskap Norge" references)
+      doc.setFontSize(11);
+      const legalTerms = [
+        '1. PARTENES PLIKTER',
+        '',
+        '1.1 OPPDRAGETS INNHOLD',
+        'Regnskapsforetaket skal levere de tjenester som er regulert i oppdragsavtalen.',
+        '',
+        '1.2 REGNSKAPSFORETAKETS PLIKTER',
+        'Regnskapsforetaket skal utføre de tjenester som følger av oppdragsavtalen i samsvar',
+        'med gjeldende lovgivning og god regnskapsføringsskikk (GRFS).',
+        'Henvendelser fra Kunden skal besvares snarest mulig.',
+        '',
+        '1.3 KUNDENS PLIKTER',
+        'Kunden skal lojalt medvirke til at Regnskapsforetaket får gjennomført oppdraget.',
+        'Regnskapsmateriale som leveres til Regnskapsforetaket skal være fullstendig og',
+        'relatere seg til virksomheten.',
+        '',
+        'Dersom det ikke klart fremgår av regnskapsmaterialet hvordan det skal behandles,',
+        'skal Kunden uoppfordret gi nødvendig tilleggsinformasjon.',
+        '',
+        'Kunden skal både før og under oppdraget informere Regnskapsforetaket om alle',
+        'relevante forhold, herunder varsler og informasjon fra det offentlige som kan ha',
+        'betydning for oppdraget.',
+        '',
+        '1.4 KOMMUNIKASJON OG DOKUMENTASJON',
+        'Alle henvendelser skal rettes til partenes utpekte representanter jf. oppdragsavtalen',
+        'pkt. 4, eller medarbeidere som disse har utpekt, via den kommunikasjonsmåte som',
+        'er avtalt.',
+        '',
+        '1.5 TAUSHETSPLIKT',
+        'Regnskapsforetakets taushetsplikt følger av regnskapsførerloven.',
+        'Partene skal behandle informasjon som de blir kjent med ifm. oppdraget konfidensielt.',
+        '',
+        '2. FULLMAKT TIL REGNSKAPSFORETAKET',
+        'Oppdragsansvarlig og daglig leder gis fullmakt til å innhente:',
+        '• Regnskapsopplysninger fra relevante tredjeparter',
+        '• Relevante opplysninger for utfylling av offentlige oppgaver',
+        '• Fylle ut og sende inn offentlige oppgaver via Altinn',
+        '',
+        '3. EIENDOMSRETT',
+        'Kunden har eiendomsrett til eget innlevert materiale og ferdigstilt regnskapsmateriale',
+        'som Regnskapsforetaket har utarbeidet for Kunden.',
+        '',
+        '4. MISLIGHOLD',
+        'Det foreligger mislighold dersom en av partene ikke oppfyller sine plikter etter',
+        'avtalen og dette ikke skyldes forhold som den annen part er ansvarlig for.',
+        '',
+        '5. ANSVARSBEGRENSNING',
+        'Regnskapsforetaket er ikke ansvarlig for forhold utenfor Regnskapsforetakets kontroll.',
+        'Ved mindre enn grov uaktsomhet eller forsett, er Regnskapsforetakets samlede',
+        'økonomiske ansvar begrenset til 10 ganger årlig regnskapshonorar, oppad begrenset',
+        'til 1 MNOK.',
+        '',
+        '6. FORSIKRING',
+        'Regnskapsforetaket skal ha profesjonsansvarsforsikring som dekker det avtalte',
+        'regnskapsoppdraget.',
+        '',
+        '7. OPPSIGELSE',
+        'Partene kan si opp avtalen med tre måneders skriftlig varsel, regnet fra den første',
+        'dagen i måneden etter meddelelsen.',
+        '',
+        '8. VERNETING',
+        'Partenes rettigheter og plikter etter denne avtalen bestemmes i sin helhet av norsk rett.',
+        'Regnskapsforetakets hjemting er avtalt verneting for alle tvister mellom',
+        'Regnskapsforetaket og Kunden.'
+      ];
+      
+      legalTerms.forEach(line => {
+        if (yPos > 270) { // Add new page if needed
+          doc.addPage();
+          yPos = 20;
+        }
+        doc.text(line, 20, yPos);
+        yPos += line === '' ? 3 : 5;
+      });
       
       // Generate PDF buffer
       const pdfBuffer = Buffer.from(doc.output('arraybuffer'));

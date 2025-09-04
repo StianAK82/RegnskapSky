@@ -259,7 +259,8 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
     // Early return if dialog is not open - don't waste processing on closed dialogs
     if (!isOpen) return;
     
-    if (client && form.getValues('scopes').length === 0) {
+    // Auto-populate whenever we have client data - don't check if scopes exist
+    if (client) {
       console.log('🔧 ENGAGEMENT: Auto-populating form with client:', client);
       console.log('🔧 ENGAGEMENT: Client tasks:', clientTasks);
       

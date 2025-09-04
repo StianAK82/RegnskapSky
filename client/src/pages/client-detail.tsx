@@ -27,7 +27,8 @@ import {
   Shield,
   UserCheck,
   FileText,
-  Download
+  Download,
+  Eye
 } from 'lucide-react';
 import { EngagementDialog } from '@/components/engagements/EngagementDialog';
 
@@ -984,35 +985,67 @@ export default function ClientDetail() {
                             {engagement.status === 'draft' ? 'Utkast' : engagement.status}
                           </Badge>
                           {clientId && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                
-                                const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
-                                if (!token) {
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  
+                                  const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
+                                  if (!token) {
+                                    toast({
+                                      title: "Ikke innlogget",
+                                      description: "Du må være innlogget for å se oppdragsavtale",
+                                      variant: "destructive",
+                                    });
+                                    return;
+                                  }
+                                  
+                                  const url = `/api/clients/${clientId}/engagements/${engagement.id}/pdf?token=${encodeURIComponent(token)}`;
+                                  // Open in new tab for viewing
+                                  window.open(url, '_blank');
+                                  
                                   toast({
-                                    title: "Ikke innlogget",
-                                    description: "Du må være innlogget for å laste ned oppdragsavtale",
-                                    variant: "destructive",
+                                    title: "Åpner oppdragsavtale", 
+                                    description: `Viser oppdragsavtale for ${client?.name} i ny fane`,
                                   });
-                                  return;
-                                }
-                                
-                                const url = `/api/clients/${clientId}/engagements/${engagement.id}/pdf?token=${encodeURIComponent(token)}`;
-                                window.location.href = url;
-                                
-                                toast({
-                                  title: "Nedlasting startet", 
-                                  description: `Oppdragsavtale for ${client?.name} blir lastet ned som PDF`,
-                                });
-                              }}
-                            >
-                              <Download className="h-4 w-4 mr-1" />
-                              Last ned PDF
-                            </Button>
+                                }}
+                              >
+                                <Eye className="h-4 w-4 mr-1" />
+                                Vis PDF
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  
+                                  const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
+                                  if (!token) {
+                                    toast({
+                                      title: "Ikke innlogget",
+                                      description: "Du må være innlogget for å laste ned oppdragsavtale",
+                                      variant: "destructive",
+                                    });
+                                    return;
+                                  }
+                                  
+                                  const url = `/api/clients/${clientId}/engagements/${engagement.id}/pdf?token=${encodeURIComponent(token)}`;
+                                  window.location.href = url;
+                                  
+                                  toast({
+                                    title: "Nedlasting startet", 
+                                    description: `Oppdragsavtale for ${client?.name} blir lastet ned som PDF`,
+                                  });
+                                }}
+                              >
+                                <Download className="h-4 w-4 mr-1" />
+                                Last ned PDF
+                              </Button>
+                            </div>
                           )}
                         </div>
                       </div>
