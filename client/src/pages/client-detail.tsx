@@ -931,52 +931,10 @@ export default function ClientDetail() {
                             onClick={async () => {
                               console.log('📄 Downloading engagement:', engagement.id);
                               try {
-                                // Get authentication token for download
-                                const authToken = localStorage.getItem('auth_token');
-                                const token = localStorage.getItem('token');
-                                const finalToken = authToken || token;
+                                // Use the proper apiRequest function that handles authentication automatically
+                                const response = await apiRequest('GET', `/api/clients/${clientId}/engagements/${engagement.id}/pdf`);
                                 
-                                console.log('🔍 Token debug:', { 
-                                  authToken: authToken ? authToken.substring(0, 20) + '...' : 'null', 
-                                  token: token ? token.substring(0, 20) + '...' : 'null',
-                                  finalToken: finalToken ? finalToken.substring(0, 20) + '...' : 'null',
-                                  tokenLength: finalToken ? finalToken.length : 0
-                                });
-                                
-                                if (!finalToken || finalToken === 'null' || finalToken === 'undefined') {
-                                  toast({
-                                    title: "Ikke innlogget",
-                                    description: "Du må være innlogget for å laste ned oppdragsavtale",
-                                    variant: "destructive"
-                                  });
-                                  console.error('❌ No valid token found for download');
-                                  return;
-                                }
-                                
-                                // Create download URL with authentication token
-                                const downloadUrl = `/api/clients/${clientId}/engagements/${engagement.id}/pdf?token=${encodeURIComponent(finalToken)}`;
-                                console.log('🔗 Download URL:', downloadUrl);
-                                
-                                // Use fetch with Authorization header instead of query parameter
-                                const response = await fetch(`/api/clients/${clientId}/engagements/${engagement.id}/pdf`, {
-                                  method: 'GET',
-                                  headers: {
-                                    'Authorization': `Bearer ${finalToken}`
-                                  }
-                                });
-                                
-                                console.log('🔗 Response status:', response.status);
-                                
-                                if (!response.ok) {
-                                  const errorText = await response.text();
-                                  console.error('❌ Download request failed:', response.status, errorText);
-                                  toast({
-                                    title: "Nedlasting feilet",
-                                    description: `Server feil: ${response.status} - ${errorText}`,
-                                    variant: "destructive"
-                                  });
-                                  return;
-                                }
+                                console.log('✅ PDF request successful, downloading...');
                                 
                                 // Get the blob and create download link
                                 const blob = await response.blob();
@@ -988,7 +946,11 @@ export default function ClientDetail() {
                                 link.click();
                                 document.body.removeChild(link);
                                 window.URL.revokeObjectURL(url);
-                                console.log('✅ PDF download completed successfully');
+                                
+                                toast({
+                                  title: "Nedlasting fullført",
+                                  description: "Oppdragsavtalen er lastet ned",
+                                });
                               } catch (error) {
                                 console.error('❌ Download failed:', error);
                               }
