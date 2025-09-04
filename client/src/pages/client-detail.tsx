@@ -31,16 +31,24 @@ import {
 } from 'lucide-react';
 import { EngagementDialog } from '@/components/engagements/EngagementDialog';
 
-// Simple download button component
+// Simple download button component  
 function DownloadButton({ clientId, engagementId, clientName }: { clientId: string, engagementId: string, clientName?: string }) {
   const { toast } = useToast();
 
-  const handleClick = () => {
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    console.log('🔧 DownloadButton clicked:', { clientId, engagementId });
+    
     const authToken = localStorage.getItem('auth_token');
     const token = localStorage.getItem('token'); 
     const finalToken = authToken || token;
     
+    console.log('🔧 Token check:', { hasAuthToken: !!authToken, hasToken: !!token, hasFinalToken: !!finalToken });
+    
     if (!finalToken) {
+      console.log('🔧 No token found');
       toast({
         title: "Ikke innlogget",
         description: "Du må være innlogget for å laste ned oppdragsavtale",
@@ -50,7 +58,16 @@ function DownloadButton({ clientId, engagementId, clientName }: { clientId: stri
     }
     
     const downloadUrl = `/api/clients/${clientId}/engagements/${engagementId}/pdf?token=${encodeURIComponent(finalToken)}`;
-    window.location.href = downloadUrl;
+    console.log('🔧 Opening URL:', downloadUrl);
+    
+    // Try window.open first, then fallback to location.href
+    try {
+      window.open(downloadUrl, '_blank');
+      console.log('🔧 window.open successful');
+    } catch (error) {
+      console.log('🔧 window.open failed, using location.href');
+      window.location.href = downloadUrl;
+    }
     
     toast({
       title: "Nedlasting startet", 
@@ -63,6 +80,7 @@ function DownloadButton({ clientId, engagementId, clientName }: { clientId: stri
       size="sm"
       variant="outline"
       onClick={handleClick}
+      type="button"
     >
       <Download className="h-4 w-4 mr-1" />
       Last ned
@@ -964,11 +982,13 @@ export default function ClientDetail() {
                           <Badge variant={engagement.status === 'draft' ? 'secondary' : 'default'}>
                             {engagement.status === 'draft' ? 'Utkast' : engagement.status}
                           </Badge>
-                          <DownloadButton 
-                            clientId={clientId} 
-                            engagementId={engagement.id} 
-                            clientName={client?.name}
-                          />
+                          {clientId && (
+                            <DownloadButton 
+                              clientId={clientId} 
+                              engagementId={engagement.id} 
+                              clientName={client?.name}
+                            />
+                          )}
                         </div>
                       </div>
                       <div className="mt-3 text-sm text-gray-600">
