@@ -145,7 +145,14 @@ app.use((req, res, next) => {
   });
 
   // Add PDF download endpoint using database storage
-  app.get("/api/clients/:clientId/engagements/:engagementId/pdf", authenticateToken as any, async (req, res) => {
+  app.get("/api/clients/:clientId/engagements/:engagementId/pdf", (req, res, next) => {
+    console.log('📄 PDF ENDPOINT DEBUG:');
+    console.log('🔍 All headers:', req.headers);
+    console.log('🔍 Authorization header:', req.headers.authorization);
+    console.log('🔍 Query params:', req.query);
+    console.log('🔍 URL:', req.url);
+    authenticateToken(req as any, res, next);
+  }, async (req, res) => {
     try {
       console.log('📄 GET /api/clients/:clientId/engagements/:engagementId/pdf - Generating PDF');
       

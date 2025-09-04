@@ -939,6 +939,11 @@ export default function ClientDetail() {
                                 const token = localStorage.getItem('token');
                                 const finalToken = authToken || token;
                                 
+                                console.log('🔍 localStorage contents:', Object.keys(localStorage));
+                                console.log('🔍 Auth token raw:', authToken);
+                                console.log('🔍 Token raw:', token);
+                                console.log('🔍 Final token chosen:', finalToken);
+                                
                                 console.log('🔍 Token details:', {
                                   hasAuthToken: !!authToken,
                                   hasToken: !!token,
@@ -947,7 +952,7 @@ export default function ClientDetail() {
                                   isValidJWT: finalToken?.startsWith('eyJ') || false
                                 });
                                 
-                                if (!finalToken) {
+                                if (!finalToken || finalToken === 'null' || finalToken === 'undefined') {
                                   toast({
                                     title: "Ikke innlogget",
                                     description: "Du må være innlogget for å laste ned oppdragsavtale",
@@ -959,18 +964,21 @@ export default function ClientDetail() {
                                 // Use manual fetch with explicit Authorization header
                                 const downloadUrl = `/api/clients/${clientId}/engagements/${engagement.id}/pdf`;
                                 console.log('🔗 Fetching from:', downloadUrl);
-                                console.log('🔑 Sending Authorization header with token');
+                                
+                                const headers = {
+                                  'Authorization': `Bearer ${finalToken}`,
+                                  'Content-Type': 'application/json'
+                                };
+                                console.log('🔑 Headers to send:', headers);
                                 
                                 const response = await fetch(downloadUrl, {
                                   method: 'GET',
-                                  headers: {
-                                    'Authorization': `Bearer ${finalToken}`,
-                                    'Content-Type': 'application/json'
-                                  },
+                                  headers: headers,
                                   credentials: 'include'
                                 });
                                 
                                 console.log('📊 Response status:', response.status, response.statusText);
+                                console.log('📊 Response headers:', Array.from(response.headers.entries()));
                                 
                                 if (!response.ok) {
                                   const errorText = await response.text();
