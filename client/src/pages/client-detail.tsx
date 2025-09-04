@@ -928,58 +928,28 @@ export default function ClientDetail() {
                           <Button
                             size="sm"
                             variant="outline"
-                            type="button"
                             onClick={() => {
-                              console.log('📄 Download button clicked!');
+                              const authToken = localStorage.getItem('auth_token');
+                              const token = localStorage.getItem('token'); 
+                              const finalToken = authToken || token;
                               
-                              // Get token
-                              const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
-                              console.log('📄 Token exists:', !!token);
-                              
-                              if (!token) {
-                                console.log('📄 No token found');
+                              if (!finalToken) {
                                 toast({
                                   title: "Ikke innlogget",
                                   description: "Du må være innlogget for å laste ned oppdragsavtale",
-                                  variant: "destructive"
+                                  variant: "destructive",
                                 });
                                 return;
                               }
                               
-                              console.log('📄 Making download request...');
+                              // Use window.open with token in URL - same solution as documents
+                              const downloadUrl = `/api/clients/${clientId}/engagements/${engagement.id}/pdf?token=${encodeURIComponent(finalToken)}`;
+                              window.open(downloadUrl, '_blank');
                               
-                              // Use apiRequest which handles auth automatically
-                              apiRequest('GET', `/api/clients/${clientId}/engagements/${engagement.id}/pdf`)
-                                .then(response => response.blob())
-                                .then(blob => {
-                                  console.log('📄 Got blob, creating download link');
-                                  const url = window.URL.createObjectURL(blob);
-                                  const link = document.createElement('a');
-                                  link.href = url;
-                                  
-                                  // Use client name for filename
-                                  const companyName = client?.name?.replace(/[^a-zA-Z0-9\sÆØÅæøå]/g, '').replace(/\s+/g, '_') || 'oppdragsavtale';
-                                  link.download = `${companyName}_oppdragsavtale.txt`;
-                                  
-                                  document.body.appendChild(link);
-                                  link.click();
-                                  document.body.removeChild(link);
-                                  window.URL.revokeObjectURL(url);
-                                  
-                                  console.log('✅ Download completed successfully');
-                                  toast({
-                                    title: "Nedlasting fullført",
-                                    description: `Oppdragsavtale for ${client?.name} lastet ned`,
-                                  });
-                                })
-                                .catch(error => {
-                                  console.error('❌ Download error:', error);
-                                  toast({
-                                    title: "Nedlasting feilet", 
-                                    description: error.message,
-                                    variant: "destructive"
-                                  });
-                                });
+                              toast({
+                                title: "Nedlasting startet",
+                                description: `Oppdragsavtale for ${client?.name} blir lastet ned`,
+                              });
                             }}
                           >
                             <Download className="h-4 w-4 mr-1" />
