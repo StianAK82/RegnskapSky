@@ -210,9 +210,61 @@ ${Array.isArray(engagement.pricing) ? engagement.pricing.map((price: any) => `- 
       // Use company name for filename
       const companyFileName = client.name?.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_') || 'oppdragsavtale';
       
-      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-      res.setHeader('Content-Disposition', `attachment; filename="${companyFileName}_oppdragsavtale.txt"`);
-      res.send(pdfContent);
+      // Generate actual PDF using jsPDF
+      const { jsPDF } = require('jspdf');
+      const doc = new jsPDF();
+      
+      // Add content to PDF with proper formatting
+      doc.setFontSize(16);
+      doc.text('OPPDRAGSAVTALE', 20, 20);
+      
+      doc.setFontSize(12);
+      doc.text(`Klient: ${client?.name || 'N/A'}`, 20, 40);
+      doc.text(`Org.nr: ${client?.orgNumber || 'N/A'}`, 20, 50);
+      doc.text(`System: ${engagement.systemName || 'N/A'}`, 20, 60);
+      doc.text(`Opprettet: ${new Date(engagement.createdAt).toLocaleDateString('nb-NO')}`, 20, 70);
+      
+      doc.text('SIGNATARER:', 20, 90);
+      let yPos = 100;
+      
+      if (engagement.signatories && Array.isArray(engagement.signatories)) {
+        engagement.signatories.forEach((sig: any, index: number) => {
+          doc.text(`${index + 1}. ${sig.name} (${sig.role})`, 20, yPos);
+          doc.text(`   Email: ${sig.email}`, 20, yPos + 10);
+          if (sig.phone) doc.text(`   Telefon: ${sig.phone}`, 20, yPos + 20);
+          yPos += 30;
+        });
+      }
+      
+      doc.text('ARBEIDSOMRÅDER:', 20, yPos + 10);
+      yPos += 20;
+      
+      if (engagement.scopes && Array.isArray(engagement.scopes)) {
+        engagement.scopes.forEach((scope: any, index: number) => {
+          doc.text(`${index + 1}. ${scope.scopeKey} (${scope.frequency})`, 20, yPos);
+          if (scope.comments) doc.text(`   ${scope.comments}`, 20, yPos + 10);
+          yPos += 20;
+        });
+      }
+      
+      doc.text('PRISING:', 20, yPos + 10);
+      yPos += 20;
+      
+      if (engagement.pricing && Array.isArray(engagement.pricing)) {
+        engagement.pricing.forEach((price: any, index: number) => {
+          doc.text(`${index + 1}. ${price.area}: ${price.model}`, 20, yPos);
+          if (price.hourlyRateExVat) doc.text(`   Timesats: ${price.hourlyRateExVat} kr (eks. mva)`, 20, yPos + 10);
+          if (price.fixedAmountExVat) doc.text(`   Fastpris: ${price.fixedAmountExVat} kr (eks. mva)`, 20, yPos + 10);
+          yPos += 20;
+        });
+      }
+      
+      // Generate PDF buffer
+      const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${companyFileName}_oppdragsavtale.pdf"`);
+      res.send(pdfBuffer);
       
       console.log('✅ PDF generated for engagement:', engagementId);
       

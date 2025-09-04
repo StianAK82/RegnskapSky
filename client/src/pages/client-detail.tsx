@@ -990,22 +990,28 @@ export default function ClientDetail() {
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                alert('🚨 DIRECT CLICK TEST! Engagement ID: ' + engagement.id);
-                                console.log('🚨 DIRECT CLICK! engagement:', engagement.id);
                                 
                                 const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
                                 if (!token) {
-                                  alert('❌ NO TOKEN!');
+                                  toast({
+                                    title: "Ikke innlogget",
+                                    description: "Du må være innlogget for å laste ned oppdragsavtale",
+                                    variant: "destructive",
+                                  });
                                   return;
                                 }
                                 
                                 const url = `/api/clients/${clientId}/engagements/${engagement.id}/pdf?token=${encodeURIComponent(token)}`;
-                                alert('🚨 OPENING: ' + url);
                                 window.location.href = url;
+                                
+                                toast({
+                                  title: "Nedlasting startet", 
+                                  description: `Oppdragsavtale for ${client?.name} blir lastet ned som PDF`,
+                                });
                               }}
-                              style={{ backgroundColor: 'orange', color: 'black', border: '3px solid red' }}
                             >
-                              🚨 DIRECT TEST
+                              <Download className="h-4 w-4 mr-1" />
+                              Last ned PDF
                             </Button>
                           )}
                         </div>
