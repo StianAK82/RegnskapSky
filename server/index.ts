@@ -200,8 +200,11 @@ PRISING
 ${Array.isArray(engagement.pricing) ? engagement.pricing.map((price: any) => `- ${price.description || 'Ukjent'}: ${price.amount || 0} kr ${price.unit || ''}`).join('\n') : 'Ingen prising oppgitt'}
       `.trim();
       
+      // Use company name for filename
+      const companyFileName = client.name?.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_') || 'oppdragsavtale';
+      
       res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-      res.setHeader('Content-Disposition', `attachment; filename="oppdragsavtale-${engagementId}.txt"`);
+      res.setHeader('Content-Disposition', `attachment; filename="${companyFileName}_oppdragsavtale.txt"`);
       res.send(pdfContent);
       
       console.log('✅ PDF generated for engagement:', engagementId);
