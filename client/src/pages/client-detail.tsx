@@ -311,6 +311,7 @@ export default function ClientDetail() {
             assignedTo: existingUserConfig?.assignedTo || client?.responsiblePersonId || '',
             nextDueDate: ''
           };
+          console.log(`📝 TASK SCHEDULES: Added missing standard task ${standardTask.name} with responsible person: ${client?.responsiblePersonId}`);
         }
       });
       

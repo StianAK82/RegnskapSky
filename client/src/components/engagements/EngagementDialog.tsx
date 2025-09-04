@@ -211,16 +211,22 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
     return 'other';
   };
 
-  // Function to map repeatInterval to frequency
+  // Function to map repeatInterval to frequency - PRESERVE EXACT FREQUENCIES
   const mapIntervalToFrequency = (repeatInterval: string) => {
     if (!repeatInterval) return 'ved_behov';
     const interval = repeatInterval.toLowerCase();
-    if (interval.includes('daglig')) return 'løpende';
-    if (interval.includes('månedlig')) return 'månedlig';
-    if (interval.includes('kvartal')) return 'kvartalsvis';
-    if (interval.includes('årlig')) return 'årlig';
-    if (interval.includes('2 vær mnd')) return 'månedlig';
-    return 'ved_behov';
+    
+    // Preserve exact frequencies - don't map "2 vær mnd" to "månedlig"!
+    if (interval === '2 vær mnd') return '2 vær mnd';
+    if (interval === 'ukentlig') return 'løpende';
+    if (interval === 'daglig') return 'løpende';
+    if (interval === 'månedlig') return 'månedlig';
+    if (interval === 'kvartalsvis') return 'kvartalsvis';
+    if (interval === 'årlig') return 'årlig';
+    if (interval === 'løpende') return 'løpende';
+    
+    // Return original if no match found
+    return repeatInterval;
   };
 
   const form = useForm<EngagementFormData>({
