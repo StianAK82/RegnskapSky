@@ -305,8 +305,11 @@ export default function ClientDetail() {
   const updateClientMutation = useMutation({
     mutationFn: (updates: any) => apiRequest('PATCH', `/api/clients/${clientId}`, updates).then(res => res.json()),
     onSuccess: () => {
+      // Invalidate all client-related queries globally
+      queryClient.invalidateQueries({ queryKey: ['/api/clients'] });
       queryClient.invalidateQueries({ queryKey: ['/api/clients', clientId] });
-      toast({ title: 'Klient oppdatert', description: 'Klientinformasjon ble oppdatert' });
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/metrics'] });
+      toast({ title: 'Klient oppdatert', description: 'Klientinformasjon ble oppdatert globalt' });
     },
     onError: () => {
       toast({ title: 'Feil', description: 'Kunne ikke oppdatere klient', variant: 'destructive' });
@@ -506,12 +509,22 @@ export default function ClientDetail() {
       return Promise.all(promises);
     },
     onSuccess: () => {
+      // Invalidate all task-related queries GLOBALLY to ensure system-wide updates
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks/overview'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/clients'] });
       queryClient.invalidateQueries({ queryKey: ['/api/clients', clientId, 'tasks'] });
       queryClient.invalidateQueries({ queryKey: ['/api/clients/task-overview'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/metrics'] });
       
-      // Force refetch and wait for it to complete, then rebuild form state
-      queryClient.refetchQueries({ queryKey: ['/api/clients', clientId, 'tasks'] }).then(() => {
-        console.log('🔄 Tasks refetched, rebuilding form state...');
+      // Force refetch of ALL related data for global consistency
+      Promise.all([
+        queryClient.refetchQueries({ queryKey: ['/api/tasks'] }),
+        queryClient.refetchQueries({ queryKey: ['/api/tasks/overview'] }),
+        queryClient.refetchQueries({ queryKey: ['/api/clients'] }),
+        queryClient.refetchQueries({ queryKey: ['/api/clients', clientId, 'tasks'] })
+      ]).then(() => {
+        console.log('🔄 ALL task queries refetched globally, rebuilding form state...');
         // Trigger useEffect to rebuild form state by accessing fresh clientTasks
         const updatedTasks = queryClient.getQueryData(['/api/clients', clientId, 'tasks']);
         if (updatedTasks && Array.isArray(updatedTasks)) {
@@ -521,7 +534,7 @@ export default function ClientDetail() {
       
       toast({
         title: "Oppgaveplaner lagret",
-        description: "Standardoppgaver er konfigurert for denne klienten."
+        description: "Standardoppgaver är nu uppdaterade i hela systemet."
       });
     },
     onError: () => {
