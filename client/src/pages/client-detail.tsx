@@ -31,6 +31,45 @@ import {
 } from 'lucide-react';
 import { EngagementDialog } from '@/components/engagements/EngagementDialog';
 
+// Simple download button component
+function DownloadButton({ clientId, engagementId, clientName }: { clientId: string, engagementId: string, clientName?: string }) {
+  const { toast } = useToast();
+
+  const handleClick = () => {
+    const authToken = localStorage.getItem('auth_token');
+    const token = localStorage.getItem('token'); 
+    const finalToken = authToken || token;
+    
+    if (!finalToken) {
+      toast({
+        title: "Ikke innlogget",
+        description: "Du må være innlogget for å laste ned oppdragsavtale",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const downloadUrl = `/api/clients/${clientId}/engagements/${engagementId}/pdf?token=${encodeURIComponent(finalToken)}`;
+    window.location.href = downloadUrl;
+    
+    toast({
+      title: "Nedlasting startet", 
+      description: `Oppdragsavtale for ${clientName} blir lastet ned`,
+    });
+  };
+
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      onClick={handleClick}
+    >
+      <Download className="h-4 w-4 mr-1" />
+      Last ned
+    </Button>
+  );
+}
+
 interface Client {
   id: string;
   name: string;
@@ -925,59 +964,11 @@ export default function ClientDetail() {
                           <Badge variant={engagement.status === 'draft' ? 'secondary' : 'default'}>
                             {engagement.status === 'draft' ? 'Utkast' : engagement.status}
                           </Badge>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              console.log('🚀 PDF Button clicked!');
-                              
-                              try {
-                                const authToken = localStorage.getItem('auth_token');
-                                const token = localStorage.getItem('token'); 
-                                const finalToken = authToken || token;
-                                
-                                console.log('🚀 Token check result:', {
-                                  hasAuthToken: !!authToken,
-                                  hasToken: !!token,
-                                  hasFinalToken: !!finalToken
-                                });
-                                
-                                if (!finalToken) {
-                                  console.log('🚀 No token found - showing error');
-                                  toast({
-                                    title: "Ikke innlogget",
-                                    description: "Du må være innlogget for å laste ned oppdragsavtale",
-                                    variant: "destructive",
-                                  });
-                                  return;
-                                }
-                                
-                                // Use window.open with token in URL - same solution as documents
-                                const downloadUrl = `/api/clients/${clientId}/engagements/${engagement.id}/pdf?token=${encodeURIComponent(finalToken)}`;
-                                console.log('🚀 Opening URL:', downloadUrl.substring(0, 100) + '...');
-                                
-                                window.open(downloadUrl, '_blank');
-                                console.log('🚀 window.open called successfully');
-                                
-                                toast({
-                                  title: "Nedlasting startet",
-                                  description: `Oppdragsavtale for ${client?.name} blir lastet ned`,
-                                });
-                                
-                                console.log('🚀 Everything completed successfully');
-                              } catch (error) {
-                                console.error('🚀 Error in click handler:', error);
-                                toast({
-                                  title: "Feil",
-                                  description: "En feil oppstod ved nedlasting",
-                                  variant: "destructive",
-                                });
-                              }
-                            }}
-                          >
-                            <Download className="h-4 w-4 mr-1" />
-                            Last ned
-                          </Button>
+                          <DownloadButton 
+                            clientId={clientId} 
+                            engagementId={engagement.id} 
+                            clientName={client?.name}
+                          />
                         </div>
                       </div>
                       <div className="mt-3 text-sm text-gray-600">
