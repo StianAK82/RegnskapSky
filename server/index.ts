@@ -4,10 +4,12 @@ import { storage } from './storage';
 import { authenticateToken } from './auth';
 import { registerRoutes } from './routes';
 import { licensingService } from './services/licensing';
+import { engagementRoutes } from '../src/routes/engagements';
 import path from 'path';
 
 const app = express();
 app.use(express.json());
+app.use('/api', engagementRoutes);
 
 console.log('\n🚀 Task scheduler startet - sjekker oppgaver hvert minutt + daglige lisensoppgaver');
 

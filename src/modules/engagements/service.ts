@@ -1,4 +1,4 @@
-import { db } from "../../server/db";
+import { db } from "../../../server/db";
 import { 
   clients, 
   engagements, 
@@ -113,6 +113,39 @@ export class EngagementService {
 
       // Create default tasks for each scope
       await this.createDefaultTasksForEngagement(engagement.id, engagementData.scopes, engagementData.signatories, engagementData.tenantId);
+      
+      // Auto-assign responsible user from signatories to client tasks
+      const responsibleSignatory = engagementData.signatories?.find(s => 
+        s.role === 'responsible_accountant' || s.role === 'accounting_responsible'
+      );
+      
+      if (responsibleSignatory) {
+        try {
+          // Get user ID from email
+          const { db: storageDb } = await import('../../../server/db');
+          const { users } = await import('../../../shared/schema');
+          const { eq } = await import('drizzle-orm');
+          
+          const [user] = await storageDb
+            .select()
+            .from(users)
+            .where(eq(users.email, responsibleSignatory.email))
+            .limit(1);
+          
+          if (user) {
+            console.log('🔧 AUTO-ASSIGN: Found responsible user for engagement creation:', { 
+              email: responsibleSignatory.email, 
+              userId: user.id 
+            });
+            const updatedCount = await this.assignResponsibleToClientTasks(engagement.clientId, user.id);
+            console.log(`✅ AUTO-ASSIGN: Updated ${updatedCount} tasks after engagement creation`);
+          } else {
+            console.warn('⚠️ AUTO-ASSIGN: Responsible user not found:', responsibleSignatory.email);
+          }
+        } catch (error) {
+          console.error('❌ AUTO-ASSIGN: Error during engagement creation auto-assign:', error);
+        }
+      }
     }
 
     // Create pricing if provided
@@ -156,8 +189,8 @@ export class EngagementService {
 
     if (responsibleAccountant) {
       // Find the user by email to get their ID
-      const { db: storageDb } = await import('../../server/db');
-      const { users } = await import('../../shared/schema');
+      const { db: storageDb } = await import('../../../server/db');
+      const { users } = await import('../../../shared/schema');
       const { eq } = await import('drizzle-orm');
       
       const [user] = await storageDb
@@ -175,7 +208,7 @@ export class EngagementService {
     }
 
     // Import storage for task creation
-    const { storage } = await import('../../server/storage');
+    const { storage } = await import('../../../server/storage');
 
     // Task mapping based on scope keys
     const taskTemplates = {
@@ -273,13 +306,13 @@ export class EngagementService {
 
   // Sync client responsible to tasks - reassign open standard tasks
   async syncClientResponsibleToTasks(clientId: string, newResponsibleUserId: string): Promise<void> {
-    const { storage } = await import('../../server/storage');
+    const { storage } = await import('../../../server/storage');
     
     console.log('🔧 SYNC RESPONSIBLE: Syncing tasks for client:', { clientId, newResponsibleUserId });
 
     try {
       // Get all open standard tasks for the client that are not manually assigned
-      const { db: storageDb } = await import('../../server/db');
+      const { db: storageDb } = await import('../../../server/db');
       const { clientTasks } = await import('../../shared/schema');
       const { eq, and } = await import('drizzle-orm');
 
@@ -450,6 +483,68 @@ export class EngagementService {
     return fallbackInfo;
   }
 
+  // Auto-assign responsible user to client tasks
+  async assignResponsibleToClientTasks(
+    clientId: string, 
+    userId: string, 
+    options: { onlyUnassigned?: boolean } = { onlyUnassigned: true }
+  ): Promise<number> {
+    console.log('🔧 AUTO-ASSIGN: Starting task assignment:', { clientId, userId, options });
+
+    try {
+      // Import required modules
+      const { storage } = await import('../../../server/storage');
+      
+      // Get all standard tasks for the client
+      const allTasks = await storage.getTasksByClient(clientId);
+      
+      // Filter standard tasks that need updating
+      const standardTaskNames = ['Bokføring', 'MVA', 'Lønn', 'Årsoppgjör', 'Annet'];
+      
+      const tasksToUpdate = allTasks.filter((task: any) => {
+        // Must be a standard task type
+        if (task.taskType !== 'standard') return false;
+        
+        // Must be one of the standard task names
+        if (!standardTaskNames.includes(task.taskName)) return false;
+        
+        // Skip manually assigned tasks
+        if (task.isManuallyAssigned) return false;
+        
+        // If onlyUnassigned is true, only update unassigned tasks
+        if (options.onlyUnassigned && task.assignedTo) return false;
+        
+        return true;
+      });
+
+      console.log('🔧 AUTO-ASSIGN: Found tasks to update:', {
+        totalTasks: allTasks.length,
+        standardTasks: allTasks.filter((t: any) => t.taskType === 'standard').length,
+        tasksToUpdate: tasksToUpdate.length,
+        taskNames: tasksToUpdate.map((t: any) => t.taskName)
+      });
+
+      // Update the tasks
+      let updatedCount = 0;
+      for (const task of tasksToUpdate) {
+        try {
+          await storage.updateTask(task.id, { assignedTo: userId });
+          updatedCount++;
+          console.log(`✅ AUTO-ASSIGN: Updated task ${task.taskName} (${task.id})`);
+        } catch (error) {
+          console.error(`❌ AUTO-ASSIGN: Failed to update task ${task.id}:`, error);
+        }
+      }
+
+      console.log(`✅ AUTO-ASSIGN: Successfully updated ${updatedCount} tasks for client ${clientId}`);
+      return updatedCount;
+
+    } catch (error) {
+      console.error('❌ AUTO-ASSIGN: Error in assignResponsibleToClientTasks:', error);
+      throw error;
+    }
+  }
+
   // Finalize engagement - sets status to active and generates PDFs
   async finalizeEngagement(engagementId: string, tenantId: string) {
     const engagement = await this.getEngagementById(engagementId, tenantId);
@@ -491,7 +586,7 @@ export class EngagementService {
       .select({
         month: engagementPricing.fixedPeriod,
         totalMrr: engagementPricing.fixedAmountExVat,
-        clientName: clients.legalName,
+        clientName: clients.name,
         engagementId: engagements.id
       })
       .from(engagementPricing)
@@ -514,7 +609,7 @@ export class EngagementService {
       .select({
         area: engagementPricing.area,
         hourlyRate: engagementPricing.hourlyRateExVat,
-        clientName: clients.legalName,
+        clientName: clients.name,
         engagementId: engagements.id
       })
       .from(engagementPricing)
@@ -559,7 +654,7 @@ export class EngagementService {
 
     const terminationData = await db
       .select({
-        clientName: clients.legalName,
+        clientName: clients.name,
         engagementId: engagements.id,
         validFrom: engagements.validFrom,
         validTo: engagements.validTo,

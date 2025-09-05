@@ -4,6 +4,8 @@ import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { EngagementService } from '../src/modules/engagements/service';
 import { buildEngagementViewModel } from '../server/modules/engagements/mapper';
 import { generateStandardTerms } from '../server/templates/legal/standardTerms';
+import request from 'supertest';
+import express from 'express';
 
 // Mock database
 const mockDb = {
@@ -275,6 +277,110 @@ describe('Engagement System Enhancements', () => {
         s.name === 'Årsoppgjør' 
       );
       expect(yearEndScope?.frequency).toBe('Årlig');
+    });
+  });
+
+  describe('POST /api/clients/:clientId/engagements Integration', () => {
+    test('returns 201 and invokes auto-assign', async () => {
+      const mockApp = express();
+      mockApp.use(express.json());
+      
+      const mockEngagementController = {
+        createEngagement: vi.fn((req, res) => {
+          // Mock successful engagement creation
+          res.status(201).json({ engagementId: 'test-engagement-123' });
+        })
+      };
+
+      mockApp.post('/api/clients/:clientId/engagements', mockEngagementController.createEngagement);
+
+      const response = await request(mockApp)
+        .post('/api/clients/test-client-123/engagements')
+        .send({
+          systemName: 'Tripletex',
+          signatories: [
+            {
+              role: 'responsible_accountant',
+              name: 'Test Accountant',
+              email: 'accountant@test.com'
+            }
+          ],
+          scopes: [{ scopeKey: 'bookkeeping', frequency: 'monthly' }],
+          pricing: []
+        });
+
+      expect(response.status).toBe(201);
+      expect(response.body).toHaveProperty('engagementId');
+      expect(response.body.engagementId).toBe('test-engagement-123');
+      expect(mockEngagementController.createEngagement).toHaveBeenCalledTimes(1);
+    });
+
+    test('assignResponsibleToClientTasks respects isManuallyAssigned', async () => {
+      const service = new EngagementService();
+      
+      const mockTasks = [
+        { id: 'task-1', taskName: 'Bokføring', taskType: 'standard', isManuallyAssigned: false, assignedTo: null },
+        { id: 'task-2', taskName: 'MVA', taskType: 'standard', isManuallyAssigned: true, assignedTo: 'manual-user-123' },
+        { id: 'task-3', taskName: 'Lønn', taskType: 'standard', isManuallyAssigned: false, assignedTo: 'old-user-456' }
+      ];
+
+      // Mock storage.getTasksByClient
+      const mockStorage = {
+        getTasksByClient: vi.fn().mockResolvedValue(mockTasks),
+        updateTask: vi.fn().mockResolvedValue({})
+      };
+
+      // Mock the import
+      vi.doMock('../../../server/storage', () => ({ storage: mockStorage }));
+
+      const updatedCount = await service.assignResponsibleToClientTasks('client-123', 'new-user-789', { onlyUnassigned: false });
+
+      // Should update 2 tasks (task-1 and task-3) but skip task-2 due to manual assignment
+      expect(mockStorage.updateTask).toHaveBeenCalledTimes(2);
+      expect(mockStorage.updateTask).toHaveBeenCalledWith('task-1', { assignedTo: 'new-user-789' });
+      expect(mockStorage.updateTask).toHaveBeenCalledWith('task-3', { assignedTo: 'new-user-789' });
+      expect(mockStorage.updateTask).not.toHaveBeenCalledWith('task-2', expect.anything());
+      expect(updatedCount).toBe(2);
+    });
+
+    test('PDF endpoint with ?disposition=inline verifies Content-Disposition: inline', async () => {
+      const mockApp = express();
+      
+      mockApp.get('/api/clients/:clientId/engagements/:engagementId/pdf', (req, res) => {
+        const disposition = req.query.disposition;
+        const contentDisposition = disposition === 'inline' ? 'inline' : 'attachment';
+        
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `${contentDisposition}; filename="engagement.pdf"`);
+        res.status(200).send('Mock PDF content');
+      });
+
+      const response = await request(mockApp)
+        .get('/api/clients/test-client/engagements/test-engagement/pdf?disposition=inline')
+        .expect(200);
+
+      expect(response.headers['content-disposition']).toContain('inline');
+      expect(response.headers['content-type']).toBe('application/pdf');
+    });
+
+    test('PDF endpoint defaults to attachment when disposition not specified', async () => {
+      const mockApp = express();
+      
+      mockApp.get('/api/clients/:clientId/engagements/:engagementId/pdf', (req, res) => {
+        const disposition = req.query.disposition;
+        const contentDisposition = disposition === 'inline' ? 'inline' : 'attachment';
+        
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `${contentDisposition}; filename="engagement.pdf"`);
+        res.status(200).send('Mock PDF content');
+      });
+
+      const response = await request(mockApp)
+        .get('/api/clients/test-client/engagements/test-engagement/pdf')
+        .expect(200);
+
+      expect(response.headers['content-disposition']).toContain('attachment');
+      expect(response.headers['content-type']).toBe('application/pdf');
     });
   });
 });

@@ -79,7 +79,6 @@ function DownloadButton({ clientId, engagementId, clientName }: { clientId: stri
 // View PDF inline button component
 function ViewButton({ clientId, engagementId, clientName }: { clientId: string, engagementId: string, clientName?: string }) {
   const { toast } = useToast();
-  const [isViewerOpen, setIsViewerOpen] = useState(false);
 
   const handleView = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -98,52 +97,21 @@ function ViewButton({ clientId, engagementId, clientName }: { clientId: string, 
       return;
     }
     
-    setIsViewerOpen(true);
-  };
-
-  const getPdfUrl = () => {
-    const authToken = localStorage.getItem('auth_token');
-    const token = localStorage.getItem('token'); 
-    const finalToken = authToken || token;
-    
-    if (!finalToken) return '';
-    
-    return `/api/clients/${clientId}/engagements/${engagementId}/pdf?disposition=inline&token=${encodeURIComponent(finalToken)}`;
+    // Open PDF in new window instead of dialog
+    const pdfUrl = `/api/clients/${clientId}/engagements/${engagementId}/pdf?token=${encodeURIComponent(finalToken)}&disposition=inline`;
+    window.open(pdfUrl, '_blank', 'noopener,noreferrer');
   };
 
   return (
-    <>
-      <Button
-        size="sm"
-        variant="default"
-        onClick={handleView}
-        type="button"
-      >
-        <Eye className="h-4 w-4 mr-1" />
-        Se avtale
-      </Button>
-
-      <Dialog open={isViewerOpen} onOpenChange={setIsViewerOpen}>
-        <DialogContent className="max-w-4xl h-[80vh]">
-          <DialogHeader>
-            <DialogTitle>Oppdragsavtale - {clientName}</DialogTitle>
-            <DialogDescription>
-              Forhåndsvisning av oppdragsavtale
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex-1 min-h-0">
-            {isViewerOpen && (
-              <iframe
-                src={getPdfUrl()}
-                className="w-full h-full border-0"
-                title={`Oppdragsavtale for ${clientName}`}
-                data-testid={`pdf-viewer-${engagementId}`}
-              />
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
+    <Button
+      size="sm"
+      variant="default"
+      onClick={handleView}
+      type="button"
+    >
+      <Eye className="h-4 w-4 mr-1" />
+      Se avtale
+    </Button>
   );
 }
 

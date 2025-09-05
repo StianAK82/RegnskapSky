@@ -17,6 +17,7 @@ router.put('/clients/:clientId', authenticateToken, engagementController.updateC
 
 // Engagement routes
 router.post('/clients/:clientId/engagements', authenticateToken, engagementController.createEngagement);
+router.post('/engagements', authenticateToken, engagementController.createEngagement); // Alias route
 router.get('/clients/:clientId/engagements', authenticateToken, engagementController.getEngagements);
 router.get('/engagements/:engagementId', authenticateToken, engagementController.getEngagement);
 router.get('/engagements/:engagementId/view-model', authenticateToken, engagementController.getEngagementViewModel);

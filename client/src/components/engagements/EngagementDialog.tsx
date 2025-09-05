@@ -229,7 +229,7 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
       scopes: [],
       pricing: [],
       dpas: [{
-        processorName: 'Zaldo AS',
+        processorName: '', // Will be populated from practice info
         country: 'Norge',
         transferBasis: 'GDPR/EU'
       }]
