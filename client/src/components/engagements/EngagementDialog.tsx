@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { normalizeFrequency, TaskFrequency } from '../../../../shared/frequency';
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -211,22 +212,25 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
     return 'other';
   };
 
-  // Function to map repeatInterval to frequency - PRESERVE EXACT FREQUENCIES
+  // Function to map repeatInterval to frequency using shared module
   const mapIntervalToFrequency = (repeatInterval: string) => {
     if (!repeatInterval) return 'ved_behov';
-    const interval = repeatInterval.toLowerCase();
     
-    // Preserve exact frequencies - don't map "2 vær mnd" to "månedlig"!
-    if (interval === '2 vær mnd') return '2 vær mnd';
-    if (interval === 'ukentlig') return 'løpende';
-    if (interval === 'daglig') return 'løpende';
-    if (interval === 'månedlig') return 'månedlig';
-    if (interval === 'kvartalsvis') return 'kvartalsvis';
-    if (interval === 'årlig') return 'årlig';
-    if (interval === 'løpende') return 'løpende';
+    // Use shared frequency normalization - PRESERVE EXACT FREQUENCIES
+    const normalized = normalizeFrequency(repeatInterval);
     
-    // Return original if no match found
-    return repeatInterval;
+    // Map normalized English back to Norwegian UI terms for engagement forms
+    const engagementFrequencyMap: Record<TaskFrequency, string> = {
+      'daily': 'løpende',
+      'weekly': 'løpende', 
+      'monthly': 'månedlig',
+      'bi-monthly': '2 vær mnd', // Preserve exact Norwegian term!
+      'quarterly': 'kvartalsvis',
+      'yearly': 'årlig',
+      'once': 'ved_behov'
+    };
+    
+    return engagementFrequencyMap[normalized] || repeatInterval;
   };
 
   const form = useForm<EngagementFormData>({

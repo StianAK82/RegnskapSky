@@ -21,6 +21,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Users, FileText, Plus } from 'lucide-react';
 import { ExcelImportDialog } from '@/components/clients/ExcelImportDialog';
 import { EngagementDialog } from '@/components/engagements/EngagementDialog';
+import { normalizeFrequency, nextOccurrence, TaskFrequency } from '../../../shared/frequency';
 
 interface Client {
   id: string;
@@ -252,17 +253,10 @@ export default function Clients() {
     },
   });
 
-  // Map Norwegian frequencies to English enum values
+  // Use shared frequency normalization - NO MORE LOCAL MAPPING!
   const mapFrequencyToInterval = (frequency: string): string => {
-    switch (frequency.toLowerCase()) {
-      case 'daglig': return 'weekly'; // Closest match for daily
-      case 'ukentlig': return 'weekly';
-      case 'månedlig': return 'monthly';
-      case '2 vær mnd': return 'bi-monthly';
-      case 'kvartalsvis': return 'monthly'; // Quarterly not in enum, use monthly
-      case 'årlig': return 'yearly';
-      default: return 'monthly';
-    }
+    const normalized = normalizeFrequency(frequency);
+    return normalized; // Direct mapping from shared module
   };
 
   const saveTaskSchedulesMutation = useMutation({

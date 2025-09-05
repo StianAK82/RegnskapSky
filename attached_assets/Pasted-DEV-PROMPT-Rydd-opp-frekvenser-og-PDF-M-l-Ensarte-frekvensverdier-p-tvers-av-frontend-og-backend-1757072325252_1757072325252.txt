@@ -1,0 +1,373 @@
+DEV PROMPT — Rydd opp frekvenser og PDF
+Mål
+
+Ensarte frekvensverdier på tvers av frontend og backend.
+
+Utvide/rette backend-enum slik at alle forventede verdier støttes.
+
+Samle all frekvens- og datoberegning i én felles modul som brukes overalt.
+
+Fjerne forvirrende/ubrukt PDF-kode og sikre én, tydelig genereringsvei.
+
+Akseptansekriterier
+
+Ingen lokale mapFrequencyToInterval i client-detail.tsx og clients.tsx. Begge importerer fra felles modul.
+
+Støttede frekvenser (EN): daily, weekly, monthly, bi-monthly, quarterly, yearly, once.
+
+Støttede norske alias (NB): daglig, ukentlig, månedlig, annenhver måned (og feilskrivingen 2 vær mnd), kvartalsvis, årlig, engangs/spesifikk dato.
+
+Backend enum (DB/ORM): inneholder tilsvarende verdier (tillatte DB-symboler uten bindestrek) og API/DTO mapper mellom DB-enum og string-verdiene brukt i front.
+
+Dato­beregning: Én funksjon nextOccurrence() gir neste forfallsdato konsekvent.
+
+PDF: Ingen ubrukt pdfContent; enten fjernet eller brukt konsekvent i én genereringsfunksjon.
+
+Alle eksisterende kall til frekvenslogikk og PDF fungerer etter refaktor (CI grønn).
+
+Endringer (gjennomfør i rekkefølge)
+1) Opprett felles modul
+
+Opprett src/shared/frequency.ts (eller tilsvarende delt sti som både front og back kan konsumere – hvis ikke mulig, lag identisk modul i begge repoene, men med samme kode).
+
+// src/shared/frequency.ts
+
+export const taskFrequencies = [
+  "daily",
+  "weekly",
+  "monthly",
+  "bi-monthly",
+  "quarterly",
+  "yearly",
+  "once",
+] as const;
+
+export type TaskFrequency = typeof taskFrequencies[number];
+
+/**
+ * Norsk -> Engelsk normalisering (robust mot små skrivefeil)
+ */
+const NB_TO_EN: Record<string, TaskFrequency> = {
+  "daglig": "daily",
+  "ukentlig": "weekly",
+  "månedlig": "monthly",
+  "maanedlig": "monthly",
+  "mnd": "monthly",
+  "annenhver måned": "bi-monthly",
+  "annenhver mnd": "bi-monthly",
+  "2 hver mnd": "bi-monthly",
+  "2 vær mnd": "bi-monthly", // historisk feilskriving
+  "kvartalsvis": "quarterly",
+  "årlig": "yearly",
+  "aarlig": "yearly",
+  "engangs": "once",
+  "engang": "once",
+  "spesifikk dato": "once",
+  "bestemt dato": "once",
+};
+
+/**
+ * Engelsk alias -> Engelsk kanonisk
+ */
+const EN_ALIAS: Record<string, TaskFrequency> = {
+  "daily": "daily",
+  "day": "daily",
+  "weekly": "weekly",
+  "week": "weekly",
+  "monthly": "monthly",
+  "month": "monthly",
+  "bi-monthly": "bi-monthly",
+  "bimonthly": "bi-monthly",
+  "quarterly": "quarterly",
+  "yearly": "yearly",
+  "annual": "yearly",
+  "once": "once",
+  "specific_date": "once", // tidligere navn
+};
+
+/**
+ * Normaliserer vilkårlig inn-verdi (norsk/engelsk/alias/feilskriving)
+ * til vår kanoniske TaskFrequency.
+ */
+export function normalizeFrequency(input: string): TaskFrequency {
+  const key = (input || "").trim().toLowerCase();
+
+  // 1) eksakt match mot NB
+  if (NB_TO_EN[key]) return NB_TO_EN[key];
+
+  // 2) engelsk alias/kanonisk
+  if (EN_ALIAS[key]) return EN_ALIAS[key];
+
+  // 3) heuristikk for "annenhver måned"
+  if (/(2|annenhver).*(mån|mnd)/.test(key)) return "bi-monthly";
+
+  // 4) fallback: monthlig er tryggere enn feil "weekly" for "daglig"
+  return "monthly";
+}
+
+/**
+ * Beregn neste forfallsdato gitt frekvens.
+ * - startDate: første gyldige dato for oppgaven
+ * - fromDate: referansetid (default: nå)
+ * Returnerer neste dato >= fromDate.
+ */
+export function nextOccurrence(
+  frequency: TaskFrequency,
+  startDate: Date,
+  fromDate: Date = new Date()
+): Date {
+  if (!(startDate instanceof Date)) startDate = new Date(startDate);
+  if (!(fromDate instanceof Date)) fromDate = new Date(fromDate);
+
+  if (isNaN(+startDate)) throw new Error("Invalid startDate");
+  if (isNaN(+fromDate)) throw new Error("Invalid fromDate");
+
+  const d = new Date(Math.max(startDate.getTime(), fromDate.getTime()));
+
+  const addDays = (n: number) => { d.setDate(d.getDate() + n); };
+  const addMonths = (n: number) => { d.setMonth(d.getMonth() + n); };
+
+  switch (frequency) {
+    case "once":
+      return startDate >= fromDate ? startDate : startDate; // kallende lag håndterer "utløpt"
+    case "daily":
+      if (d > fromDate) return d;
+      addDays(1);
+      return d;
+    case "weekly": {
+      // rull til neste ukegrense fra startDate sin ukedag
+      const candidate = new Date(fromDate);
+      const startDow = startDate.getDay();
+      while (candidate.getDay() !== startDow || candidate <= fromDate) {
+        candidate.setDate(candidate.getDate() + 1);
+      }
+      return candidate;
+    }
+    case "monthly": {
+      const candidate = new Date(fromDate);
+      candidate.setDate(startDate.getDate());
+      if (candidate <= fromDate) candidate.setMonth(candidate.getMonth() + 1);
+      return candidate;
+    }
+    case "bi-monthly": {
+      const candidate = new Date(fromDate);
+      candidate.setDate(startDate.getDate());
+      // hopp i 2-måneders steg til vi passerer fromDate
+      while (candidate <= fromDate) candidate.setMonth(candidate.getMonth() + 2);
+      return candidate;
+    }
+    case "quarterly": {
+      const candidate = new Date(fromDate);
+      candidate.setDate(startDate.getDate());
+      const addQuarter = () => candidate.setMonth(candidate.getMonth() + 3);
+      // juster til samme dag i måneden som start
+      if (candidate.getDate() !== startDate.getDate()) {
+        candidate.setDate(startDate.getDate());
+      }
+      while (candidate <= fromDate) addQuarter();
+      return candidate;
+    }
+    case "yearly": {
+      const candidate = new Date(fromDate);
+      candidate.setMonth(startDate.getMonth(), startDate.getDate());
+      if (candidate <= fromDate) candidate.setFullYear(candidate.getFullYear() + 1);
+      return candidate;
+    }
+    default:
+      return fromDate;
+  }
+}
+
+2) Bytt ut lokal mapping i frontend
+
+I både client-detail.tsx og clients.tsx:
+
+Slett dupliserte mapFrequencyToInterval-funksjoner.
+
+Importer og bruk:
+
+import { normalizeFrequency, nextOccurrence, TaskFrequency } from "@/shared/frequency";
+
+// Eksempel:
+const freq: TaskFrequency = normalizeFrequency(inputFrequencyFromUIOrDB);
+const next = nextOccurrence(freq, new Date(task.startDate));
+
+3) Backend enum + mapping
+
+Hvis Prisma (eller tilsvarende DB-enum):
+
+Oppdater schema til en DB-trygg enum (ingen bindestrek i enum-symboler):
+
+// schema.prisma
+enum TaskFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+  BI_MONTHLY
+  QUARTERLY
+  YEARLY
+  ONCE
+}
+
+
+Kjør migrasjon.
+
+I backend (service/DTO-lag), legg til mapper mellom DB-enum og strenger brukt i front:
+
+// backend/shared/frequency-map.ts
+import { TaskFrequency as FrontFreq, normalizeFrequency } from "@/shared/frequency";
+
+export type DbFreq = "DAILY"|"WEEKLY"|"MONTHLY"|"BI_MONTHLY"|"QUARTERLY"|"YEARLY"|"ONCE";
+
+export const DB_TO_FRONT: Record<DbFreq, FrontFreq> = {
+  DAILY: "daily",
+  WEEKLY: "weekly",
+  MONTHLY: "monthly",
+  BI_MONTHLY: "bi-monthly",
+  QUARTERLY: "quarterly",
+  YEARLY: "yearly",
+  ONCE: "once",
+};
+
+export const FRONT_TO_DB: Record<FrontFreq, DbFreq> = {
+  "daily": "DAILY",
+  "weekly": "WEEKLY",
+  "monthly": "MONTHLY",
+  "bi-monthly": "BI_MONTHLY",
+  "quarterly": "QUARTERLY",
+  "yearly": "YEARLY",
+  "once": "ONCE",
+};
+
+// Når det kommer inn fritekst (NB/EN/alias), normaliser først:
+export function toDbEnum(input: string): DbFreq {
+  return FRONT_TO_DB[normalizeFrequency(input)];
+}
+
+
+NB: Dersom dere tidligere har lagret feilverdier (f.eks. "weekly" for "daglig"): lag en engangsmigrasjon som normaliserer.
+
+4) Rydd opp PDF-generering
+
+I PDF-endepunktet:
+
+Fjern ubrukt pdfContent eller bruk det bevisst som datakilde.
+
+Anbefaling: Én funksjon buildEngagementPdf(doc, client, engagement) som enten:
+a) Rendreer direkte med jsPDF uten pdfContent, eller
+b) Parser pdfContent og skriver det til doc (men da må pdfContent representere alt som faktisk går i PDFen).
+
+Minimal, tydelig implementasjon (direkte jsPDF, ingen ubrukt variabel):
+
+import jsPDF from "jspdf";
+
+export function generateEngagementPDF(client: any, engagement: any) {
+  const doc = new jsPDF();
+
+  const safe = (v: any, fallback = "Ikke oppgitt") =>
+    (v === null || v === undefined || v === "") ? fallback : String(v);
+
+  const created = new Date(engagement.createdAt).toLocaleDateString("nb-NO");
+  const validFrom = new Date(engagement.validFrom).toLocaleDateString("nb-NO");
+
+  let y = 10;
+  const line = (txt: string) => { doc.text(txt, 10, y); y += 8; };
+
+  line("OPPDRAGSAVTALE");
+  y += 4;
+  line("KLIENTINFORMASJON");
+  line(`Selskap: ${safe(client.name)}`);
+  line(`Organisasjonsnummer: ${safe(client.orgNumber)}`);
+  line(`E-post: ${safe(client.email)}`);
+  line(`Telefon: ${safe(client.phone)}`);
+  y += 4;
+  line("AVTALEDETALJER");
+  line(`Avtale ID: ${safe(engagement.id)}`);
+  line(`System: ${safe(engagement.systemName)}`);
+  line(`Lisensholder: ${safe(engagement.licenseHolder)}`);
+  line(`Admin-tilgang: ${engagement.adminAccess ? "Ja" : "Nei"}`);
+  line(`Status: ${safe(engagement.status)}`);
+  line(`Opprettet: ${created}`);
+  line(`Gyldig fra: ${validFrom}`);
+
+  if (Array.isArray(engagement.signatories)) {
+    y += 4; line(`SIGNATARER (${engagement.signatories.length})`);
+    engagement.signatories.forEach((s: any) =>
+      line(`- ${safe(s.name, "Ukjent")} (${safe(s.role, "Ukjent rolle")})`)
+    );
+  }
+
+  if (Array.isArray(engagement.scopes)) {
+    y += 4; line(`ARBEIDSOMRÅDER (${engagement.scopes.length})`);
+    engagement.scopes.forEach((sc: any) =>
+      line(`- ${safe(sc.name, "Ukjent område")}: ${safe(sc.description, "Ingen beskrivelse")}`)
+    );
+  }
+
+  if (Array.isArray(engagement.pricing)) {
+    y += 4; line(`PRISING`);
+    engagement.pricing.forEach((p: any) =>
+      line(`- ${safe(p.description, "Ukjent")}: ${safe(p.amount, 0)} kr ${safe(p.unit, "")}`)
+    );
+  }
+
+  const companyFileName =
+    (client.name?.replace(/[^a-zA-Z0-9\s]/g, "").replace(/\s+/g, "_") || "oppdragsavtale") + ".pdf";
+
+  doc.save(companyFileName);
+}
+
+Opprydding i eksisterende kode
+
+Slett alle forekomster av:
+
+// Map Norwegian frequencies to English enum values
+const mapFrequencyToInterval = (frequency: string): string => { ... }
+
+
+og erstatte bruken med:
+
+const f = normalizeFrequency(frequencyFromFormOrDb);
+
+
+Bytt ut gamle lister:
+
+export const taskIntervals = ["weekly", "monthly", "bi-monthly", "yearly", "specific_date"] as const;
+export type TaskInterval = typeof taskIntervals[number];
+
+export const taskFrequencies = ["weekly", "monthly", "quarterly", "yearly", "once"] as const;
+export type TaskFrequency = typeof taskFrequencies[number];
+
+
+med kun:
+
+export { taskFrequencies, TaskFrequency } from "@/shared/frequency";
+
+
+Fallbacker som var feil, f.eks. case 'daglig': return 'weekly', skal ikke finnes lenger.
+
+Testscenarioer (må passere)
+
+normalizeFrequency("daglig") === "daily"
+
+normalizeFrequency("ukentlig") === "weekly"
+
+normalizeFrequency("månedlig") === "monthly"
+
+normalizeFrequency("2 vær mnd") === "bi-monthly"
+
+normalizeFrequency("kvartalsvis") === "quarterly"
+
+normalizeFrequency("årlig") === "yearly"
+
+normalizeFrequency("specific_date") === "once"
+
+nextOccurrence("monthly", 2025-01-31, 2025-02-01) returnerer sluttdato i mars (håndtering av korte måneder skal ikke krasje).
+
+Ingen pdfContent-variabel igjen som ikke brukes.
+
+Notater
+
+Hvis DB-enumen må bruke underscore (f.eks. BI_MONTHLY), er det allerede hensyntatt via FRONT_TO_DB/DB_TO_FRONT.
+
+Hvis dere har flere steder som beregner “neste dato”, erstatt dem fortløpende med nextOccurrence() for å unngå duplisering.

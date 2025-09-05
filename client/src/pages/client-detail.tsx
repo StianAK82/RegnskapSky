@@ -31,6 +31,7 @@ import {
   Eye
 } from 'lucide-react';
 import { EngagementDialog } from '@/components/engagements/EngagementDialog';
+import { normalizeFrequency, nextOccurrence, TaskFrequency } from '../../../shared/frequency';
 
 // Simple download button component  
 function DownloadButton({ clientId, engagementId, clientName }: { clientId: string, engagementId: string, clientName?: string }) {
@@ -369,25 +370,18 @@ export default function ClientDetail() {
     }
   });
 
-  // Map Norwegian frequencies to English enum values
+  // Use shared frequency normalization - NO MORE LOCAL MAPPING!
   const mapFrequencyToInterval = (frequency: string): string => {
-    switch (frequency.toLowerCase()) {
-      case 'daglig': return 'weekly'; // Closest match for daily
-      case 'ukentlig': return 'weekly';
-      case 'månedlig': return 'monthly';
-      case '2 vær mnd': return 'bi-monthly';
-      case 'kvartalsvis': return 'monthly'; // Quarterly not in enum, use monthly
-      case 'årlig': return 'yearly';
-      default: return 'monthly';
-    }
+    const normalized = normalizeFrequency(frequency);
+    return normalized; // Direct mapping from shared module
   };
 
-  // Calculate next due date with Norwegian business compliance rules
+  // Calculate next due date using shared frequency module + Norwegian compliance rules
   const calculateNextDueDate = (frequency: string, taskIndex: number = 0, taskName: string = ''): Date => {
-    const nextDate = new Date();
+    const normalizedFreq = normalizeFrequency(frequency);
     
-    // Special Norwegian compliance rules
-    if (taskName === 'MVA' && frequency.toLowerCase() === '2 vær mnd') {
+    // Special Norwegian compliance rules override shared module for specific cases
+    if (taskName === 'MVA' && normalizedFreq === 'bi-monthly') {
       // MVA is always on the 10th of every 2nd month
       const baseDate = new Date();
       baseDate.setDate(10); // Always 10th
@@ -418,7 +412,7 @@ export default function ClientDetail() {
       return baseDate;
     }
     
-    if (taskName === 'Lønn' && frequency.toLowerCase() === 'månedlig') {
+    if (taskName === 'Lønn' && normalizedFreq === 'monthly') {
       // Lønn is always on the 5th of every month (Norwegian payroll standard)
       const baseDate = new Date();
       baseDate.setDate(5); // Always 5th
@@ -426,38 +420,45 @@ export default function ClientDetail() {
       return baseDate;
     }
     
-    // Standard logic for other tasks
-    switch (frequency.toLowerCase()) {
-      case 'daglig':
-        nextDate.setDate(nextDate.getDate() + 1 + taskIndex); // Stagger daily tasks by days
-        break;
-      case 'ukentlig':
-        nextDate.setDate(nextDate.getDate() + 7 + (taskIndex * 7)); // Stagger weekly tasks by weeks (same day, different weeks)
-        break;
-      case 'månedlig':
-        nextDate.setMonth(nextDate.getMonth() + 1);
-        nextDate.setDate(nextDate.getDate() + (taskIndex * 7)); // Stagger monthly tasks by weeks
-        break;
-      case '2 vær mnd':
-        nextDate.setMonth(nextDate.getMonth() + 2);
-        nextDate.setDate(nextDate.getDate() + (taskIndex * 14)); // Stagger bi-monthly tasks by 2 weeks
-        break;
-      case 'kvartalsvis':
-        nextDate.setMonth(nextDate.getMonth() + 3);
-        nextDate.setDate(nextDate.getDate() + (taskIndex * 30)); // Stagger quarterly tasks by months
-        break;
-      case 'årlig':
-        nextDate.setFullYear(nextDate.getFullYear() + 1);
-        nextDate.setDate(nextDate.getDate() + (taskIndex * 30)); // Stagger yearly tasks by months
-        break;
-      default:
-        // Som standard, legg til 1 måned
-        nextDate.setMonth(nextDate.getMonth() + 1);
-        nextDate.setDate(nextDate.getDate() + (taskIndex * 7));
-        console.log(`⚠️ Ukjent frekvens: ${frequency}, bruker månedlig som standard`);
+    // Use shared frequency module for standard date calculation
+    const baseStartDate = new Date();
+    try {
+      const nextDate = nextOccurrence(normalizedFreq, baseStartDate, new Date());
+      
+      // Apply task index staggering for multiple tasks of same type
+      const staggeredDate = new Date(nextDate);
+      switch (normalizedFreq) {
+        case 'daily':
+          staggeredDate.setDate(staggeredDate.getDate() + taskIndex);
+          break;
+        case 'weekly':
+          staggeredDate.setDate(staggeredDate.getDate() + (taskIndex * 7));
+          break;
+        case 'monthly':
+          staggeredDate.setDate(staggeredDate.getDate() + (taskIndex * 7));
+          break;
+        case 'bi-monthly':
+          staggeredDate.setDate(staggeredDate.getDate() + (taskIndex * 14));
+          break;
+        case 'quarterly':
+          staggeredDate.setDate(staggeredDate.getDate() + (taskIndex * 30));
+          break;
+        case 'yearly':
+          staggeredDate.setDate(staggeredDate.getDate() + (taskIndex * 30));
+          break;
+        default:
+          staggeredDate.setDate(staggeredDate.getDate() + (taskIndex * 7));
+      }
+      
+      return staggeredDate;
+    } catch (error) {
+      console.warn(`⚠️ Error calculating next occurrence for ${frequency}:`, error);
+      // Fallback to simple monthly calculation
+      const fallbackDate = new Date();
+      fallbackDate.setMonth(fallbackDate.getMonth() + 1);
+      fallbackDate.setDate(fallbackDate.getDate() + (taskIndex * 7));
+      return fallbackDate;
     }
-    
-    return nextDate;
   };
 
   const saveStandardTasksMutation = useMutation({
