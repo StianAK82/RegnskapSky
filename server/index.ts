@@ -1,7 +1,8 @@
 import express, { Request, Response, NextFunction } from 'express';
 import { db } from './db';
 import { storage } from './storage';
-import { authenticateToken } from './auth-middleware';
+import { authenticateToken } from './auth';
+import { registerRoutes } from './routes';
 import path from 'path';
 
 const app = express();
@@ -21,32 +22,26 @@ setInterval(async () => {
   }
 }, 60 * 1000);
 
-// Include all API routes
-import { authRoutes } from './routes/auth';
-import { billingRoutes } from './routes/billing';
-import { engagementsRoutes } from './routes/engagements';
+// Setup server routes and start server
+(async () => {
+  // Register all API routes
+  const server = await registerRoutes(app);
 
-app.use('/api/auth', authRoutes);
-app.use('/api/billing', billingRoutes);  
-app.use('/api/clients', engagementsRoutes);
-
-// User management endpoints
-app.get('/api/user/:id', authenticateToken, async (req, res) => {
-  try {
-    const user = await storage.getUser(req.params.id);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+  // User management endpoints
+  app.get('/api/user/:id', authenticateToken as any, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.params.id);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      res.json(user);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
     }
-    res.json(user);
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
-  }
-});
+  });
 
-// Get all engagements for a client
-app.get("/api/clients/:clientId/engagements", (req, res, next) => {
-  authenticateToken(req as any, res, next);
-}, async (req, res) => {
+  // Get all engagements for a client
+  app.get("/api/clients/:clientId/engagements", authenticateToken as any, async (req: any, res) => {
   try {
     const { clientId } = req.params;
     
@@ -92,10 +87,8 @@ app.get("/api/clients/:clientId/engagements", (req, res, next) => {
   }
 });
 
-// Add PDF download endpoint using modular PDF generator
-app.get("/api/clients/:clientId/engagements/:engagementId/pdf", (req, res, next) => {
-  authenticateToken(req as any, res, next);
-}, async (req, res) => {
+  // Add PDF download endpoint using modular PDF generator
+  app.get("/api/clients/:clientId/engagements/:engagementId/pdf", authenticateToken as any, async (req: any, res) => {
   try {
     const { clientId, engagementId } = req.params;
     
@@ -137,66 +130,67 @@ app.get("/api/clients/:clientId/engagements/:engagementId/pdf", (req, res, next)
   }
 });
 
-app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-  const status = err.status || err.statusCode || 500;
-  const message = err.message || "Internal Server Error";
+  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+    const status = err.status || err.statusCode || 500;
+    const message = err.message || "Internal Server Error";
 
-  res.status(status).json({ message });
-  throw err;
-});
-
-// Serve the built frontend
-const distPath = path.resolve(process.cwd(), "dist/public");
-
-// Check if the build exists
-if (require('fs').existsSync(distPath)) {
-  app.use(express.static(distPath));
-  
-  // Serve React app for all remaining routes
-  app.get('*', (req, res) => {
-    res.sendFile(path.resolve(distPath, 'index.html'));
+    res.status(status).json({ message });
+    throw err;
   });
-  
-  console.log('Serving production build from:', distPath);
-} else {
-  console.log('Production build not found. Expected at:', distPath);
-  console.log('Starting development server with Vite...');
-  
-  // Development mode - serve static files from client directory
-  console.log('Serving static files from client/ directory...');
-  
-  // Serve static files from client directory
-  app.use(express.static(path.resolve(process.cwd(), 'client')));
-  
-  // Serve modules with correct MIME types
-  app.use('/src', express.static(path.resolve(process.cwd(), 'client/src'), {
-    setHeaders: (res, path) => {
-      if (path.endsWith('.tsx') || path.endsWith('.ts')) {
-        res.setHeader('Content-Type', 'application/javascript');
-      }
-    }
-  }));
-  
-  // Serve shared modules
-  app.use('/shared', express.static(path.resolve(process.cwd(), 'shared'), {
-    setHeaders: (res, path) => {
-      if (path.endsWith('.ts')) {
-        res.setHeader('Content-Type', 'application/javascript');
-      }
-    }
-  }));
-  
-  // Serve attached assets
-  app.use('/attached_assets', express.static(path.resolve(process.cwd(), 'attached_assets')));
-  
-  // Fallback to index.html for React routing
-  app.get('*', (req, res) => {
-    const htmlPath = path.resolve(process.cwd(), 'client', 'index.html');
-    res.sendFile(htmlPath);
-  });
-}
 
-const PORT = 5000;
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`RegnskapsAI serving on port ${PORT}`);
-});
+  // Serve the built frontend
+  const distPath = path.resolve(process.cwd(), "dist/public");
+
+  // Check if the build exists
+  if (require('fs').existsSync(distPath)) {
+    app.use(express.static(distPath));
+    
+    // Serve React app for all remaining routes
+    app.get('*', (req, res) => {
+      res.sendFile(path.resolve(distPath, 'index.html'));
+    });
+    
+    console.log('Serving production build from:', distPath);
+  } else {
+    console.log('Production build not found. Expected at:', distPath);
+    console.log('Starting development server with Vite...');
+    
+    // Development mode - serve static files from client directory
+    console.log('Serving static files from client/ directory...');
+    
+    // Serve static files from client directory
+    app.use(express.static(path.resolve(process.cwd(), 'client')));
+    
+    // Serve modules with correct MIME types
+    app.use('/src', express.static(path.resolve(process.cwd(), 'client/src'), {
+      setHeaders: (res, path) => {
+        if (path.endsWith('.tsx') || path.endsWith('.ts')) {
+          res.setHeader('Content-Type', 'application/javascript');
+        }
+      }
+    }));
+    
+    // Serve shared modules
+    app.use('/shared', express.static(path.resolve(process.cwd(), 'shared'), {
+      setHeaders: (res, path) => {
+        if (path.endsWith('.ts')) {
+          res.setHeader('Content-Type', 'application/javascript');
+        }
+      }
+    }));
+    
+    // Serve attached assets
+    app.use('/attached_assets', express.static(path.resolve(process.cwd(), 'attached_assets')));
+    
+    // Fallback to index.html for React routing
+    app.get('*', (req, res) => {
+      const htmlPath = path.resolve(process.cwd(), 'client', 'index.html');
+      res.sendFile(htmlPath);
+    });
+  }
+
+  const PORT = 5000;
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`RegnskapsAI serving on port ${PORT}`);
+  });
+})();
