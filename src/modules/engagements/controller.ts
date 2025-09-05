@@ -109,6 +109,23 @@ export class EngagementController {
     }
   }
 
+  // Get engagement view-model for UI display and PDF generation
+  async getEngagementViewModel(req: AuthRequest, res: Response) {
+    try {
+      const viewModel = await engagementService.getEngagementViewModel(
+        req.params.engagementId, 
+        req.user!.tenantId
+      );
+      if (!viewModel) {
+        return res.status(404).json({ message: 'Oppdrag eller klient ikke funnet' });
+      }
+      res.json(viewModel);
+    } catch (error: any) {
+      console.error('Error fetching engagement view-model:', error);
+      res.status(500).json({ message: 'Feil ved henting av oppdrag: ' + error.message });
+    }
+  }
+
   async updateEngagement(req: AuthRequest, res: Response) {
     try {
       const updates = insertEngagementSchema.partial().parse(req.body);

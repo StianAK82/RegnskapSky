@@ -125,6 +125,30 @@ export class EngagementService {
     };
   }
 
+  // Get engagement details with client data for view-model
+  async getEngagementViewModel(engagementId: string, tenantId: string) {
+    const engagement = await this.getEngagementDetails(engagementId, tenantId);
+    if (!engagement) return null;
+
+    // Get client data
+    const [client] = await db
+      .select()
+      .from(clients)
+      .where(
+        and(
+          eq(clients.id, engagement.clientId),
+          eq(clients.tenantId, tenantId)
+        )
+      );
+
+    if (!client) return null;
+
+    // Import mapper here to avoid circular dependency
+    const { buildEngagementViewModel } = await import('../../../server/modules/engagements/mapper');
+    
+    return buildEngagementViewModel(engagement, client);
+  }
+
   // Finalize engagement - sets status to active and generates PDFs
   async finalizeEngagement(engagementId: string, tenantId: string) {
     const engagement = await this.getEngagementById(engagementId, tenantId);

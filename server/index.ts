@@ -141,9 +141,17 @@ setInterval(async () => {
       return res.status(404).json({ message: 'Klient ikke funnet' });
     }
     
-    // Generate PDF using clean, modular function
+    // Generate PDF using view-model approach
+    const { EngagementService } = await import('../src/modules/engagements/service');
+    const engagementService = new EngagementService();
+    const viewModel = await engagementService.getEngagementViewModel(engagementId, req.user!.tenantId);
+    
+    if (!viewModel) {
+      return res.status(404).json({ message: 'Oppdrag eller klient ikke funnet' });
+    }
+
     const { generateEngagementPDF } = await import('./utils/pdf-generator');
-    const doc = generateEngagementPDF(client, engagement);
+    const doc = generateEngagementPDF(viewModel.pdfModel);
     
     // Use company name for filename
     const companyFileName = client.name?.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_') || 'oppdragsavtale';

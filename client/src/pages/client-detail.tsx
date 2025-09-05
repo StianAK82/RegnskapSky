@@ -1064,12 +1064,14 @@ export default function ClientDetail() {
                     <div key={engagement.id} className="border rounded-lg p-4">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h4 className="font-medium">Oppdragsavtale #{engagement.id}</h4>
-                          <div className="text-sm text-gray-600 mt-1">
-                            <span>System: {engagement.systemName}</span>
-                            <span className="mx-2">•</span>
-                            <span>Opprettet: {new Date(engagement.createdAt).toLocaleDateString('nb-NO')}</span>
-                          </div>
+                          <EngagementHeader 
+                            engagementId={engagement.id}
+                            fallbackData={{
+                              clientName: client?.name || '',
+                              systemName: engagement.systemName || '',
+                              createdAt: engagement.createdAt
+                            }}
+                          />
                         </div>
                         <div className="flex items-center space-x-2">
                           <Badge variant={engagement.status === 'draft' ? 'secondary' : 'default'}>
@@ -1091,11 +1093,11 @@ export default function ClientDetail() {
                           )}
                         </div>
                       </div>
-                      <div className="mt-3 text-sm text-gray-600">
-                        <span>{engagement.signatories} signatarer</span>
-                        <span className="mx-2">•</span>
-                        <span>{engagement.scopes} arbeidsområder</span>
-                      </div>
+                      <EngagementSummary 
+                        engagementId={engagement.id}
+                        fallbackSignatories={engagement.signatories || 0}
+                        fallbackScopes={engagement.scopes || 0}
+                      />
                     </div>
                   ))}
                 </div>

@@ -1,19 +1,15 @@
 // server/utils/pdf-generator.ts
 import jsPDF from "jspdf";
+import type { EngagementPDFModel } from "../shared/engagement";
 
-export function generateEngagementPDF(client: any, engagement: any) {
+export function generateEngagementPDF(model: EngagementPDFModel) {
   const doc = new jsPDF();
 
-  const safe = (v: any, fallback = "Ikke oppgitt") =>
+  const safe = (v: any, fallback = "Ikke angitt") =>
     (v === null || v === undefined || v === "") ? fallback : String(v);
 
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return "Ikke oppgitt";
-    return new Date(dateStr).toLocaleDateString("nb-NO");
-  };
-
-  const formatCurrency = (amount: number) => {
-    if (!amount || isNaN(amount)) return "Ikke oppgitt";
+  const formatCurrency = (amount: number | null) => {
+    if (!amount || isNaN(amount)) return "Ikke angitt";
     return new Intl.NumberFormat('nb-NO', { 
       style: 'currency', 
       currency: 'NOK' 
@@ -99,47 +95,45 @@ export function generateEngagementPDF(client: any, engagement: any) {
 
   // Date and reference
   doc.setFontSize(10);
-  doc.text(`Dato: ${formatDate(new Date().toISOString())}`, 15, y);
-  doc.text(`Avtale-ID: ${safe(engagement.id)}`, 210 - 15, y, { align: 'right' });
+  doc.text(`Dato: ${safe(model.engagement.validFrom)}`, 15, y);
+  doc.text(`Avtale-ID: ${safe(model.engagement.id)}`, 210 - 15, y, { align: 'right' });
   y += 15;
 
   // Client Information Section
   addSection("1. KLIENTINFORMASJON", () => {
-    addLine("Firmanavn", safe(client.legalName || client.name));
-    addLine("Organisasjonsnummer", safe(client.orgNumber));
-    addLine("Adresse", safe(client.address));
-    addLine("Postadresse", safe(client.postalAddress));
-    addLine("Kontaktperson", safe(client.contactName));
-    addLine("E-post", safe(client.contactEmail));
-    addLine("Telefon", safe(client.contactPhone));
+    addLine("Firmanavn", safe(model.client.legalName || model.client.name));
+    addLine("Organisasjonsnummer", safe(model.client.orgNumber));
+    addLine("Adresse", safe(model.client.address));
+    addLine("Postadresse", safe(model.client.postalAddress));
+    if (model.client.contact) {
+      addLine("Kontaktperson", safe(model.client.contact.name));
+      addLine("E-post", safe(model.client.contact.email));
+      addLine("Telefon", safe(model.client.contact.phone));
+    }
   });
 
   // Engagement Details Section  
   addSection("2. OPPDRAGSBESKRIVELSE", () => {
-    addLine("System", safe(engagement.systemName));
-    addLine("Lisensholder", engagement.licenseHolder === 'client' ? 'Klient' : 'Regnskapskontor');
-    addLine("Administrator-tilgang", engagement.adminAccess ? "Ja" : "Nei");
-    addLine("Gyldig fra", formatDate(engagement.validFrom));
-    addLine("Status", engagement.status === 'draft' ? 'Utkast' : 
-                     engagement.status === 'active' ? 'Aktiv' : 
-                     engagement.status || 'Ikke oppgitt');
+    addLine("System", safe(model.engagement.system.name));
+    addLine("Lisensholder", safe(model.engagement.system.licenseHolder));
+    addLine("Administrator-tilgang", model.engagement.system.adminAccess ? "Ja" : "Nei");
+    addLine("Gyldig fra", safe(model.engagement.validFrom));
+    if (model.engagement.validTo) {
+      addLine("Gyldig til", safe(model.engagement.validTo));
+    }
+    addLine("Status", safe(model.engagement.status));
   });
 
   // Signatories Section
-  if (Array.isArray(engagement.signatories) && engagement.signatories.length > 0) {
+  if (model.signatories.length > 0) {
     addSection("3. KONTAKTPERSONER OG SIGNATURRETT", () => {
-      engagement.signatories.forEach((sig: any, index: number) => {
-        const roleText = sig.role === 'client_representative' ? 'Klientrepresentant' :
-                        sig.role === 'responsible_accountant' ? 'Oppdragsansvarlig regnskapsfører' :
-                        sig.role === 'managing_director' ? 'Daglig leder' : 
-                        safe(sig.role);
-        
+      model.signatories.forEach((sig, index) => {
         doc.setFont("helvetica", "bold");
         doc.text(`${index + 1}. ${safe(sig.name)}`, 20, y);
         y += 5;
         
         doc.setFont("helvetica", "normal");
-        addLine("Rolle", roleText, 5);
+        addLine("Rolle", safe(sig.role), 5);
         if (sig.title) addLine("Tittel", safe(sig.title), 5);
         addLine("E-post", safe(sig.email), 5);
         if (sig.phone) addLine("Telefon", safe(sig.phone), 5);
@@ -149,21 +143,11 @@ export function generateEngagementPDF(client: any, engagement: any) {
   }
 
   // Scope of Work Section
-  if (Array.isArray(engagement.scopes) && engagement.scopes.length > 0) {
+  if (model.scopes.length > 0) {
     addSection("4. ARBEIDSOMRÅDER", () => {
-      engagement.scopes.forEach((scope: any, index: number) => {
-        const scopeText = scope.scopeKey === 'bookkeeping' ? 'Løpende bokføring' :
-                         scope.scopeKey === 'year_end' ? 'Årsoppgjør' :
-                         scope.scopeKey === 'payroll' ? 'Lønn' :
-                         scope.scopeKey === 'invoicing' ? 'Fakturering' :
-                         scope.scopeKey === 'mva' ? 'Merverdiavgift' :
-                         scope.scopeKey === 'period_reports' ? 'Perioderapporter' :
-                         scope.scopeKey === 'project' ? 'Prosjektoppgave' :
-                         scope.scopeKey === 'other' ? 'Annet' :
-                         safe(scope.scopeKey);
-        
+      model.scopes.forEach((scope, index) => {
         doc.setFont("helvetica", "bold");
-        doc.text(`${index + 1}. ${scopeText}`, 20, y);
+        doc.text(`${index + 1}. ${safe(scope.name)}`, 20, y);
         y += 5;
         
         doc.setFont("helvetica", "normal");
@@ -183,21 +167,11 @@ export function generateEngagementPDF(client: any, engagement: any) {
   }
 
   // Pricing Section
-  if (Array.isArray(engagement.pricing) && engagement.pricing.length > 0) {
+  if (model.pricing.length > 0) {
     addSection("5. HONORAR OG BETINGELSER", () => {
-      engagement.pricing.forEach((price: any, index: number) => {
-        const areaText = price.area === 'bookkeeping' ? 'Løpende bokføring' :
-                        price.area === 'year_end' ? 'Årsoppgjør' :
-                        price.area === 'payroll' ? 'Lønn' :
-                        price.area === 'invoicing' ? 'Fakturering' :
-                        price.area === 'mva' ? 'Merverdiavgift' :
-                        price.area === 'period_reports' ? 'Perioderapporter' :
-                        price.area === 'project' ? 'Prosjektoppgave' :
-                        price.area === 'other' ? 'Annet' :
-                        safe(price.area);
-        
+      model.pricing.forEach((price, index) => {
         doc.setFont("helvetica", "bold");
-        doc.text(`${index + 1}. ${areaText}`, 20, y);
+        doc.text(`${index + 1}. ${safe(price.area)}`, 20, y);
         y += 5;
         
         doc.setFont("helvetica", "normal");
@@ -208,10 +182,9 @@ export function generateEngagementPDF(client: any, engagement: any) {
         } else if (price.model === 'fixed') {
           addLine("Prising", "Fast pris", 5);
           addLine("Beløp eks. mva", formatCurrency(price.fixedAmountExVat), 5);
-          addLine("Periode", price.fixedPeriod === 'monthly' ? 'Månedlig' :
-                           price.fixedPeriod === 'quarterly' ? 'Kvartalsvis' :
-                           price.fixedPeriod === 'yearly' ? 'Årlig' :
-                           safe(price.fixedPeriod), 5);
+          if (price.fixedPeriod) {
+            addLine("Periode", safe(price.fixedPeriod), 5);
+          }
         } else if (price.model === 'volume') {
           addLine("Prising", "Volumbasert", 5);
           addLine("Enhet", safe(price.volumeUnitLabel), 5);
@@ -240,12 +213,20 @@ export function generateEngagementPDF(client: any, engagement: any) {
   addSection("6. GENERELLE BESTEMMELSER", () => {
     const legalTerms = [
       "Oppdraget utføres i henhold til god regnskapsskikk og gjeldende lovgivning.",
-      "Betalingsbetingelser: 14 dager netto fra fakturadato.",
-      "Oppsigelsesfrist: 3 måneder fra den ene part til den andre.",
+      `Betalingsbetingelser: ${model.legalTerms.paymentTermsDays} dager netto fra fakturadato.`,
+      `Oppsigelsesfrist: ${model.legalTerms.noticeMonths} måneder fra den ene part til den andre.`,
       "Tvisteløsning: Eventuelle tvister løses ved ordinær domstol.",
       "Taushetsplikt: Regnskapskontoret er underlagt lovbestemt taushetsplikt.",
       "Forsikring: Regnskapskontoret har profesjonsansvarsforsikring."
     ];
+    
+    if (model.legalTerms.includeDpa) {
+      legalTerms.push("Databehandleravtale: Vedlagt som del av avtalen.");
+    }
+    
+    if (model.legalTerms.includeItBilag) {
+      legalTerms.push("IT-bilag: Vedlagt som del av avtalen.");
+    }
     
     legalTerms.forEach((term, index) => {
       doc.text(`${index + 1}. ${term}`, 20, y);
@@ -268,7 +249,7 @@ export function generateEngagementPDF(client: any, engagement: any) {
     doc.text("For klienten:", 20, y);
     doc.line(20, y + 15, 90, y + 15);
     doc.text("Dato og signatur", 20, y + 20);
-    doc.text(safe(client.contactName || client.name), 20, y + 25);
+    doc.text(safe(model.client.contact?.name || model.client.name), 20, y + 25);
     
     // Accounting firm signature  
     doc.text("For Zaldo AS:", 120, y);
@@ -284,7 +265,7 @@ export function generateEngagementPDF(client: any, engagement: any) {
     doc.setFontSize(8);
     doc.setTextColor(128, 128, 128);
     doc.text(`Side ${i} av ${pageCount}`, 105, 290, { align: 'center' });
-    doc.text(`Generert: ${formatDate(new Date().toISOString())}`, 15, 290);
+    doc.text(`Generert: ${safe(model.generatedAt)}`, 15, 290);
   }
 
   return doc;
