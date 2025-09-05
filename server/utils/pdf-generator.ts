@@ -3,6 +3,12 @@ import jsPDF from "jspdf";
 import type { EngagementPDFModel } from "../shared/engagement";
 
 export function generateEngagementPDF(model: EngagementPDFModel) {
+  console.log('🖨️ PDF GENERATOR: Starting PDF generation for engagement:', model.engagement.id);
+  console.log('📄 PDF GENERATOR: Using practice branding:', { 
+    firmName: model.practice.firmName,
+    orgNumber: model.practice.orgNumber
+  });
+
   const doc = new jsPDF();
 
   const safe = (v: any, fallback = "Ikke angitt") =>
@@ -35,17 +41,17 @@ export function generateEngagementPDF(model: EngagementPDFModel) {
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(20);
     doc.setFont("helvetica", "bold");
-    doc.text("ZALDO AS", 15, 18);
+    doc.text(safe(model.practice.firmName), 15, 18);
     
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     doc.text("Autorisert regnskapsførerselskap", 15, 25);
-    doc.text("Org.nr: 123 456 789 MVA", 15, 30);
+    doc.text(`Org.nr: ${safe(model.practice.orgNumber)} MVA`, 15, 30);
     
     // Contact info (right aligned)
-    doc.text("Telefon: +47 123 45 678", 210 - 15, 18, { align: 'right' });
-    doc.text("E-post: post@zaldo.no", 210 - 15, 25, { align: 'right' });
-    doc.text("www.zaldo.no", 210 - 15, 30, { align: 'right' });
+    doc.text(`Telefon: ${safe(model.practice.phone)}`, 210 - 15, 18, { align: 'right' });
+    doc.text(`E-post: ${safe(model.practice.email)}`, 210 - 15, 25, { align: 'right' });
+    doc.text(safe(model.practice.website?.replace(/^https?:\/\//, '') || model.practice.website), 210 - 15, 30, { align: 'right' });
     
     y = 50;
   };
@@ -252,7 +258,7 @@ export function generateEngagementPDF(model: EngagementPDFModel) {
     doc.text(safe(model.client.contact?.name || model.client.name), 20, y + 25);
     
     // Accounting firm signature  
-    doc.text("For Zaldo AS:", 120, y);
+    doc.text(`For ${safe(model.practice.firmName)}:`, 120, y);
     doc.line(120, y + 15, 190, y + 15);
     doc.text("Dato og signatur", 120, y + 20);
     doc.text("Autorisert regnskapsfører", 120, y + 25);

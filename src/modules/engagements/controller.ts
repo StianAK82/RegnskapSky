@@ -69,15 +69,23 @@ export class EngagementController {
   // Engagement endpoints
   async createEngagement(req: AuthRequest, res: Response) {
     try {
+      console.log('🔍 POST /api/clients/:clientId/engagements - Creating engagement:', { 
+        clientId: req.params.clientId, 
+        tenantId: req.user!.tenantId 
+      });
+
       const validatedData = insertEngagementSchema.parse({
         ...req.body,
+        clientId: req.params.clientId,
         tenantId: req.user!.tenantId
       });
 
       const engagement = await engagementService.createEngagement(validatedData);
-      res.status(201).json(engagement);
+      
+      console.log('✅ POST /api/clients/:clientId/engagements - Engagement created:', { engagementId: engagement.id });
+      res.status(201).json({ engagementId: engagement.id });
     } catch (error: any) {
-      console.error('Error creating engagement:', error);
+      console.error('❌ POST /api/clients/:clientId/engagements - Error creating engagement:', error);
       res.status(400).json({ message: 'Feil ved opprettelse av oppdrag: ' + error.message });
     }
   }

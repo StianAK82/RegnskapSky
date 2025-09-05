@@ -66,17 +66,35 @@ export interface FormattedPricing {
   systemCostsNote: string | null;
 }
 
+export interface LegalTermsSection {
+  title: string;
+  content: string[];
+  includePageBreak?: boolean;
+}
+
 export interface FormattedLegalTerms {
   includeDpa: boolean;
   includeItBilag: boolean;
   includeStandardTerms: boolean;
   paymentTermsDays: number;
   noticeMonths: number;
+  sections?: LegalTermsSection[];
+}
+
+export interface PracticeInfo {
+  firmName: string;
+  orgNumber: string;
+  address: string;
+  email: string;
+  phone: string;
+  website: string;
+  logoUrl?: string | null;
 }
 
 export interface EngagementPDFModel {
   client: FormattedClient;
   engagement: FormattedEngagement;
+  practice: PracticeInfo;
   signatories: FormattedSignatory[];
   scopes: FormattedScope[];
   pricing: FormattedPricing[];

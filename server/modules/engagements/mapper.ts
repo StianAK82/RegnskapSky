@@ -10,7 +10,8 @@ import {
   FormattedSignatory,
   FormattedScope,
   FormattedPricing,
-  FormattedLegalTerms
+  FormattedLegalTerms,
+  LegalTermsSection
 } from '../../../shared/engagement';
 
 // Translation mappings
@@ -232,14 +233,47 @@ export function buildEngagementViewModel(
     noticeMonths: client?.noticeMonths || 3
   };
   
+  // Build practice information with fallbacks
+  const formattedPractice = practiceInfo || {
+    firmName: 'RegnskapsAI',
+    orgNumber: '123 456 789',
+    address: 'Postboks 123, 0123 Oslo',
+    email: 'post@regnskapsai.no',
+    phone: '+47 23 00 00 00',
+    website: 'https://regnskapsai.no',
+    logoUrl: null
+  };
+
+  // Import legal terms generator
+  const { generateStandardTerms, StandardTermsConfig } = await import('../../templates/legal/standardTerms');
+  
+  // Build legal terms configuration
+  const legalConfig: StandardTermsConfig = {
+    includeStandardTerms: formattedLegalTerms.includeStandardTerms,
+    includeDpa: formattedLegalTerms.includeDpa,
+    includeItBilag: formattedLegalTerms.includeItBilag,
+    paymentTermsDays: formattedLegalTerms.paymentTermsDays,
+    noticeMonths: formattedLegalTerms.noticeMonths
+  };
+
+  // Generate legal terms sections for inclusion in view model
+  const legalTermsSections = generateStandardTerms(legalConfig);
+
+  // Add legal sections to formatted legal terms
+  const enhancedLegalTerms: FormattedLegalTerms = {
+    ...formattedLegalTerms,
+    sections: legalTermsSections
+  };
+
   // Build complete PDF model
   const pdfModel: EngagementPDFModel = {
     client: formattedClient,
     engagement: formattedEngagement,
+    practice: formattedPractice,
     signatories: formattedSignatories,
     scopes: formattedScopes,
     pricing: formattedPricing,
-    legalTerms: formattedLegalTerms,
+    legalTerms: enhancedLegalTerms,
     generatedAt: new Date().toISOString()
   };
   
