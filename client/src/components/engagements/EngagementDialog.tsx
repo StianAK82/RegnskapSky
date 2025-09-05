@@ -86,12 +86,12 @@ const FREQUENCY_LABELS = {
 
 // Standard tasks available for all clients (hardcoded configuration)
 const STANDARD_TASKS = [
-  { name: 'Bokföring', frequency: ['Daglig', 'Ukentlig', 'Månedlig'] },
-  { name: 'MVA', frequency: ['Månedlig', 'Kvartalsvis', '2 vær mnd'] },
-  { name: 'Lønn', frequency: ['Månedlig'] },
-  { name: 'Bankavstemming', frequency: ['Daglig', 'Ukentlig'] },
-  { name: 'Kontoavstemming', frequency: ['Månedlig', 'Kvartalsvis'] },
-  { name: 'Regnskapstemming', frequency: ['Månedlig'] }
+  { name: 'Bokføring',            frequency: ['Daglig', 'Ukentlig', 'Månedlig'] },
+  { name: 'MVA',                  frequency: ['Månedlig', 'Kvartalsvis', '2 hver mnd'] },
+  { name: 'Lønn',                 frequency: ['Månedlig'] },
+  { name: 'Bankavstemming',       frequency: ['Daglig', 'Ukentlig'] },
+  { name: 'Kontoavstemming',      frequency: ['Månedlig', 'Kvartalsvis'] },
+  { name: 'Regnskapsavstemming',  frequency: ['Månedlig'] },
 ];
 
 export function EngagementDialog({ clientId, clientName, open, onOpenChange, trigger }: EngagementDialogProps) {
@@ -191,46 +191,28 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
   });
 
 
+  // Normalize strings by removing diacritics, lowercasing and trimming
+  const norm = (s = '') =>
+    s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+
   // Function to map task names to scope categories
   const mapTaskToScope = (taskName: string) => {
-    const name = taskName.toLowerCase();
-    if (name.includes('bokføring') || name.includes('kontoavstemming') || name.includes('bankavstemming')) {
-      return 'bookkeeping';
-    }
-    if (name.includes('mva')) {
-      return 'mva';
-    }
-    if (name.includes('lønn')) {
-      return 'payroll';
-    }
-    if (name.includes('årsoppgjør')) {
-      return 'year_end';
-    }
-    if (name.includes('faktur')) {
-      return 'invoicing';
-    }
-    return 'other';
+    const name = norm(taskName);
+    if (name.includes('bokforing') || name.includes('kontoavstemming') || name.includes('bankavstemming')) return 'bookkeeping';
+    if (name.includes('mva')) return 'mva';
+    if (name.includes('lonn')) return 'payroll';
+    if (name.includes('arsoppgjor') || name.includes('arsavslutning')) return 'year_end';
+    return undefined;
   };
 
-  // Function to map repeatInterval to frequency using shared module
-  const mapIntervalToFrequency = (repeatInterval: string) => {
-    if (!repeatInterval) return 'ved_behov';
-    
-    // Use shared frequency normalization - PRESERVE EXACT FREQUENCIES
-    const normalized = normalizeFrequency(repeatInterval);
-    
-    // Map normalized English back to Norwegian UI terms for engagement forms
-    const engagementFrequencyMap: Record<TaskFrequency, string> = {
-      'daily': 'løpende',
-      'weekly': 'løpende', 
-      'monthly': 'månedlig',
-      'bi-monthly': '2 vær mnd', // Preserve exact Norwegian term!
-      'quarterly': 'kvartalsvis',
-      'yearly': 'årlig',
-      'once': 'ved_behov'
-    };
-    
-    return engagementFrequencyMap[normalized] || repeatInterval;
+  // Function to map repeatInterval to frequency
+  const mapIntervalToFrequency = (interval: string) => {
+    const i = norm(interval);
+    if (i.includes('daglig') || i.includes('ukentlig')) return 'løpende';
+    if (i.includes('manedlig') || i.includes('hver mnd') || i.includes('hver måned') || i.includes('2 hver mnd') || i.includes('2hver mnd') || i.includes('2 var mnd') || i.includes('2 vær mnd')) return 'månedlig';
+    if (i.includes('kvartal')) return 'kvartalsvis';
+    if (i.includes('arlig') || i.includes('hvert ar')) return 'årlig';
+    return 'ved_behov';
   };
 
   const form = useForm<EngagementFormData>({
@@ -278,38 +260,22 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
       
       // Small delay to ensure form is ready
       setTimeout(() => {
-        // Auto-populate scopes based on client tasks first, fallback to standard tasks
-        let autoScopes = [];
-        
-        if (clientTasks && clientTasks.length > 0) {
-          // Use actual client tasks
-          autoScopes = clientTasks.slice(0, 8).map((task: any) => {
-            const scopeKey = mapTaskToScope(task.taskName || task.title || '');
-            const frequency = mapIntervalToFrequency(task.repeatInterval || task.interval || '');
-            
-            return {
-              scopeKey: scopeKey as any,
-              frequency: frequency as any,
-              comments: task.description || task.taskName || task.title || ''
-            };
-          });
-        } else {
-          // Fallback to standard tasks
-          autoScopes = STANDARD_TASKS.map((task) => {
-            const scopeKey = mapTaskToScope(task.name);
-            const firstFreq = task.frequency[0];
-            const frequency = mapIntervalToFrequency(firstFreq);
-            
-            return {
-              scopeKey: scopeKey as any,
-              frequency: frequency as any,
-              comments: task.name
-            };
-          });
-        }
-        
-        console.log('🔧 ENGAGEMENT: Setting scopes:', autoScopes);
-        form.setValue('scopes', autoScopes, { shouldValidate: true });
+        // Use clientTasks if available, otherwise fallback to STANDARD_TASKS
+        const sourceTasks = Array.isArray(clientTasks) && clientTasks.length ? clientTasks : STANDARD_TASKS;
+
+        const autoScopes = sourceTasks
+          .map((task: any) => {
+            const taskName: string = task.taskName || task.name || '';
+            const repeatInterval: string =
+              task.repeatInterval || (Array.isArray(task.frequency) ? task.frequency[0] : '') || '';
+            const scopeKey = mapTaskToScope(taskName);
+            if (!scopeKey) return undefined;
+            const frequency = mapIntervalToFrequency(repeatInterval);
+            return { scopeKey: scopeKey as any, frequency: frequency as any, comments: `Automatisk lagt til basert på ${taskName}` };
+          })
+          .filter(Boolean);
+
+        form.setValue('scopes', autoScopes as any, { shouldDirty: true });
 
         // Auto-populate system name if client has one
         if (client.accountingSystem) {
@@ -432,8 +398,8 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
     },
     onError: (error: any) => {
       toast({
-        title: 'Feil ved opprettelse',
-        description: error.message || 'Kunne ikke opprette engasjement',
+        title: 'Kunne ikke opprette engasjement',
+        description: error?.message || 'Noe gikk galt. Prøv igjen.',
         variant: 'destructive',
       });
     }

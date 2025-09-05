@@ -1,0 +1,143 @@
+Du er en senior TypeScript/React-utvikler. Refaktorer filen EngagementDialog.tsx slik at følgende blir gjort – uten å endre eksisterende API-kall eller komponent-API:
+
+Mål / Endringer
+
+Rett opp onError-håndteringen i createEngagementMutation til et gyldig toast-kall:
+
+title: 'Kunne ikke opprette engasjement'
+
+description: error?.message || 'Noe gikk galt. Prøv igjen.'
+
+variant: 'destructive'
+
+Normaliser strengsammenligninger:
+
+Lag en hjelpefunksjon norm(s) som fjerner diakritiske tegn (NFD + regex), lowercaser og trimmer.
+
+Bruk norm i både mapTaskToScope og mapIntervalToFrequency.
+
+Robust mapping:
+
+mapTaskToScope(taskName) skal mappe:
+
+bokføring/kontoavstemming/bankavstemming → bookkeeping
+
+mva → mva
+
+lønn → payroll
+
+årsoppgjør/årsavslutning → year_end
+
+mapIntervalToFrequency(interval) skal mappe:
+
+daglig/ukentlig → løpende
+
+månedlig / “hver mnd” / “hver måned” / “2 hver mnd” / (tåle stavefeil som “2 vær mnd”) → månedlig
+
+kvartal/kvartalsvis → kvartalsvis
+
+årlig → årlig
+
+ellers → ved_behov
+
+Kilde for auto-scopes:
+
+Bruk clientTasks hvis det finnes (array med elementer som kan ha taskName og repeatInterval).
+
+Fall tilbake til STANDARD_TASKS hvis clientTasks er tomt.
+
+Ta første frekvens fra task.frequency når repeatInterval ikke finnes.
+
+Filtrer vekk ugyldige scopes:
+
+Ikke skriv scopes uten gyldig scopeKey.
+
+Sett verdien på form.setValue('scopes', autoScopes, { shouldDirty: true }).
+
+Lett opprydding:
+
+Hold logging minimal (behold nyttig debug, fjern støy).
+
+Sørg for at STANDARD_TASKS bruker norske navn konsekvent (f.eks. “Bokføring”, “Regnskapsavstemming”, “2 hver mnd”).
+
+Akseptansekriterier
+
+Ingen TypeScript-feil.
+
+Ingen runtime-feil ved opening/closing av dialog, ved fetch-feil eller ved suksess.
+
+Når clientTasks eksisterer, brukes de; ellers faller koden tilbake til STANDARD_TASKS.
+
+onError viser en rød (destructive) toast med enten error.message eller en generic tekst.
+
+Scopes inneholder bare gyldige scopeKey-verdier og riktig frekvensmapping.
+
+Implementer disse konkrete endringene:
+
+Legg til:
+
+const norm = (s = '') =>
+  s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+
+const mapTaskToScope = (taskName: string) => {
+  const name = norm(taskName);
+  if (name.includes('bokforing') || name.includes('kontoavstemming') || name.includes('bankavstemming')) return 'bookkeeping';
+  if (name.includes('mva')) return 'mva';
+  if (name.includes('lonn')) return 'payroll';
+  if (name.includes('arsoppgjor') || name.includes('arsavslutning')) return 'year_end';
+  return undefined;
+};
+
+const mapIntervalToFrequency = (interval: string) => {
+  const i = norm(interval);
+  if (i.includes('daglig') || i.includes('ukentlig')) return 'løpende';
+  if (i.includes('manedlig') || i.includes('hver mnd') || i.includes('hver måned') || i.includes('2 hver mnd') || i.includes('2hver mnd') || i.includes('2 var mnd') || i.includes('2 vær mnd')) return 'månedlig';
+  if (i.includes('kvartal')) return 'kvartalsvis';
+  if (i.includes('arlig') || i.includes('hvert ar')) return 'årlig';
+  return 'ved_behov';
+};
+
+
+I useEffect som autopopulerer scopes, bruk:
+
+const sourceTasks = Array.isArray(clientTasks) && clientTasks.length ? clientTasks : STANDARD_TASKS;
+
+const autoScopes = sourceTasks
+  .map((task: any) => {
+    const taskName: string = task.taskName || task.name || '';
+    const repeatInterval: string =
+      task.repeatInterval || (Array.isArray(task.frequency) ? task.frequency[0] : '') || '';
+    const scopeKey = mapTaskToScope(taskName);
+    if (!scopeKey) return undefined;
+    const frequency = mapIntervalToFrequency(repeatInterval);
+    return { scopeKey: scopeKey as any, frequency: frequency as any, comments: `Automatisk lagt til basert på ${taskName}` };
+  })
+  .filter(Boolean);
+
+form.setValue('scopes', autoScopes as any, { shouldDirty: true });
+
+
+Fiks onError:
+
+onError: (error: any) => {
+  toast({
+    title: 'Kunne ikke opprette engasjement',
+    description: error?.message || 'Noe gikk galt. Prøv igjen.',
+    variant: 'destructive',
+  });
+},
+
+
+Juster STANDARD_TASKS til:
+
+const STANDARD_TASKS = [
+  { name: 'Bokføring',            frequency: ['Daglig', 'Ukentlig', 'Månedlig'] },
+  { name: 'MVA',                  frequency: ['Månedlig', 'Kvartalsvis', '2 hver mnd'] },
+  { name: 'Lønn',                 frequency: ['Månedlig'] },
+  { name: 'Bankavstemming',       frequency: ['Daglig', 'Ukentlig'] },
+  { name: 'Kontoavstemming',      frequency: ['Månedlig', 'Kvartalsvis'] },
+  { name: 'Regnskapsavstemming',  frequency: ['Månedlig'] },
+];
+
+
+Utfør endringene direkte i filen og sørg for at all eksisterende funksjonalitet ellers forblir uendret. Kjør deretter prosjektet og verifiser akseptansekriteriene.
