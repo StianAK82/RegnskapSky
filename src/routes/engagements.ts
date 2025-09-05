@@ -21,6 +21,8 @@ router.post('/engagements', authenticateToken, engagementController.createEngage
 router.get('/clients/:clientId/engagements', authenticateToken, engagementController.getEngagements);
 router.get('/engagements/:engagementId', authenticateToken, engagementController.getEngagement);
 router.get('/engagements/:engagementId/view-model', authenticateToken, engagementController.getEngagementViewModel);
+router.get('/clients/:clientId/engagements/:engagementId', authenticateToken, engagementController.getEngagement);
+router.get('/clients/:clientId/engagements/:engagementId/view-model', authenticateToken, engagementController.getEngagementViewModel);
 router.put('/engagements/:engagementId', authenticateToken, engagementController.updateEngagement);
 router.post('/engagements/:engagementId/finalize', authenticateToken, engagementController.finalizeEngagement);
 

@@ -76,9 +76,38 @@ function DownloadButton({ clientId, engagementId, clientName }: { clientId: stri
   );
 }
 
-// View PDF inline button component
+// View PDF inline button component with enhanced accessibility
 function ViewButton({ clientId, engagementId, clientName }: { clientId: string, engagementId: string, clientName?: string }) {
   const { toast } = useToast();
+  const [viewModel, setViewModel] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Fetch engagement view model for better UI display
+  const fetchViewModel = async () => {
+    if (viewModel) return; // Already fetched
+    
+    setIsLoading(true);
+    try {
+      const authToken = localStorage.getItem('auth_token');
+      const token = localStorage.getItem('token'); 
+      const finalToken = authToken || token;
+      
+      const response = await fetch(`/api/clients/${clientId}/engagements/${engagementId}/view-model`, {
+        headers: {
+          'Authorization': `Bearer ${finalToken}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setViewModel(data);
+      }
+    } catch (error) {
+      console.warn('Could not fetch engagement view model:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleView = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -99,19 +128,35 @@ function ViewButton({ clientId, engagementId, clientName }: { clientId: string, 
     
     // Open PDF in new window instead of dialog
     const pdfUrl = `/api/clients/${clientId}/engagements/${engagementId}/pdf?token=${encodeURIComponent(finalToken)}&disposition=inline`;
+    const windowName = `Oppdragsavtale (PDF)`;
     window.open(pdfUrl, '_blank', 'noopener,noreferrer');
   };
 
+  // Display header info if view model is available
+  const headerInfo = viewModel ? (
+    <div className="text-xs text-muted-foreground mb-2">
+      {viewModel.header.clientName} • {viewModel.header.orgNumber} • {viewModel.header.systemName}
+    </div>
+  ) : null;
+
   return (
-    <Button
-      size="sm"
-      variant="default"
-      onClick={handleView}
-      type="button"
-    >
-      <Eye className="h-4 w-4 mr-1" />
-      Se avtale
-    </Button>
+    <div>
+      {headerInfo}
+      <Button
+        size="sm"
+        variant="default"
+        onClick={handleView}
+        onMouseEnter={fetchViewModel}
+        aria-label="Se oppdragsavtale"
+        title={`Åpne oppdragsavtale for ${clientName || 'klient'} i ny fane`}
+        type="button"
+        disabled={isLoading}
+        data-testid={`button-view-engagement-${engagementId}`}
+      >
+        <Eye className="h-4 w-4 mr-1" />
+        Se avtale
+      </Button>
+    </div>
   );
 }
 

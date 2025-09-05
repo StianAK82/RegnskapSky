@@ -383,4 +383,216 @@ describe('Engagement System Enhancements', () => {
       expect(response.headers['content-type']).toBe('application/pdf');
     });
   });
+
+  describe('buildEngagementViewModel Unit Tests', () => {
+    test('builds view model with full data and formats org number correctly', () => {
+      const mockEngagement = {
+        id: 'eng-123',
+        status: 'draft',
+        version: 1,
+        validFrom: '2024-01-15',
+        validTo: '2025-01-15',
+        systemName: 'Tripletex',
+        licenseHolder: 'client',
+        adminAccess: true,
+        includeStandardTerms: true,
+        includeDpa: true,
+        includeItBilag: true
+      };
+
+      const mockClient = {
+        name: 'Test Company AS',
+        orgNumber: '123456789',
+        address: 'Testveien 123, 0123 Oslo',
+        contactName: 'John Doe'
+      };
+
+      const mockPractice = {
+        firmName: 'Test Regnskapsbyrå AS',
+        orgNumber: '987654321',
+        address: 'Praksisveien 456, 0456 Oslo',
+        email: 'kontakt@testregnskapsbyrå.no',
+        phone: '+47 12 34 56 78',
+        website: 'https://testregnskapsbyrå.no'
+      };
+
+      const mockSignatories = [
+        {
+          role: 'responsible_accountant',
+          name: 'Jane Smith',
+          email: 'jane@testregnskapsbyrå.no',
+          phone: '+47 98 76 54 32',
+          title: 'Autorisert regnskapsfører'
+        }
+      ];
+
+      const mockScopes = [
+        {
+          scopeKey: 'bookkeeping',
+          frequency: 'månedlig',
+          comments: 'Løpende bokføring'
+        }
+      ];
+
+      const result = buildEngagementViewModel(
+        mockEngagement, 
+        mockClient, 
+        mockPractice, 
+        mockSignatories, 
+        mockScopes
+      );
+
+      // Test header formatting
+      expect(result.header.clientName).toBe('Test Company AS');
+      expect(result.header.orgNumber).toBe('123 456 789'); // Should be formatted
+      expect(result.header.systemName).toBe('Tripletex');
+
+      // Test contact picking (should pick responsible accountant)
+      expect(result.summary.contact?.name).toBe('Jane Smith');
+      expect(result.summary.contact?.email).toBe('jane@testregnskapsbyrå.no');
+
+      // Test responsibles list
+      expect(result.summary.responsibles).toHaveLength(1);
+      expect(result.summary.responsibles[0].name).toBe('Jane Smith');
+      expect(result.summary.responsibles[0].role).toBe('Oppdragsansvarlig regnskapsfører');
+
+      // Test practice formatting
+      expect(result.pdfModel.practice.orgNumber).toBe('987 654 321'); // Should be formatted
+      expect(result.pdfModel.practice.firmName).toBe('Test Regnskapsbyrå AS');
+
+      // Test scopes translation
+      expect(result.pdfModel.scopes).toHaveLength(1);
+      expect(result.pdfModel.scopes[0].name).toBe('Løpende bokføring');
+      expect(result.pdfModel.scopes[0].frequency).toBe('Månedlig');
+    });
+
+    test('handles missing contact and falls back to client contact', () => {
+      const mockEngagement = {
+        id: 'eng-456',
+        status: 'active',
+        version: 1,
+        validFrom: '2024-01-01',
+        systemName: 'Fiken',
+        licenseHolder: 'firm',
+        adminAccess: false,
+        includeStandardTerms: true,
+        includeDpa: true,
+        includeItBilag: false
+      };
+
+      const mockClient = {
+        name: 'Another Company AS',
+        orgNumber: '111222333',
+        contactName: 'Client Contact Person'
+      };
+
+      const mockPractice = {
+        firmName: 'Default Practice'
+      };
+
+      const result = buildEngagementViewModel(
+        mockEngagement, 
+        mockClient, 
+        mockPractice, 
+        [], // No signatories
+        []  // No scopes
+      );
+
+      // Should use client contact as fallback
+      expect(result.summary.contact?.name).toBe('Client Contact Person');
+
+      // No responsibles since no signatories
+      expect(result.summary.responsibles).toHaveLength(0);
+      
+      // Org number should still be formatted
+      expect(result.header.orgNumber).toBe('111 222 333');
+    });
+
+    test('returns "Ikke angitt" when no contact info available', () => {
+      const mockEngagement = {
+        id: 'eng-789',
+        status: 'terminated',
+        version: 2,
+        systemName: 'Unimicro',
+        licenseHolder: 'client',
+        adminAccess: false,
+        includeStandardTerms: false,
+        includeDpa: false,
+        includeItBilag: false
+      };
+
+      const mockClient = {
+        name: 'No Contact Company',
+        orgNumber: '444555666'
+        // No contactName provided
+      };
+
+      const mockPractice = {
+        firmName: 'Test Practice'
+      };
+
+      const result = buildEngagementViewModel(
+        mockEngagement, 
+        mockClient, 
+        mockPractice, 
+        [], // No signatories
+        []  // No scopes
+      );
+
+      // Should have no contact since none available
+      expect(result.summary.contact).toBe(null);
+      
+      // Legal terms should reflect the settings
+      expect(result.pdfModel.legalTerms.includeStandardTerms).toBe(false);
+      expect(result.pdfModel.legalTerms.includeDpa).toBe(false);
+      expect(result.pdfModel.legalTerms.includeItBilag).toBe(false);
+    });
+
+    test('maintains stable section order in PDF model', () => {
+      const mockEngagement = {
+        id: 'order-test',
+        status: 'draft',
+        version: 1,
+        systemName: 'Test System',
+        licenseHolder: 'firm',
+        adminAccess: true,
+        includeStandardTerms: true,
+        includeDpa: true,
+        includeItBilag: true
+      };
+
+      const mockClient = {
+        name: 'Order Test Company',
+        orgNumber: '123456789'
+      };
+
+      const mockPractice = {
+        firmName: 'Order Test Practice'
+      };
+
+      const result = buildEngagementViewModel(
+        mockEngagement, 
+        mockClient, 
+        mockPractice, 
+        [], 
+        []
+      );
+
+      // Check that PDF model has expected structure
+      const pdfModel = result.pdfModel;
+      expect(pdfModel).toHaveProperty('client');
+      expect(pdfModel).toHaveProperty('engagement');
+      expect(pdfModel).toHaveProperty('practice');
+      expect(pdfModel).toHaveProperty('signatories');
+      expect(pdfModel).toHaveProperty('scopes');
+      expect(pdfModel).toHaveProperty('pricing');
+      expect(pdfModel).toHaveProperty('legalTerms');
+      expect(pdfModel).toHaveProperty('generatedAt');
+
+      // Verify arrays are properly initialized
+      expect(Array.isArray(pdfModel.signatories)).toBe(true);
+      expect(Array.isArray(pdfModel.scopes)).toBe(true);
+      expect(Array.isArray(pdfModel.pricing)).toBe(true);
+    });
+  });
 });

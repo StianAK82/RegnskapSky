@@ -13,13 +13,11 @@ export const fixedPeriodEnum = pgEnum('fixed_period', ['monthly', 'quarterly', '
 // Enhanced Client table
 export const clients = pgTable("clients", {
   id: varchar("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
-  legalName: varchar("legal_name").notNull(),
+  name: varchar("name").notNull(),
   orgNumber: varchar("org_number"),
   address: varchar("address"),
   postalAddress: varchar("postal_address"),
-  contactName: varchar("contact_name"),
-  contactEmail: varchar("contact_email"),
-  contactPhone: varchar("contact_phone"),
+  contactName: varchar("contact_person"),
   signDate: timestamp("sign_date"),
   startDate: timestamp("start_date"),
   noticeMonths: integer("notice_months").default(3),

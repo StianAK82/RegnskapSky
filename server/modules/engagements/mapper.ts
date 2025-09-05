@@ -88,6 +88,36 @@ function safeString(value: any): string | null {
   return String(value).trim() || null;
 }
 
+// Pick primary contact from signatories or fallback to client contact
+function getPrimaryContactName(signatories: any[], clientContactName?: string | null): string {
+  // Try to find responsible accountant or accounting responsible first
+  const responsibleSignatory = signatories.find(s => 
+    s.role === 'responsible_accountant' || s.role === 'accounting_responsible'
+  );
+  
+  if (responsibleSignatory) {
+    return responsibleSignatory.name;
+  }
+  
+  // Try client representative
+  const clientRep = signatories.find(s => s.role === 'client_representative');
+  if (clientRep) {
+    return clientRep.name;
+  }
+  
+  // Try any signatory
+  if (signatories.length > 0) {
+    return signatories[0].name;
+  }
+  
+  // Fallback to client contact
+  if (clientContactName) {
+    return clientContactName;
+  }
+  
+  return 'Ikke angitt';
+}
+
 function translateRole(role: string): string {
   return ROLE_TRANSLATIONS[role] || role;
 }
@@ -111,28 +141,38 @@ export function buildEngagementViewModel(
   practice?: any
 ): EngagementDisplayModel {
   
-  // Find contact person - priority: client_representative signatory → client contact → null
+  // Find contact person using prioritized approach
   let contact: ContactInfo | null = null;
+  const signatories = engagement.signatories || [];
   
-  if (engagement.signatories && Array.isArray(engagement.signatories)) {
-    const clientRep = engagement.signatories.find((s: any) => s.role === 'client_representative');
-    if (clientRep) {
+  // Get primary contact name
+  const contactName = getPrimaryContactName(signatories, client?.contactName);
+  
+  if (contactName !== 'Ikke angitt') {
+    // Try to find the corresponding signatory for complete contact info
+    const contactSignatory = signatories.find((s: any) => s.name === contactName);
+    
+    if (contactSignatory) {
       contact = {
-        name: safeString(clientRep.name) || 'Ukjent',
-        email: safeString(clientRep.email) || '',
-        phone: safeString(clientRep.phone),
-        title: safeString(clientRep.title)
+        name: contactName,
+        email: safeString(contactSignatory.email) || '',
+        phone: safeString(contactSignatory.phone),
+        title: safeString(contactSignatory.title)
       };
-    }
-  }
-  
-  // Fallback to client contact info
-  if (!contact && client) {
-    if (client.contactName || client.contactEmail) {
+    } else if (client?.contactName === contactName) {
+      // Use client contact info
       contact = {
-        name: safeString(client.contactName) || 'Ukjent',
+        name: contactName,
         email: safeString(client.contactEmail) || '',
         phone: safeString(client.contactPhone),
+        title: null
+      };
+    } else {
+      // Just the name is available
+      contact = {
+        name: contactName,
+        email: '',
+        phone: null,
         title: null
       };
     }
@@ -155,7 +195,7 @@ export function buildEngagementViewModel(
   // Build formatted client
   const formattedClient: FormattedClient = {
     name: safeString(client?.name) || 'Ukjent klient',
-    legalName: safeString(client?.legalName),
+    legalName: safeString(client?.name), // Using name column since legalName was renamed
     orgNumber: formatOrgNumber(client?.orgNumber),
     address: formatAddress(client?.address),
     postalAddress: formatAddress(client?.postalAddress),
@@ -234,7 +274,7 @@ export function buildEngagementViewModel(
   };
   
   // Build practice information with fallbacks
-  const formattedPractice = practiceInfo || {
+  const formattedPractice = practice || {
     firmName: 'RegnskapsAI',
     orgNumber: '123 456 789',
     address: 'Postboks 123, 0123 Oslo',
@@ -243,26 +283,10 @@ export function buildEngagementViewModel(
     website: 'https://regnskapsai.no',
     logoUrl: null
   };
-
-  // Import legal terms generator
-  const { generateStandardTerms, StandardTermsConfig } = await import('../../templates/legal/standardTerms');
   
-  // Build legal terms configuration
-  const legalConfig: StandardTermsConfig = {
-    includeStandardTerms: formattedLegalTerms.includeStandardTerms,
-    includeDpa: formattedLegalTerms.includeDpa,
-    includeItBilag: formattedLegalTerms.includeItBilag,
-    paymentTermsDays: formattedLegalTerms.paymentTermsDays,
-    noticeMonths: formattedLegalTerms.noticeMonths
-  };
-
-  // Generate legal terms sections for inclusion in view model
-  const legalTermsSections = generateStandardTerms(legalConfig);
-
-  // Add legal sections to formatted legal terms
+  // Enhanced legal terms (legal sections will be added by PDF generator)
   const enhancedLegalTerms: FormattedLegalTerms = {
-    ...formattedLegalTerms,
-    sections: legalTermsSections
+    ...formattedLegalTerms
   };
 
   // Build complete PDF model
