@@ -241,7 +241,7 @@ export default function Clients() {
 
       return clientData;
     },
-    onSuccess: () => {
+    onSuccess: (clientData) => {
       queryClient.invalidateQueries({ queryKey: ['/api/clients'] });
       setIsCreateOpen(false);
       setTaskSchedules({});
@@ -249,6 +249,11 @@ export default function Clients() {
         title: 'Klient opprettet',
         description: 'Ny klient ble opprettet med system, ansvarlig og oppgaver',
       });
+      
+      // Navigate to the client detail page
+      if (clientData?.id) {
+        setLocation(`/clients/${clientData.id}`);
+      }
     },
     onError: (error: any) => {
       console.error('Client creation error:', error);

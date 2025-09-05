@@ -733,17 +733,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const clientId = req.params.id;
       console.log(`[REQ] GET /api/clients/${clientId}/tasks - tenantId: ${req.user!.tenantId}`);
       
-      // Validate client belongs to tenant
+      // First try to get client tasks directly (more lenient)
+      const tasks = await storage.getClientTasksByClient(clientId, req.user!.tenantId);
+      console.log(`[REQ] Found ${tasks.length} tasks for client ${clientId}`);
+      
+      // If we have tasks, return them
+      if (tasks && tasks.length > 0) {
+        res.json(tasks);
+        return;
+      }
+      
+      // If no tasks, verify client exists and belongs to tenant
       const client = await storage.getClient(clientId);
       if (!client || client.tenantId !== req.user!.tenantId) {
         console.log(`[REQ] Client ${clientId} not found or access denied - returning empty array`);
         return res.status(200).json([]);
       }
 
-      const tasks = await storage.getClientTasksByClient(clientId, req.user!.tenantId);
-      console.log(`[REQ] Found ${tasks.length} tasks for client ${clientId}`);
-      
-      res.json(tasks);
+      // Client exists but has no tasks - return empty array
+      res.json([]);
     } catch (error: any) {
       console.error(`[REQ] GET /api/clients/${clientId}/tasks error:`, error);
       res.status(500).json({ message: "Feil ved henting av oppgaver: " + error.message });

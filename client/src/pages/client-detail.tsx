@@ -20,6 +20,7 @@ import {
   Plus, 
   ExternalLink, 
   Edit, 
+  Edit2,
   Trash2,
   Calendar,
   Timer,
@@ -283,6 +284,14 @@ export default function ClientDetail() {
 
   const [isAddResponsibleOpen, setIsAddResponsibleOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState('');
+  const [isEditingClientInfo, setIsEditingClientInfo] = useState(false);
+  const [clientInfoForm, setClientInfoForm] = useState({
+    name: '',
+    contactPerson: '',
+    email: '',
+    phone: '',
+    address: ''
+  });
 
   // Queries
   const { data: client, isLoading } = useQuery({
@@ -647,6 +656,15 @@ export default function ClientDetail() {
         amlStatus: client.amlStatus || 'pending',
         kycStatus: client.kycStatus || 'pending'
       });
+      
+      // Initialize edit form with current client data
+      setClientInfoForm({
+        name: client.name || '',
+        contactPerson: client.contactPerson || '',
+        email: client.email || '',
+        phone: client.phone || '',
+        address: client.address || ''
+      });
     }
   }, [client]);
 
@@ -708,6 +726,50 @@ export default function ClientDetail() {
       amlStatus: clientUpdates.amlStatus,
       kycStatus: clientUpdates.kycStatus
     });
+  };
+
+  const handleSaveClientInfo = async () => {
+    try {
+      // Validate required fields
+      if (!clientInfoForm.name.trim()) {
+        toast({
+          title: 'Feil',
+          description: 'Navn er påkrevd',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Update client via API
+      const response = await apiRequest('PATCH', `/api/clients/${clientId}`, {
+        name: clientInfoForm.name.trim(),
+        contactPerson: clientInfoForm.contactPerson.trim() || null,
+        email: clientInfoForm.email.trim() || null,
+        phone: clientInfoForm.phone.trim() || null,
+        address: clientInfoForm.address.trim() || null
+      });
+
+      if (response.ok) {
+        // Invalidate cache to refresh data
+        queryClient.invalidateQueries({ queryKey: ['/api/clients', clientId] });
+        queryClient.invalidateQueries({ queryKey: ['/api/clients'] });
+        
+        setIsEditingClientInfo(false);
+        toast({
+          title: 'Klient oppdatert',
+          description: 'Klientinformasjon ble lagret',
+        });
+      } else {
+        throw new Error('Failed to update client');
+      }
+    } catch (error: any) {
+      console.error('Error updating client:', error);
+      toast({
+        title: 'Feil',
+        description: 'Kunne ikke oppdatere klient',
+        variant: 'destructive',
+      });
+    }
   };
 
   const getAMLStatusBadge = (status: string) => {
@@ -912,32 +974,107 @@ export default function ClientDetail() {
             {/* Client Information */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Building2 className="mr-2 h-5 w-5" />
-                  Klientinformasjon
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <Building2 className="mr-2 h-5 w-5" />
+                    Klientinformasjon
+                  </div>
+                  {!isEditingClientInfo ? (
+                    <Button variant="outline" size="sm" onClick={() => setIsEditingClientInfo(true)}>
+                      <Edit2 className="mr-2 h-4 w-4" />
+                      Rediger
+                    </Button>
+                  ) : (
+                    <div className="flex space-x-2">
+                      <Button variant="outline" size="sm" onClick={() => {
+                        setIsEditingClientInfo(false);
+                        // Reset form to original values
+                        setClientInfoForm({
+                          name: client.name || '',
+                          contactPerson: client.contactPerson || '',
+                          email: client.email || '',
+                          phone: client.phone || '',
+                          address: client.address || ''
+                        });
+                      }}>
+                        Avbryt
+                      </Button>
+                      <Button size="sm" onClick={handleSaveClientInfo} disabled={updateClientMutation.isPending}>
+                        Lagre
+                      </Button>
+                    </div>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <Label>Navn</Label>
-                  <p className="font-medium">{client.name}</p>
-                </div>
-                <div>
-                  <Label>Kontaktperson</Label>
-                  <p>{client.contactPerson || 'Ikke angitt'}</p>
-                </div>
-                <div>
-                  <Label>E-post</Label>
-                  <p>{client.email || 'Ikke angitt'}</p>
-                </div>
-                <div>
-                  <Label>Telefon</Label>
-                  <p>{client.phone || 'Ikke angitt'}</p>
-                </div>
-                <div>
-                  <Label>Adresse</Label>
-                  <p>{client.address || 'Ikke angitt'}</p>
-                </div>
+                {!isEditingClientInfo ? (
+                  <>
+                    <div>
+                      <Label>Navn</Label>
+                      <p className="font-medium">{client.name}</p>
+                    </div>
+                    <div>
+                      <Label>Kontaktperson</Label>
+                      <p>{client.contactPerson || 'Ikke angitt'}</p>
+                    </div>
+                    <div>
+                      <Label>E-post</Label>
+                      <p>{client.email || 'Ikke angitt'}</p>
+                    </div>
+                    <div>
+                      <Label>Telefon</Label>
+                      <p>{client.phone || 'Ikke angitt'}</p>
+                    </div>
+                    <div>
+                      <Label>Adresse</Label>
+                      <p>{client.address || 'Ikke angitt'}</p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <Label>Navn</Label>
+                      <Input
+                        value={clientInfoForm.name}
+                        onChange={(e) => setClientInfoForm(prev => ({...prev, name: e.target.value}))}
+                        placeholder="Firmanavn"
+                      />
+                    </div>
+                    <div>
+                      <Label>Kontaktperson</Label>
+                      <Input
+                        value={clientInfoForm.contactPerson}
+                        onChange={(e) => setClientInfoForm(prev => ({...prev, contactPerson: e.target.value}))}
+                        placeholder="Kontaktperson"
+                      />
+                    </div>
+                    <div>
+                      <Label>E-post</Label>
+                      <Input
+                        value={clientInfoForm.email}
+                        onChange={(e) => setClientInfoForm(prev => ({...prev, email: e.target.value}))}
+                        placeholder="epost@example.com"
+                        type="email"
+                      />
+                    </div>
+                    <div>
+                      <Label>Telefon</Label>
+                      <Input
+                        value={clientInfoForm.phone}
+                        onChange={(e) => setClientInfoForm(prev => ({...prev, phone: e.target.value}))}
+                        placeholder="Telefonnummer"
+                      />
+                    </div>
+                    <div>
+                      <Label>Adresse</Label>
+                      <Input
+                        value={clientInfoForm.address}
+                        onChange={(e) => setClientInfoForm(prev => ({...prev, address: e.target.value}))}
+                        placeholder="Adresse"
+                      />
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
 
