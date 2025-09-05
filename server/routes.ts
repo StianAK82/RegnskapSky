@@ -21,6 +21,28 @@ import {
   insertAccountingIntegrationSchema, insertClientChecklistSchema,
   type User, clientTasks, tenants, users
 } from "../shared/schema";
+import { z } from "zod";
+
+// Additional schemas for client flow
+const systemSchema = z.object({
+  system: z.string().min(1),
+  licenseHolder: z.enum(["client", "firm"]).optional(),
+  adminAccess: z.boolean().optional().default(false)
+});
+
+const addResponsibleSchema = z.object({
+  userId: z.string().uuid(),
+  role: z.literal("accounting_responsible").default("accounting_responsible")
+});
+
+const tasksSetupSchema = z.object({
+  scopes: z.array(z.string()).min(1)
+});
+
+const assignResponsibleSchema = z.object({
+  userId: z.string().uuid(),
+  onlyUnassigned: z.boolean().optional().default(true)
+});
 import { db } from "./db";
 import { eq, and, sql } from "drizzle-orm";
 
@@ -709,21 +731,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/clients/:id/tasks", authenticateToken, async (req: AuthRequest, res) => {
     try {
       const clientId = req.params.id;
-      console.log(`🔥 ROUTES: About to call getClientTasksByClient with clientId: ${clientId}, tenantId: ${req.user!.tenantId}`);
+      console.log(`[REQ] GET /api/clients/${clientId}/tasks - tenantId: ${req.user!.tenantId}`);
       
       // Validate client belongs to tenant
       const client = await storage.getClient(clientId);
       if (!client || client.tenantId !== req.user!.tenantId) {
-        return res.status(404).json({ message: "Klient ikke funnet" });
+        console.log(`[REQ] Client ${clientId} not found or access denied - returning empty array`);
+        return res.status(200).json([]);
       }
 
       const tasks = await storage.getClientTasksByClient(clientId, req.user!.tenantId);
-      console.log(`🔥 ROUTES: getClientTasksByClient returned:`, tasks);
-      console.log(`📋 GET /api/clients/${clientId}/tasks: Found ${tasks.length} tasks for tenant ${req.user!.tenantId}`);
+      console.log(`[REQ] Found ${tasks.length} tasks for client ${clientId}`);
       
       res.json(tasks);
     } catch (error: any) {
-      console.error(`❌ GET /api/clients/${clientId}/tasks error:`, error);
+      console.error(`[REQ] GET /api/clients/${clientId}/tasks error:`, error);
       res.status(500).json({ message: "Feil ved henting av oppgaver: " + error.message });
     }
   });
@@ -1284,18 +1306,133 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update client system configuration  
+  app.put("/api/clients/:clientId/system", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const { clientId } = req.params;
+      console.log(`[REQ] PUT /api/clients/${clientId}/system - body:`, req.body);
+      
+      const systemData = systemSchema.parse(req.body);
+      
+      // Update client system info
+      const client = await storage.updateClient(clientId, {
+        accountingSystem: systemData.system,
+        // Additional system-related fields can be added here
+      });
+      
+      console.log(`[REQ] System updated for client ${clientId}:`, systemData.system);
+      res.json({ success: true, system: systemData.system });
+    } catch (error: any) {
+      console.error(`[REQ] PUT /api/clients/${clientId}/system error:`, error);
+      res.status(400).json({ message: "Feil ved oppdatering av system: " + error.message });
+    }
+  });
+
   app.post("/api/clients/:clientId/responsibles", authenticateToken, requireRole(["admin", "oppdragsansvarlig"]), async (req: AuthRequest, res) => {
     try {
       const { clientId } = req.params;
-      const { userId } = req.body;
+      console.log(`[REQ] POST /api/clients/${clientId}/responsibles - body:`, req.body);
+      
+      const responsibleData = addResponsibleSchema.parse(req.body);
       const responsible = await storage.createClientResponsible({
         clientId,
-        userId,
+        userId: responsibleData.userId,
         tenantId: req.user!.tenantId,
       });
+      
+      console.log(`[REQ] Responsible added for client ${clientId}:`, responsibleData.userId);
       res.status(201).json(responsible);
     } catch (error: any) {
+      console.error(`[REQ] POST /api/clients/${clientId}/responsibles error:`, error);
       res.status(400).json({ message: "Feil ved opprettelse av oppdragsansvarlig: " + error.message });
+    }
+  });
+
+  // Setup standard tasks for client based on scopes
+  app.post("/api/clients/:clientId/tasks/setup", authenticateToken, requireRole(["admin", "oppdragsansvarlig"]), async (req: AuthRequest, res) => {
+    try {
+      const { clientId } = req.params;
+      console.log(`[REQ] POST /api/clients/${clientId}/tasks/setup - body:`, req.body);
+      
+      const setupData = tasksSetupSchema.parse(req.body);
+      
+      // Create standard tasks based on scopes
+      const createdTasks = [];
+      for (const scope of setupData.scopes) {
+        let taskName = scope;
+        let description = `Standard oppgave for ${scope}`;
+        let interval = 'monthly';
+        
+        // Map scope to Norwegian task names
+        switch (scope) {
+          case 'bookkeeping':
+            taskName = 'Bokføring';
+            description = 'Løpende bokføring';
+            interval = 'weekly';
+            break;
+          case 'mva':
+            taskName = 'MVA';
+            description = 'Merverdiavgift behandling';
+            interval = 'monthly';
+            break;
+          case 'payroll':
+            taskName = 'Lønn';
+            description = 'Lønnskjøring';
+            interval = 'monthly';
+            break;
+          default:
+            taskName = scope;
+        }
+        
+        const taskData = {
+          clientId,
+          tenantId: req.user!.tenantId,
+          taskName,
+          taskType: 'standard' as const,
+          description,
+          interval,
+          repeatInterval: interval === 'weekly' ? 'ukentlig' : 'månedlig',
+          status: 'ikke_startet' as const,
+          dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 1 week from now
+        };
+        
+        const task = await storage.createClientTask(taskData);
+        createdTasks.push(task);
+      }
+      
+      console.log(`[REQ] Created ${createdTasks.length} standard tasks for client ${clientId}`);
+      res.status(201).json({ tasksCreated: createdTasks.length, tasks: createdTasks });
+    } catch (error: any) {
+      console.error(`[REQ] POST /api/clients/${clientId}/tasks/setup error:`, error);
+      res.status(400).json({ message: "Feil ved opprettelse av standardoppgaver: " + error.message });
+    }
+  });
+
+  // Assign responsible user to client tasks
+  app.post("/api/clients/:clientId/tasks/assign-responsible", authenticateToken, requireRole(["admin", "oppdragsansvarlig"]), async (req: AuthRequest, res) => {
+    try {
+      const { clientId } = req.params;
+      console.log(`[REQ] POST /api/clients/${clientId}/tasks/assign-responsible - body:`, req.body);
+      
+      const assignData = assignResponsibleSchema.parse(req.body);
+      
+      // Get client tasks
+      const tasks = await storage.getClientTasksByClient(clientId, req.user!.tenantId);
+      
+      let updatedCount = 0;
+      for (const task of tasks) {
+        // Only update if onlyUnassigned is false or task has no assignee
+        if (!assignData.onlyUnassigned || !task.assignedTo) {
+          await storage.updateClientTask(task.id, { assignedTo: assignData.userId });
+          updatedCount++;
+        }
+      }
+      
+      console.log(`[REQ] Assigned responsible ${assignData.userId} to ${updatedCount} tasks for client ${clientId}`);
+      res.json({ tasksAssigned: updatedCount, userId: assignData.userId });
+    } catch (error: any) {
+      console.error(`[REQ] POST /api/clients/${clientId}/tasks/assign-responsible error:`, error);
+      res.status(400).json({ message: "Feil ved tildeling av oppgaveansvarlig: " + error.message });
     }
   });
 

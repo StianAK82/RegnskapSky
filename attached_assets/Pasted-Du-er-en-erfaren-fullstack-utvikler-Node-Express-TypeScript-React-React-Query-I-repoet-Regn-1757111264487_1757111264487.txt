@@ -1,0 +1,50 @@
+Du er en erfaren fullstack‑utvikler (Node/Express + TypeScript + React/React‑Query).
+I repoet “RegnskapSky” skal du rette regressjonen i klientflyten. Implementer
+endringene under og kjør relevante tester.
+
+########################
+# Backend (Express/TS) #
+########################
+1. I serverens klient‑ruter (f.eks. `server/routes.ts` eller tilsvarende):
+   - Fjern all bruk av `parseInt`/`Number` på `clientId`; behandl IDer som rene UUID‑strenger.
+   - Legg til `PUT /api/clients/:clientId/system` som upserter
+     `{ system, licenseHolder?, adminAccess? }` via `clientSystemService`.
+   - Legg til `POST /api/clients/:clientId/responsibles` som lagrer
+     `{ userId, role:'accounting_responsible' }`.
+   - Legg til `POST /api/clients/:clientId/tasks/setup` som aktiverer standardoppgaver
+     basert på `{ scopes }`.
+   - Legg til `POST /api/clients/:clientId/tasks/assign-responsible` som setter
+     `responsibleUserId` på oppgaver, body `{ userId, onlyUnassigned:true }`.
+   - Oppdater `GET /api/clients/:clientId/tasks` til alltid returnere `200` og `[]`
+     hvis ingen oppgaver finnes (ingen 404).
+   - Logg midlertidig `[REQ]` og body/clientId i hver rute for feilsøking.
+
+2. Definer nødvendige Zod‑schemas (`systemSchema`, `addResponsibleSchema` osv.)
+   i `server/validators` og bruk `zodValidator(...)` i nye rutene.
+
+########################
+# Frontend (React/TS)  #
+########################
+1. I klient‑wizard (`client/src/pages/clients.tsx` eller tilsvarende):
+   - Etter `POST /api/clients` (som returnerer `{id}`), kjør sekvensielt og `await`:
+     a) `PUT /api/clients/${id}/system`
+     b) `POST /api/clients/${id}/responsibles`
+     c) `POST /api/clients/${id}/tasks/setup`
+     d) `POST /api/clients/${id}/tasks/assign-responsible`
+   - Etter hvert kall, invalidér React‑Query caches for
+     `/api/clients/${id}`, `/system`, `/responsibles`, `/tasks`.
+
+2. På klientkortet (f.eks. `client/src/pages/client-detail.tsx`):
+   - Knappen “Lagre system” skal sende `PUT /api/clients/:id/system`
+     med `{ system: 'Fiken' }` og vise suksess‑toast ved 200.
+   - Invalidér `/api/clients/:id` etter suksess.
+
+#################
+# Testing/check #
+#################
+- ✅ `npm test` i backend.
+- ✅ `npm test` i frontend.
+- Manuell verifisering: Opprett ny klient i wizard; kontroller at system,
+  ansvarlig og oppgaver vises uten 404‑feil, og at “Lagre system” fungerer.
+
+Returner kun de nødvendige filendringene og testresultatene.

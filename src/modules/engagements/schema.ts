@@ -56,7 +56,6 @@ export const engagements = pgTable("engagements", {
   status: engagementStatusEnum("status").notNull().default('draft'),
   version: integer("version").default(1),
   validFrom: timestamp("valid_from").notNull(),
-  validTo: timestamp("valid_to"),
   systemName: varchar("system_name"),
   licenseHolder: licenseHolderEnum("license_holder"),
   adminAccess: boolean("admin_access").default(false),
@@ -152,8 +151,7 @@ export const insertEngagementSchema = createInsertSchema(engagements).omit({
   createdAt: true, 
   updatedAt: true 
 }).extend({
-  validFrom: z.string().transform((str) => new Date(str)),
-  validTo: z.string().optional().transform((str) => str ? new Date(str) : undefined)
+  validFrom: z.string().transform((str) => new Date(str))
 });
 
 export const insertSignatorySchema = createInsertSchema(signatories).omit({ 

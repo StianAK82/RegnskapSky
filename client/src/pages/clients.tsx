@@ -184,8 +184,62 @@ export default function Clients() {
 
   const createMutation = useMutation({
     mutationFn: async (data: ClientFormData) => {
+      // Step 1: Create client
       const response = await apiRequest('POST', '/api/clients', data);
-      return response.json();
+      const clientData = await response.json();
+      const clientId = clientData.id;
+
+      if (!clientId) {
+        throw new Error('No client ID returned from creation');
+      }
+
+      // Step 2: Update system if specified
+      if (data.accountingSystem) {
+        await apiRequest('PUT', `/api/clients/${clientId}/system`, {
+          system: data.accountingSystem
+        });
+        await queryClient.invalidateQueries({ queryKey: ['/api/clients', clientId] });
+      }
+
+      // Step 3: Add responsible person if specified
+      if (data.responsiblePersonId) {
+        await apiRequest('POST', `/api/clients/${clientId}/responsibles`, {
+          userId: data.responsiblePersonId,
+          role: 'accounting_responsible'
+        });
+        await queryClient.invalidateQueries({ queryKey: ['/api/clients', clientId, 'responsibles'] });
+      }
+
+      // Step 4: Setup standard tasks based on selected tasks
+      if (data.tasks && data.tasks.length > 0) {
+        // Map frontend task names to backend scopes
+        const scopeMapping: Record<string, string> = {
+          'Bokføring': 'bookkeeping',
+          'MVA': 'mva', 
+          'Lønn': 'payroll',
+          'Bankavstemming': 'bookkeeping',
+          'Kontoavstemming': 'bookkeeping',
+          'Årsoppgjør': 'year_end'
+        };
+        
+        const scopes = data.tasks.map(task => scopeMapping[task] || 'other');
+        
+        await apiRequest('POST', `/api/clients/${clientId}/tasks/setup`, {
+          scopes: scopes
+        });
+        await queryClient.invalidateQueries({ queryKey: ['/api/clients', clientId, 'tasks'] });
+      }
+
+      // Step 5: Assign responsible person to tasks if both responsible and tasks exist
+      if (data.responsiblePersonId && data.tasks && data.tasks.length > 0) {
+        await apiRequest('POST', `/api/clients/${clientId}/tasks/assign-responsible`, {
+          userId: data.responsiblePersonId,
+          onlyUnassigned: true
+        });
+        await queryClient.invalidateQueries({ queryKey: ['/api/clients', clientId, 'tasks'] });
+      }
+
+      return clientData;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/clients'] });
@@ -193,10 +247,11 @@ export default function Clients() {
       setTaskSchedules({});
       toast({
         title: 'Klient opprettet',
-        description: 'Ny klient ble opprettet successfully',
+        description: 'Ny klient ble opprettet med system, ansvarlig og oppgaver',
       });
     },
     onError: (error: any) => {
+      console.error('Client creation error:', error);
       toast({
         title: 'Feil',
         description: error.message || 'Kunne ikke opprette klient',

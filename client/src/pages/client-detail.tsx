@@ -659,8 +659,34 @@ export default function ClientDetail() {
     });
   };
 
-  const saveAccountingSystem = () => {
-    updateClientMutation.mutate(clientUpdates);
+  const saveAccountingSystem = async () => {
+    try {
+      // Use new system endpoint instead of general client update
+      const response = await apiRequest('PUT', `/api/clients/${clientId}/system`, {
+        system: clientUpdates.accountingSystem
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        
+        // Invalidate client cache
+        queryClient.invalidateQueries({ queryKey: ['/api/clients', clientId] });
+        
+        toast({
+          title: 'System lagret',
+          description: `Regnskapssystem "${result.system}" ble lagret`,
+        });
+      } else {
+        throw new Error('Failed to save system');
+      }
+    } catch (error: any) {
+      console.error('Error saving system:', error);
+      toast({
+        title: 'Feil',
+        description: 'Kunne ikke lagre regnskapssystem',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleAMLStatusChange = (value: 'pending' | 'approved' | 'rejected') => {
