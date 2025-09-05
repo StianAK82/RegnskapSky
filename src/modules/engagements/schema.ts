@@ -1,6 +1,8 @@
-import { pgTable, varchar, text, timestamp, integer, boolean, decimal, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, varchar, text, timestamp, integer, boolean, decimal, pgEnum, uuid, jsonb } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import crypto from "crypto";
 
 // Enums for engagement system
 export const engagementStatusEnum = pgEnum('engagement_status', ['draft', 'active', 'terminated']);
@@ -18,11 +20,31 @@ export const clients = pgTable("clients", {
   address: varchar("address"),
   postalAddress: varchar("postal_address"),
   contactName: varchar("contact_person"),
-  signDate: timestamp("sign_date"),
-  startDate: timestamp("start_date"),
-  noticeMonths: integer("notice_months").default(3),
-  paymentTermsDays: integer("payment_terms_days").default(14),
-  tenantId: varchar("tenant_id").notNull(),
+  email: varchar("email"),
+  phone: varchar("phone"),
+  city: varchar("city"),
+  postalCode: varchar("postal_code"),
+  municipality: varchar("municipality"),
+  responsiblePersonId: uuid("responsible_person_id"),
+  engagementOwnerId: uuid("engagement_owner_id"),
+  accountingSystem: varchar("accounting_system"),
+  accountingSystemUrl: varchar("accounting_system_url"),
+  amlStatus: varchar("aml_status"),
+  kycStatus: varchar("kyc_status"),
+  checklistStatus: varchar("checklist_status"),
+  payrollRunDay: integer("payroll_run_day"),
+  payrollRunTime: varchar("payroll_run_time"),
+  lastBackupDate: timestamp("last_backup_date"),
+  isActive: boolean("is_active").default(true),
+  notes: text("notes"),
+  hourlyReportNotes: text("hourly_report_notes"),
+  tasks: jsonb("tasks"),
+  recurringTasks: jsonb("recurring_tasks"),
+  checklists: jsonb("checklists"),
+  amlDocuments: jsonb("aml_documents"),
+  calendarIntegration: jsonb("calendar_integration"),
+  emailIntegration: jsonb("email_integration"),
+  tenantId: uuid("tenant_id").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

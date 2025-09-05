@@ -3,7 +3,7 @@ import { engagementController } from '../modules/engagements/controller';
 // Using placeholder middleware for now
 const authenticateToken = (req: any, res: any, next: any) => {
   // TODO: Implement authentication
-  req.user = { tenantId: 'default-tenant', email: 'test@example.com', id: 'test-user' };
+  req.user = { tenantId: '00000000-0000-0000-0000-000000000001', email: 'test@example.com', id: 'test-user' };
   next();
 };
 
