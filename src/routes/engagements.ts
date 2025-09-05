@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import { engagementController } from '../modules/engagements/controller';
+import { EngagementController } from '../modules/engagements/controller';
+
 // Using placeholder middleware for now
 const authenticateToken = (req: any, res: any, next: any) => {
   // TODO: Implement authentication
@@ -8,28 +9,29 @@ const authenticateToken = (req: any, res: any, next: any) => {
 };
 
 const router = Router();
+const engagementController = new EngagementController();
 
 // Client routes
-router.post('/clients', authenticateToken, engagementController.createClient);
-router.get('/clients', authenticateToken, engagementController.getClients);
-router.get('/clients/:clientId', authenticateToken, engagementController.getClient);
-router.put('/clients/:clientId', authenticateToken, engagementController.updateClient);
+router.post('/clients', authenticateToken, (req, res) => engagementController.createClient(req, res));
+router.get('/clients', authenticateToken, (req, res) => engagementController.getClients(req, res));
+router.get('/clients/:clientId', authenticateToken, (req, res) => engagementController.getClient(req, res));
+router.put('/clients/:clientId', authenticateToken, (req, res) => engagementController.updateClient(req, res));
 
 // Engagement routes
-router.post('/clients/:clientId/engagements', authenticateToken, engagementController.createEngagement);
-router.post('/engagements', authenticateToken, engagementController.createEngagement); // Alias route
-router.get('/clients/:clientId/engagements', authenticateToken, engagementController.getEngagements);
-router.get('/engagements/:engagementId', authenticateToken, engagementController.getEngagement);
-router.get('/engagements/:engagementId/view-model', authenticateToken, engagementController.getEngagementViewModel);
-router.get('/clients/:clientId/engagements/:engagementId', authenticateToken, engagementController.getEngagement);
-router.get('/clients/:clientId/engagements/:engagementId/view-model', authenticateToken, engagementController.getEngagementViewModel);
-router.put('/engagements/:engagementId', authenticateToken, engagementController.updateEngagement);
-router.post('/engagements/:engagementId/finalize', authenticateToken, engagementController.finalizeEngagement);
+router.post('/clients/:clientId/engagements', authenticateToken, (req, res) => engagementController.createEngagement(req, res));
+router.post('/engagements', authenticateToken, (req, res) => engagementController.createEngagement(req, res)); // Alias route
+router.get('/clients/:clientId/engagements', authenticateToken, (req, res) => engagementController.getEngagements(req, res));
+router.get('/engagements/:engagementId', authenticateToken, (req, res) => engagementController.getEngagement(req, res));
+router.get('/engagements/:engagementId/view-model', authenticateToken, (req, res) => engagementController.getEngagementViewModel(req, res));
+router.get('/clients/:clientId/engagements/:engagementId', authenticateToken, (req, res) => engagementController.getEngagement(req, res));
+router.get('/clients/:clientId/engagements/:engagementId/view-model', authenticateToken, (req, res) => engagementController.getEngagementViewModel(req, res));
+router.put('/engagements/:engagementId', authenticateToken, (req, res) => engagementController.updateEngagement(req, res));
+router.post('/engagements/:engagementId/finalize', authenticateToken, (req, res) => engagementController.finalizeEngagement(req, res));
 
 // Report routes as specified
-router.get('/reports/mrr', authenticateToken, engagementController.getMrrReport);
-router.get('/reports/hourly-rate-distribution', authenticateToken, engagementController.getHourlyRateReport);
-router.get('/reports/license-holders', authenticateToken, engagementController.getLicenseHolderReport);
-router.get('/reports/termination-window', authenticateToken, engagementController.getTerminationWindowReport);
+router.get('/reports/mrr', authenticateToken, (req, res) => engagementController.getMrrReport(req, res));
+router.get('/reports/hourly-rate-distribution', authenticateToken, (req, res) => engagementController.getHourlyRateReport(req, res));
+router.get('/reports/license-holders', authenticateToken, (req, res) => engagementController.getLicenseHolderReport(req, res));
+router.get('/reports/termination-window', authenticateToken, (req, res) => engagementController.getTerminationWindowReport(req, res));
 
 export { router as engagementRoutes };

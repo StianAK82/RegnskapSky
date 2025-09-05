@@ -151,6 +151,9 @@ export const insertEngagementSchema = createInsertSchema(engagements).omit({
   id: true, 
   createdAt: true, 
   updatedAt: true 
+}).extend({
+  validFrom: z.string().transform((str) => new Date(str)),
+  validTo: z.string().optional().transform((str) => str ? new Date(str) : undefined)
 });
 
 export const insertSignatorySchema = createInsertSchema(signatories).omit({ 

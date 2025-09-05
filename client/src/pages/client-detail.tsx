@@ -101,6 +101,8 @@ function ViewButton({ clientId, engagementId, clientName }: { clientId: string, 
       if (response.ok) {
         const data = await response.json();
         setViewModel(data);
+      } else {
+        console.warn('Failed to fetch engagement view model:', response.status, response.statusText);
       }
     } catch (error) {
       console.warn('Could not fetch engagement view model:', error);
