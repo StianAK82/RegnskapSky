@@ -33,7 +33,7 @@ import {
 import { EngagementDialog } from '@/components/engagements/EngagementDialog';
 import { normalizeFrequency, nextOccurrence, TaskFrequency } from '../../../shared/frequency';
 
-// Simple download button component  
+// Download button component  
 function DownloadButton({ clientId, engagementId, clientName }: { clientId: string, engagementId: string, clientName?: string }) {
   const { toast } = useToast();
 
@@ -41,20 +41,11 @@ function DownloadButton({ clientId, engagementId, clientName }: { clientId: stri
     e.preventDefault();
     e.stopPropagation();
     
-    // Force alert to confirm button works
-    alert('🔧 DownloadButton clicked! Check console for details.');
-    console.log('🔧 DownloadButton clicked:', { clientId, engagementId });
-    
     const authToken = localStorage.getItem('auth_token');
     const token = localStorage.getItem('token'); 
     const finalToken = authToken || token;
     
-    console.log('🔧 Token found:', finalToken ? 'YES' : 'NO');
-    console.log('🔧 Token value (first 20 chars):', finalToken ? finalToken.substring(0, 20) + '...' : 'NONE');
-    
     if (!finalToken) {
-      console.log('🔧 No token found - showing error');
-      alert('🔧 ERROR: No token found!');
       toast({
         title: "Ikke innlogget",
         description: "Du må være innlogget for å laste ned oppdragsavtale",
@@ -63,13 +54,8 @@ function DownloadButton({ clientId, engagementId, clientName }: { clientId: stri
       return;
     }
     
-    const downloadUrl = `/api/clients/${clientId}/engagements/${engagementId}/pdf?token=${encodeURIComponent(finalToken)}`;
-    console.log('🔧 Opening URL:', downloadUrl);
-    alert('🔧 About to open URL: ' + downloadUrl);
-    
-    // Force navigation
+    const downloadUrl = `/api/clients/${clientId}/engagements/${engagementId}/pdf?disposition=attachment&token=${encodeURIComponent(finalToken)}`;
     window.location.href = downloadUrl;
-    console.log('🔧 window.location.href set');
     
     toast({
       title: "Nedlasting startet", 
@@ -83,11 +69,81 @@ function DownloadButton({ clientId, engagementId, clientName }: { clientId: stri
       variant="outline"
       onClick={handleClick}
       type="button"
-      style={{ backgroundColor: 'red', color: 'white' }}
     >
       <Download className="h-4 w-4 mr-1" />
-      🔧 TEST Last ned
+      Last ned
     </Button>
+  );
+}
+
+// View PDF inline button component
+function ViewButton({ clientId, engagementId, clientName }: { clientId: string, engagementId: string, clientName?: string }) {
+  const { toast } = useToast();
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
+
+  const handleView = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const authToken = localStorage.getItem('auth_token');
+    const token = localStorage.getItem('token'); 
+    const finalToken = authToken || token;
+    
+    if (!finalToken) {
+      toast({
+        title: "Ikke innlogget",
+        description: "Du må være innlogget for å se oppdragsavtale",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsViewerOpen(true);
+  };
+
+  const getPdfUrl = () => {
+    const authToken = localStorage.getItem('auth_token');
+    const token = localStorage.getItem('token'); 
+    const finalToken = authToken || token;
+    
+    if (!finalToken) return '';
+    
+    return `/api/clients/${clientId}/engagements/${engagementId}/pdf?disposition=inline&token=${encodeURIComponent(finalToken)}`;
+  };
+
+  return (
+    <>
+      <Button
+        size="sm"
+        variant="default"
+        onClick={handleView}
+        type="button"
+      >
+        <Eye className="h-4 w-4 mr-1" />
+        Se avtale
+      </Button>
+
+      <Dialog open={isViewerOpen} onOpenChange={setIsViewerOpen}>
+        <DialogContent className="max-w-4xl h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>Oppdragsavtale - {clientName}</DialogTitle>
+            <DialogDescription>
+              Forhåndsvisning av oppdragsavtale
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 min-h-0">
+            {isViewerOpen && (
+              <iframe
+                src={getPdfUrl()}
+                className="w-full h-full border-0"
+                title={`Oppdragsavtale for ${clientName}`}
+                data-testid={`pdf-viewer-${engagementId}`}
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
@@ -1021,65 +1077,16 @@ export default function ClientDetail() {
                           </Badge>
                           {clientId && (
                             <div className="flex items-center space-x-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  
-                                  const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
-                                  if (!token) {
-                                    toast({
-                                      title: "Ikke innlogget",
-                                      description: "Du må være innlogget for å se oppdragsavtale",
-                                      variant: "destructive",
-                                    });
-                                    return;
-                                  }
-                                  
-                                  const url = `/api/clients/${clientId}/engagements/${engagement.id}/pdf?token=${encodeURIComponent(token)}`;
-                                  // Open in new tab for viewing
-                                  window.open(url, '_blank');
-                                  
-                                  toast({
-                                    title: "Åpner oppdragsavtale", 
-                                    description: `Viser oppdragsavtale for ${client?.name} i ny fane`,
-                                  });
-                                }}
-                              >
-                                <Eye className="h-4 w-4 mr-1" />
-                                Vis PDF
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  
-                                  const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
-                                  if (!token) {
-                                    toast({
-                                      title: "Ikke innlogget",
-                                      description: "Du må være innlogget for å laste ned oppdragsavtale",
-                                      variant: "destructive",
-                                    });
-                                    return;
-                                  }
-                                  
-                                  const url = `/api/clients/${clientId}/engagements/${engagement.id}/pdf?token=${encodeURIComponent(token)}`;
-                                  window.location.href = url;
-                                  
-                                  toast({
-                                    title: "Nedlasting startet", 
-                                    description: `Oppdragsavtale for ${client?.name} blir lastet ned som PDF`,
-                                  });
-                                }}
-                              >
-                                <Download className="h-4 w-4 mr-1" />
-                                Last ned PDF
-                              </Button>
+                              <ViewButton 
+                                clientId={clientId}
+                                engagementId={engagement.id}
+                                clientName={client?.name}
+                              />
+                              <DownloadButton 
+                                clientId={clientId}
+                                engagementId={engagement.id}
+                                clientName={client?.name}
+                              />
                             </div>
                           )}
                         </div>

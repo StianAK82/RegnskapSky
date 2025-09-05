@@ -121,10 +121,11 @@ setInterval(async () => {
   }
 });
 
-  // Add PDF download endpoint using modular PDF generator
+  // Add PDF endpoint with configurable Content-Disposition (inline/attachment)
   app.get("/api/clients/:clientId/engagements/:engagementId/pdf", authenticateToken as any, async (req: any, res) => {
   try {
     const { clientId, engagementId } = req.params;
+    const { disposition = 'attachment' } = req.query; // Default to attachment for backward compatibility
     
     // Find the engagement in database
     const engagement = await storage.getEngagement(engagementId);
@@ -151,7 +152,14 @@ setInterval(async () => {
     const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
     
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${companyFileName}_oppdragsavtale.pdf"`);
+    
+    // Configurable Content-Disposition based on query parameter
+    if (disposition === 'inline') {
+      res.setHeader('Content-Disposition', `inline; filename="${companyFileName}_oppdragsavtale.pdf"`);
+    } else {
+      res.setHeader('Content-Disposition', `attachment; filename="${companyFileName}_oppdragsavtale.pdf"`);
+    }
+    
     res.send(pdfBuffer);
     
   } catch (error: any) {

@@ -1,0 +1,40 @@
+You are a senior fullstack developer working in Replit. Implement the following improvements to support inline PDF display and to align the “Oppdragsavtale” PDF with the Regnskap Norge 2021 template. Make small, well-scoped commits and ensure tests run after each change.
+
+1. **Configurable Content-Disposition in PDF endpoint**  
+   :::task-stub{title="Allow configurable Content-Disposition"}
+   Step-by-step, self-contained instructions for implementing the change.
+
+   Include module/package paths, key identifiers, or distinctive search strings so the implementer can locate the code quickly.
+   :::
+2. **Frontend “Se avtale” viewer**  
+   :::task-stub{title="Add inline PDF viewer in client-detail page"}
+   Step-by-step, self-contained instructions for implementing the change.
+
+   Include module/package paths, key identifiers, or distinctive search strings so the implementer can locate the code quickly.
+   :::
+3. **CSP permitting frames**  
+   :::task-stub{title="Expand CSP to permit PDF iframes"}
+   Step-by-step, self-contained instructions for implementing the change.
+
+   Include module/package paths, key identifiers, or distinctive search strings so the implementer can locate the code quickly.
+   :::
+4. **Comprehensive Regnskap Norge-style PDF template**  
+   :::task-stub{title="Implement full engagement PDF template"}
+   Step-by-step, self-contained instructions for implementing the change.
+
+   Include module/package paths, key identifiers, or distinctive search strings so the implementer can locate the code quickly.
+   :::
+5. **Extended engagement data model**  
+   :::task-stub{title="Extend engagement data model"}
+   Step-by-step, self-contained instructions for implementing the change.
+
+   Include module/package paths, key identifiers, or distinctive search strings so the implementer can locate the code quickly.
+   :::
+6. **Automated tests for inline/attachment and PDF content**  
+   :::task-stub{title="Add inline/attachment and PDF content tests"}
+   Step-by-step, self-contained instructions for implementing the change.
+
+   Include module/package paths, key identifiers, or distinctive search strings so the implementer can locate the code quickly.
+   :::
+
+Provide a brief “root cause + plan” summary in the PR description once all tasks are complete.
