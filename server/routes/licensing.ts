@@ -3,14 +3,13 @@
  */
 import type { Express } from "express";
 import { authenticateToken, requireRole, type AuthRequest } from "../auth";
-import { LicensingService } from "../services/licensing";
+import { licensingService } from "../services/licensing";
 import { storage } from "../storage";
-
-const licensingService = new LicensingService();
+import { checkEmployeeLimit } from "../middleware/enforceSeatLimit";
 
 export function registerLicensingRoutes(app: Express): void {
   
-  // Toggle employee license status (Admin only)
+  // Toggle employee license status with seat limit checking
   app.patch("/api/employees/:id/license", 
     authenticateToken, 
     requireRole(["admin", "lisensadmin"]), 
@@ -34,6 +33,22 @@ export function registerLicensingRoutes(app: Express): void {
         const user = await storage.getUserByEmail(employee.email);
         if (!user) {
           return res.status(404).json({ message: "Bruker ikke funnet for ansatt" });
+        }
+
+        // Check seat limit when enabling license
+        if (isLicensed) {
+          const canAdd = await licensingService.canAddUser(tenantId);
+          if (!canAdd) {
+            const summary = await licensingService.getSubscriptionSummary(tenantId);
+            return res.status(403).json({ 
+              message: "Seat limit reached", 
+              error: "SEAT_LIMIT_EXCEEDED",
+              details: {
+                currentSeats: summary.seatUsage,
+                seatLimit: summary.employeeLimit
+              }
+            });
+          }
         }
 
         // Toggle license
@@ -63,22 +78,13 @@ export function registerLicensingRoutes(app: Express): void {
         
         res.json({
           period: summary.period,
-          mainLicense: {
-            description: "RegnskapsAI Hovedlisens",
-            amount: summary.mainLicense,
-            currency: "NOK"
-          },
-          userLicenses: {
-            description: `Brukerlisenser (${summary.totalUsers} stk)`,
-            unitPrice: 500,
-            quantity: summary.totalUsers,
-            amount: summary.userLicenses,
-            currency: "NOK"
-          },
-          total: {
-            amount: summary.totalAmount,
-            currency: "NOK"
-          }
+          plan: summary.plan,
+          seatUsage: summary.seatUsage,
+          employeeLimit: summary.employeeLimit,
+          status: summary.status,
+          mainLicense: summary.mainLicense,
+          userLicenses: summary.userLicenses,
+          total: summary.total
         });
       } catch (error: any) {
         console.error('Error getting subscription summary:', error);
@@ -87,20 +93,63 @@ export function registerLicensingRoutes(app: Express): void {
     }
   );
 
-  // System admin view - all tenants (Lisensadmin only)
+  // System admin view - all tenants (System Owner only)
   app.get("/api/system/subscriptions",
     authenticateToken,
     requireRole(["lisensadmin"]),
-    async (req: AuthRequest, res) => {
+    async (req: any, res) => {
       try {
-        // This would be implemented for system-wide view
-        // For now, return placeholder to meet requirements
+        // Check if user is system owner (stian@zaldo.no)
+        if (req.user?.email !== 'stian@zaldo.no') {
+          return res.status(403).json({ 
+            message: "Access denied. Only system owner can view system-wide subscriptions." 
+          });
+        }
+
+        // Get all tenants with their subscription data
+        const allTenants = await storage.getAllTenants();
+        
+        const subscriptionOverview = await Promise.all(
+          allTenants.map(async (tenant) => {
+            try {
+              const summary = await licensingService.getSubscriptionSummary(tenant.id);
+              return {
+                tenantId: tenant.id,
+                tenantName: tenant.name,
+                orgNumber: tenant.orgNumber,
+                plan: summary.plan,
+                seatUsage: summary.seatUsage,
+                employeeLimit: summary.employeeLimit,
+                status: summary.status,
+                monthlyAmount: summary.total.amount,
+                validTo: tenant.trialEndDate,
+                createdAt: tenant.createdAt
+              };
+            } catch (error) {
+              console.error(`Error getting subscription for tenant ${tenant.id}:`, error);
+              return {
+                tenantId: tenant.id,
+                tenantName: tenant.name,
+                orgNumber: tenant.orgNumber,
+                plan: 'error',
+                seatUsage: 0,
+                employeeLimit: 0,
+                status: 'error',
+                monthlyAmount: 0,
+                validTo: null,
+                createdAt: tenant.createdAt,
+                error: 'Failed to load subscription data'
+              };
+            }
+          })
+        );
+
         res.json({
-          message: "System-wide subscription view - to be implemented",
-          note: "This endpoint will show all tenant summaries for system administrators"
+          totalTenants: allTenants.length,
+          subscriptions: subscriptionOverview
         });
       } catch (error: any) {
-        console.error('Error getting system subscriptions:', error);
+        console.error('Error fetching system subscriptions:', error);
         res.status(500).json({ message: "Feil ved henting av systemabonnementer: " + error.message });
       }
     }

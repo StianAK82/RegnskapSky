@@ -1,0 +1,104 @@
+Du er en senior fullstack‑utvikler som jobber i repoet RegnskapSky (Node/Express/TypeScript + React + Prisma). Implementer full lisenshåndtering slik at systemeier får oversikt over “plan / seat‑bruk / status / utløp” per selskap og at seat‑begrensningen håndheves. Følg eksisterende kode‑ og git‑stil; ikke opprett nye branches.
+
+1. Datamodell (Prisma + migrasjoner)
+1.1 prisma/schema.prisma
+
+model User: legg til isLicensed Boolean @default(false) og isActive Boolean @default(true).
+
+model LicenseUsageSnapshot: id, companyId, date, seatCount.
+
+1.2 Generer og kjør migrasjon:
+
+npx prisma migrate dev -n add_license_fields
+2. Backend
+2.1 Service – server/services/licensing.ts
+
+Implementer getSeatUsage(companyId) (teller aktive, lisensierte brukere).
+
+Implementer canAddUser(companyId) som returnerer seatUsage < employeeLimit.
+
+Sørg for at getSubscriptionSummary returnerer { mainLicense, userLicenses, total }.
+
+2.2 Middleware – server/middleware/enforceSeatLimit.ts
+
+Returner 403 hvis canAddUser er false.
+
+2.3 Routes
+
+server/routes/users.ts: på ruter som oppretter/inviterer bruker → bruk enforceSeatLimit.
+
+server/routes/licensing.ts:
+
+toggleEmployeeLicense: sjekk limit via checkEmployeeLimit før aktivering.
+
+/api/system/subscriptions: implementer full oversikt (plan, seatUsage, employeeLimit, status, validTo). Beskytt med admin/vendor‑rolle.
+
+2.4 Cron/job
+
+Jobb som daglig skriver LicenseUsageSnapshot (aktive lisensierte brukere per selskap).
+
+2.5 Env/konfig
+
+Støtt MULTI_TENANT=true|false, DEFAULT_PLAN=pro, DEFAULT_SEAT_LIMIT=5.
+
+Oppdater .env.example og README.
+
+2.6 Stripe
+
+Lagre stripeApiKey per tenant (ny kolonne i Tenant/Company).
+
+Stripe‑kall bruker nøkkelen for gjeldende tenantId.
+
+3. Frontend (React)
+3.1 Adminside – “Lisensoversikt”
+
+Tabell: Selskap | Plan | Seats brukt / grense | Status | Utløper.
+
+Rad klikkbar → detaljside.
+
+3.2 Advarsel
+
+Dersom seatUsage / seatLimit >= 0.9, vis advarsel i selskapets UI.
+
+4. Tester
+Unit
+
+getSeatUsage og enforceSeatLimit (mock DB).
+
+Integrasjon
+
+Opprett bruker når seatUsage == seatLimit → forvent 403.
+
+Admin‑API returnerer lisensliste bare for autoriserte brukere.
+
+5. Dokumentasjon
+README:
+
+“Slik er lisensen satt opp” (plan, seatLimit, hvordan usage telles).
+
+Hvordan admin får oversikt og oppdaterer lisens.
+
+Miljøvariabler (MULTI_TENANT, DEFAULT_PLAN, DEFAULT_SEAT_LIMIT, STRIPE_WEBHOOK_SECRET).
+
+6. Git
+git status (for å bekrefte working tree).
+
+Gjennomfør endringer.
+
+npm test (eller pnpm test hvis repoet bruker pnpm).
+
+git add -A
+
+git commit -m "feat: implement license and seat management"
+
+Kjør alle bygg-/lint‑skript (npm run lint osv.).
+
+git status (skal være clean).
+
+7. PR-beskrivelse (README-snutt)
+## Lisenshåndtering
+- Lisensmodell: plan, seatLimit, status, gyldighetsperiode.
+- Seat‑bruk telles som aktive, lisensierte brukere.
+- Ny middleware hindrer overforbruk.
+- Admin får oversikt via /api/system/subscriptions og ny UI.
+- Daglig snapshot for historikk.

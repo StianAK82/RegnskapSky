@@ -3,9 +3,9 @@
  */
 import { db } from '../db';
 import { 
-  subscriptions, licensedEmployees, invoices, invoiceLines, users,
+  subscriptions, licensedEmployees, invoices, invoiceLines, users, tenants, licenseUsageSnapshots,
   type InsertSubscription, type InsertLicensedEmployee, 
-  type InsertInvoice, type InsertInvoiceLine, type Invoice
+  type InsertInvoice, type InsertInvoiceLine, type Invoice, type InsertLicenseUsageSnapshot
 } from '../../shared/schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { 
@@ -271,28 +271,100 @@ export class LicensingService {
   }
 
   /**
-   * Get subscription summary for frontend display
+   * Get current seat usage (count of active licensed users)
    */
-  async getSubscriptionSummary(tenantId: string, period: string = currentPeriod()) {
-    // Get count of licensed users directly from users table
+  async getSeatUsage(tenantId: string): Promise<number> {
     const [result] = await db
       .select({ count: sql<number>`count(*)` })
       .from(users)
       .where(
         and(
           eq(users.tenantId, tenantId),
-          eq(users.isLicensed, true)
+          eq(users.isLicensed, true),
+          eq(users.isActive, true)
         )
       );
 
-    const userLicenseCount = result.count;
-    const userLicenseAmount = userLicenseCount * USER_LICENSE_PRICE;
+    return result.count;
+  }
+
+  /**
+   * Check if tenant can add a new user (within seat limit)
+   */
+  async canAddUser(tenantId: string): Promise<boolean> {
+    // Get tenant's employee limit
+    const [tenant] = await db
+      .select({ employeeLimit: tenants.employeeLimit })
+      .from(tenants)
+      .where(eq(tenants.id, tenantId));
+
+    if (!tenant) {
+      throw new Error('Tenant not found');
+    }
+
+    // Get current seat usage
+    const seatUsage = await this.getSeatUsage(tenantId);
+    
+    return seatUsage < (tenant.employeeLimit || 5); // Default to 5 if not set
+  }
+
+  /**
+   * Create a license usage snapshot for historical tracking
+   */
+  async createLicenseUsageSnapshot(tenantId: string, date: Date = new Date()): Promise<void> {
+    const seatCount = await this.getSeatUsage(tenantId);
+    
+    // Get tenant's current employee limit
+    const [tenant] = await db
+      .select({ employeeLimit: tenants.employeeLimit })
+      .from(tenants)
+      .where(eq(tenants.id, tenantId));
+
+    const employeeLimit = tenant?.employeeLimit || 5;
+
+    await db
+      .insert(licenseUsageSnapshots)
+      .values({
+        tenantId,
+        date,
+        seatCount,
+        employeeLimit
+      });
+  }
+
+  /**
+   * Get subscription summary for frontend display (enhanced with seat limits)
+   */
+  async getSubscriptionSummary(tenantId: string, period: string = currentPeriod()) {
+    // Get tenant info including employee limit
+    const [tenant] = await db
+      .select({ 
+        employeeLimit: tenants.employeeLimit,
+        subscriptionPlan: tenants.subscriptionPlan,
+        subscriptionStatus: tenants.subscriptionStatus
+      })
+      .from(tenants)
+      .where(eq(tenants.id, tenantId));
+
+    if (!tenant) {
+      throw new Error('Tenant not found');
+    }
+
+    // Get current seat usage
+    const seatUsage = await this.getSeatUsage(tenantId);
+    const employeeLimit = tenant.employeeLimit || 5;
+    
+    const userLicenseAmount = seatUsage * USER_LICENSE_PRICE;
     const totalAmount = BASE_LICENSE_PRICE + userLicenseAmount;
 
-    console.log(`Subscription summary: ${userLicenseCount} licensed users, total: ${totalAmount} NOK`);
+    console.log(`Subscription summary: ${seatUsage}/${employeeLimit} licensed users, total: ${totalAmount} NOK`);
 
     return {
       period,
+      plan: tenant.subscriptionPlan || 'basic',
+      seatUsage,
+      employeeLimit,
+      status: tenant.subscriptionStatus || 'active',
       mainLicense: {
         description: 'Hovedlisens RegnskapsAI',
         amount: BASE_LICENSE_PRICE,
@@ -301,7 +373,7 @@ export class LicensingService {
       userLicenses: {
         description: 'Brukerlisenser',
         unitPrice: USER_LICENSE_PRICE,
-        quantity: userLicenseCount,
+        quantity: seatUsage,
         amount: userLicenseAmount,
         currency: 'NOK'
       },
@@ -312,3 +384,6 @@ export class LicensingService {
     };
   }
 }
+
+// Export a singleton instance
+export const licensingService = new LicensingService();

@@ -43,6 +43,8 @@ export const tenants = pgTable("tenants", {
   billingContact: text("billing_contact"),
   billingEmail: text("billing_email"),
   monthlyRate: decimal("monthly_rate").default("799"),
+  employeeLimit: integer("employee_limit").default(5), // Default seat limit
+  stripeApiKey: text("stripe_api_key"), // Per-tenant Stripe API key (encrypted)
   trialStartDate: timestamp("trial_start_date").defaultNow(),
   trialEndDate: timestamp("trial_end_date"),
   lastBilledDate: timestamp("last_billed_date"),
@@ -457,6 +459,16 @@ export const invoiceLines = pgTable("invoice_lines", {
   unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
   amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
   metadata: jsonb("metadata"), // Additional data like userId for USER_LICENSE
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// License Usage Snapshots for historical tracking
+export const licenseUsageSnapshots = pgTable("license_usage_snapshots", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull(),
+  date: timestamp("date").notNull(),
+  seatCount: integer("seat_count").notNull(), // Number of licensed users on this date
+  employeeLimit: integer("employee_limit").notNull(), // Seat limit at this date
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -926,6 +938,11 @@ export const insertEngagementSchema = createInsertSchema(engagements).omit({
   updatedAt: true,
 });
 
+export const insertLicenseUsageSnapshotSchema = createInsertSchema(licenseUsageSnapshots).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -981,3 +998,7 @@ export type InsertInvoiceLine = z.infer<typeof insertInvoiceLineSchema>;
 // Engagement types  
 export type Engagement = typeof engagements.$inferSelect;
 export type InsertEngagement = z.infer<typeof insertEngagementSchema>;
+
+// License usage snapshot types
+export type LicenseUsageSnapshot = typeof licenseUsageSnapshots.$inferSelect;
+export type InsertLicenseUsageSnapshot = z.infer<typeof insertLicenseUsageSnapshotSchema>;

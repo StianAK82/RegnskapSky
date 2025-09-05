@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import Stripe from "stripe";
 import { storage } from "./storage";
 import { authenticateToken, requireRole, requireSameTenant, hashPassword, comparePassword, generateToken, type AuthRequest } from "./auth";
+import { enforceSeatLimit, checkEmployeeLimit } from "./middleware/enforceSeatLimit";
 import { categorizeDocument, generateAccountingSuggestions, askAccountingQuestion, analyzeDocumentImage } from "./services/openai";
 import { sendTaskNotification, sendWelcomeEmail, sendSubscriptionNotification } from "./services/sendgrid";
 import { bronnoyundService } from "./services/bronnoyund";
@@ -979,7 +980,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/employees", authenticateToken, requireRole(["admin", "oppdragsansvarlig"]), async (req: AuthRequest, res) => {
+  app.post("/api/employees", authenticateToken, requireRole(["admin", "oppdragsansvarlig"]), checkEmployeeLimit, async (req: AuthRequest, res) => {
     try {
       const tenantId = req.user!.tenantId;
       const licensingService = new LicensingService();

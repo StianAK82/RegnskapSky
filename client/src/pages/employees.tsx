@@ -76,6 +76,11 @@ export default function Employees() {
     queryKey: ['/api/employees'],
   });
 
+  // Get current seat usage to show warnings
+  const { data: seatUsage } = useQuery<{ usage: number; limit: number; canAdd: boolean }>({ 
+    queryKey: ['/api/licensing/seat-usage']
+  });
+
   const createMutation = useMutation({
     mutationFn: async (data: EmployeeFormData) => {
       const response = await apiRequest('POST', '/api/employees', data);
@@ -83,12 +88,24 @@ export default function Employees() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/employees'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/licensing/seat-usage'] });
       setIsCreateOpen(false);
       form.reset();
       toast({
         title: 'Ansatt opprettet',
         description: 'Ny ansatt opprettet og kan nå brukes som oppdragsansvarlig',
       });
+      
+      // Show warning if approaching seat limit
+      if (seatUsage && (seatUsage.usage + 1) / seatUsage.limit >= 0.8) {
+        setTimeout(() => {
+          toast({
+            title: 'Lisensmerknad',
+            description: `Du bruker nå ${seatUsage.usage + 1} av ${seatUsage.limit} tilgjengelige lisenser. Vurder oppgradering snart.`,
+            variant: 'default',
+          });
+        }, 2000);
+      }
     },
     onError: (error: any) => {
       toast({
@@ -183,6 +200,25 @@ export default function Employees() {
     if (editingEmployee) {
       updateMutation.mutate({ id: editingEmployee.id, data });
     } else {
+      // Check if this will exceed seat limit and show warning
+      if (seatUsage && !seatUsage.canAdd) {
+        toast({
+          title: 'Kan ikke opprette ansatt',
+          description: `Du har nådd maksimumsgrensen på ${seatUsage.limit} ansatte. Oppgrader abonnementet for å legge til flere.`,
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      // Show warning if approaching limit (90% or more)
+      if (seatUsage && (seatUsage.usage + 1) / seatUsage.limit >= 0.9) {
+        toast({
+          title: 'Advarsel: Nærmer seg lisensgrense',
+          description: `Dette vil bruke ${seatUsage.usage + 1} av ${seatUsage.limit} tilgjengelige lisenser. Vurder oppgradering snart.`,
+          variant: 'default',
+        });
+      }
+      
       createMutation.mutate(data);
     }
   };
@@ -239,7 +275,21 @@ export default function Employees() {
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
               <div>
-                <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Ansatte</h1>
+                <div className="flex items-center gap-3">
+                  <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Ansatte</h1>
+                  {seatUsage && (
+                    <Badge 
+                      variant={
+                        (seatUsage.usage / seatUsage.limit) >= 0.9 ? 'destructive' : 
+                        (seatUsage.usage / seatUsage.limit) >= 0.75 ? 'default' : 
+                        'secondary'
+                      }
+                      className="text-xs"
+                    >
+                      {seatUsage.usage}/{seatUsage.limit} lisenser
+                    </Badge>
+                  )}
+                </div>
                 <p className="mt-1 text-sm text-gray-600">
                   Administrer ansatte i organisasjonen din
                 </p>

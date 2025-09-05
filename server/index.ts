@@ -3,20 +3,54 @@ import { db } from './db';
 import { storage } from './storage';
 import { authenticateToken } from './auth';
 import { registerRoutes } from './routes';
+import { licensingService } from './services/licensing';
 import path from 'path';
 
 const app = express();
 app.use(express.json());
 
-console.log('\n🚀 Task scheduler startet - sjekker oppgaver hvert minutt');
+console.log('\n🚀 Task scheduler startet - sjekker oppgaver hvert minutt + daglige lisensoppgaver');
+
+// Track when daily tasks were last run
+let lastDailyRun = new Date(0); // Start with epoch to ensure first run
 
 setInterval(async () => {
   try {
-    const now = new Date().toLocaleString('nb-NO');
-    console.log(`🔄 Sjekker gjentagende oppgaver... ${now}`);
+    const now = new Date();
+    const nowStr = now.toLocaleString('nb-NO');
+    console.log(`🔄 Sjekker gjentagende oppgaver... ${nowStr}`);
     
+    // Minutely task: Generate upcoming tasks
     const totalGenerated = await storage.generateUpcomingTasks('70104b9b-1763-4158-a9b0-5c66cff9756d', 30);
     console.log(`📋 Fant ${totalGenerated} gjentagende oppgaver å prosessere`);
+    
+    // Daily task: Create license usage snapshots (run once per day)
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const lastDaily = new Date(lastDailyRun.getFullYear(), lastDailyRun.getMonth(), lastDailyRun.getDate());
+    
+    if (today.getTime() !== lastDaily.getTime()) {
+      console.log(`📊 Kjører daglige lisensoppgaver... ${nowStr}`);
+      
+      try {
+        // Get all tenants and create license usage snapshots
+        const allTenants = await storage.getAllTenants();
+        let snapshotsCreated = 0;
+        
+        for (const tenant of allTenants) {
+          try {
+            await licensingService.createLicenseUsageSnapshot(tenant.id, now);
+            snapshotsCreated++;
+          } catch (error) {
+            console.error(`❌ Feil ved oppretting av lisens-snapshot for tenant ${tenant.id}:`, error);
+          }
+        }
+        
+        console.log(`✅ Opprettet ${snapshotsCreated} lisens-snapshots for ${allTenants.length} tenants`);
+        lastDailyRun = now;
+      } catch (error) {
+        console.error('❌ Feil ved daglige lisensoppgaver:', error);
+      }
+    }
   } catch (error) {
     console.error('❌ Feil ved generering av oppgaver:', error);
   }

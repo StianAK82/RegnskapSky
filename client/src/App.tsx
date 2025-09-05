@@ -23,6 +23,7 @@ import Documents from "@/pages/documents";
 import Subscription from "@/pages/subscription";
 import Subscriptions from "@/pages/subscriptions";
 import SystemOwnerBilling from "@/pages/system-owner-billing";
+import LicenseOverview from "@/pages/license-overview";
 import Subscribe from "@/pages/subscribe";
 import AdminSubscriptions from "@/pages/AdminSubscriptions";
 import OwnerDashboard from "@/pages/OwnerDashboard";
@@ -164,6 +165,15 @@ function AuthenticatedRoutes() {
         component={() => (
           <ProtectedRoute allowedRoles={['admin']} requiredEmail="stian@zaldo.no">
             <SystemOwnerBilling />
+          </ProtectedRoute>
+        )} 
+      />
+      
+      <Route 
+        path="/system-owner-licenses" 
+        component={() => (
+          <ProtectedRoute allowedRoles={['admin']} requiredEmail="stian@zaldo.no">
+            <LicenseOverview />
           </ProtectedRoute>
         )} 
       />
