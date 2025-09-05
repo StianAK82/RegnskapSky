@@ -1,0 +1,9 @@
+dist/
+build/
+node_modules/
+*.config.js
+*.config.ts
+public/
+.next/
+coverage/
+.nyc_output/
