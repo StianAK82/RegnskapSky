@@ -1,0 +1,33 @@
+Refactor the project to address security, configurability, and feature gaps:
+
+1. Enforce secure JWT configuration and remove sensitive console logging
+   - File: server/auth.ts
+   - Throw an error if process.env.JWT_SECRET is missing instead of using a hard-coded fallback.
+   - Replace console.log in authenticateToken with a structured logger (NestJS Logger, winston, etc.) that omits token contents.
+
+2. Enable proper authentication for engagement routes
+   - File: src/routes/engagements.ts
+   - Remove the placeholder authenticateToken function.
+   - Import and apply the authenticateToken middleware from ../server/auth to all engagement routes.
+
+3. Implement engagement PDF creation and correct report queries
+   - File: src/modules/engagements/service.ts
+     • In finalizeEngagement, call the existing PDF generator and store the resulting file.
+     • Rewrite getLicenseHolderReport to perform a count(*) grouped by licenseHolder.
+     • Apply a WHERE clause in getTerminationWindowReport filtering validTo between now and futureDate.
+
+4. Externalize task scheduler license ID
+   - File: server/index.ts
+   - Replace the hard-coded license ID with one read from a configuration source (env var or database).
+   - Document this new configuration variable in README.md.
+
+5. Integrate SendGrid for activation and invoice emails
+   - File: server/src/modules/licensing/licensing.service.ts
+     • Send the temporary password via SendGrid instead of logging it.
+   - File: server/routes.ts
+     • Implement the TODO blocks to send invoice creation and dispatch emails through sendgrid.ts.
+   - Ensure failures are logged using the structured logger and return clear error responses.
+
+6. Replace system-owner email checks with role-based authorization
+   - Define a SystemOwner role in user schema and seeding scripts.
+   - Update checks in server/routes.ts, src/modules/billing/controller.ts, and related files to authorize based on this role instead of comparing email addresses.

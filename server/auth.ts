@@ -4,7 +4,11 @@ import { Request, Response, NextFunction } from 'express';
 import { storage } from './storage';
 import { type User } from '../shared/schema';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here';
+// Enforce secure JWT configuration - fail fast if not set
+if (!process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required for security');
+}
+const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = '7d';
 
 export interface AuthRequest extends Request {
@@ -50,15 +54,12 @@ export async function authenticateToken(req: AuthRequest, res: Response, next: N
     token = req.query.token as string;
   }
 
-  console.log('Auth check:', {
-    hasAuthHeader: !!authHeader,
-    hasToken: !!token,
-    tokenStart: token ? token.substring(0, 20) + '...' : 'none',
-    url: req.url
-  });
+  // Structured logging without token content exposure
+  if (!token) {
+    console.log(`Auth: No token provided for ${req.method} ${req.url}`);
+  }
 
   if (!token) {
-    console.log('No token provided');
     return res.status(401).json({ message: 'Access token required' });
   }
 
@@ -67,15 +68,13 @@ export async function authenticateToken(req: AuthRequest, res: Response, next: N
     const user = await storage.getUser(payload.userId);
     
     if (!user || !user.isActive) {
-      console.log('User not found or inactive:', payload.userId);
+      console.log(`Auth: User not found or inactive for ${req.method} ${req.url}`);
       return res.status(401).json({ message: 'Invalid or inactive user' });
     }
-
-    console.log('Token verified for user:', user.email);
     req.user = user;
     next();
   } catch (error) {
-    console.log('Token verification failed:', error instanceof Error ? error.message : 'Unknown error');
+    console.log(`Auth: Token verification failed for ${req.method} ${req.url}: ${error instanceof Error ? error.message : 'Unknown error'}`);
     return res.status(403).json({ message: 'Invalid token' });
   }
 }
