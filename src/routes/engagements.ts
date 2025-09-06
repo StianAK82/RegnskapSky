@@ -11,11 +11,8 @@ const authenticateToken = (req: any, res: any, next: any) => {
 const router = Router();
 const engagementController = new EngagementController();
 
-// Client routes
-router.post('/clients', authenticateToken, (req, res) => engagementController.createClient(req, res));
-router.get('/clients', authenticateToken, (req, res) => engagementController.getClients(req, res));
-router.get('/clients/:clientId', authenticateToken, (req, res) => engagementController.getClient(req, res));
-router.put('/clients/:clientId', authenticateToken, (req, res) => engagementController.updateClient(req, res));
+// NOTE: Client CRUD routes removed to avoid conflict with main routes in server/routes.ts
+// Main client routes are handled in server/routes.ts with proper UUID validation
 
 // Engagement routes
 router.post('/clients/:clientId/engagements', authenticateToken, (req, res) => engagementController.createEngagement(req, res));
