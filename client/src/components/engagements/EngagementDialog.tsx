@@ -35,6 +35,7 @@ const engagementSchema = z.object({
     scopeKey: z.enum(['bookkeeping', 'year_end', 'payroll', 'invoicing', 'mva', 'period_reports', 'project', 'other']),
     frequency: z.enum(['løpende', 'månedlig', 'kvartalsvis', 'årlig', 'ved_behov']),
     comments: z.string().optional(),
+    responsiblePersonId: z.string().optional(), // Employee ID
   })),
   pricing: z.array(z.object({
     area: z.enum(['bookkeeping', 'year_end', 'payroll', 'invoicing', 'mva', 'period_reports', 'project', 'other']),
@@ -271,7 +272,16 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
             const scopeKey = mapTaskToScope(taskName);
             if (!scopeKey) return undefined;
             const frequency = mapIntervalToFrequency(repeatInterval);
-            return { scopeKey: scopeKey as any, frequency: frequency as any, comments: `Automatisk lagt til basert på ${taskName}` };
+            
+            // Auto-assign responsible person if available in task or use client's default
+            const assignedTo = task.assignedTo || client.responsiblePersonId || null;
+            
+            return { 
+              scopeKey: scopeKey as any, 
+              frequency: frequency as any, 
+              comments: `${frequency.charAt(0).toUpperCase() + frequency.slice(1)} ${taskName.toLowerCase()}`,
+              responsiblePersonId: assignedTo
+            };
           })
           .filter(Boolean);
 
@@ -439,7 +449,8 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
     form.setValue('scopes', [...scopes, {
       scopeKey: 'bookkeeping',
       frequency: 'månedlig',
-      comments: ''
+      comments: '',
+      responsiblePersonId: client?.responsiblePersonId || '' // Default to client's responsible person
     }]);
   };
 
@@ -712,6 +723,7 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
                             <tr>
                               <th className="text-left py-3 px-4 font-medium text-gray-700">Område</th>
                               <th className="text-left py-3 px-4 font-medium text-gray-700">Frekvens</th>
+                              <th className="text-left py-3 px-4 font-medium text-gray-700">Ansvarlig</th>
                               <th className="w-16 py-3 px-4"></th>
                             </tr>
                           </thead>
@@ -752,6 +764,30 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
                                           <SelectContent>
                                             {Object.entries(FREQUENCY_LABELS).map(([key, label]) => (
                                               <SelectItem key={key} value={key}>{label}</SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                </td>
+                                <td className="py-4 px-4">
+                                  <FormField
+                                    control={form.control}
+                                    name={`scopes.${index}.responsiblePersonId`}
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <Select onValueChange={field.onChange} value={field.value || ''}>
+                                          <SelectTrigger className="border-0 shadow-none bg-transparent p-0 h-auto text-gray-600">
+                                            <SelectValue placeholder="Velg ansvarlig" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="">Ikke tildelt</SelectItem>
+                                            {employees?.map((emp: any) => (
+                                              <SelectItem key={emp.id} value={emp.id}>
+                                                {emp.firstName} {emp.lastName}
+                                              </SelectItem>
                                             ))}
                                           </SelectContent>
                                         </Select>
