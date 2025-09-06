@@ -23,6 +23,12 @@ import {
 } from "../shared/schema";
 import { z } from "zod";
 
+// UUID validation utility
+const isValidUUID = (id: string): boolean => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(id);
+};
+
 // Additional schemas for client flow
 const systemSchema = z.object({
   system: z.string().min(1),
@@ -665,7 +671,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/clients/:id", authenticateToken, async (req: AuthRequest, res) => {
     try {
-      const client = await storage.getClient(req.params.id);
+      const clientId = req.params.id;
+      
+      // Validate UUID format to prevent conflicts with static routes
+      if (!isValidUUID(clientId)) {
+        return res.status(400).json({ message: "Ugyldig klient-ID format" });
+      }
+      
+      const client = await storage.getClient(clientId);
       if (!client) {
         return res.status(404).json({ message: "Klient ikke funnet" });
       }
