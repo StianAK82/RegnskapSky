@@ -104,7 +104,10 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
   // Internal state for when open/onOpenChange not provided
   const [internalOpen, setInternalOpen] = useState(false);
   const isOpen = open !== undefined ? open : internalOpen;
-  const handleOpenChange = onOpenChange || setInternalOpen;
+  const handleOpenChange = onOpenChange || ((open: boolean) => {
+    console.log('🔧 ENGAGEMENT: handleOpenChange called with:', open);
+    setInternalOpen(open);
+  });
 
   // Only log for dialogs that are actually open to reduce console spam
   if (isOpen) {
@@ -152,7 +155,7 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
         throw error;
       }
     },
-    enabled: !!clientId && !!isOpen,
+    enabled: !!clientId,
     retry: 1
   });
   
@@ -163,9 +166,12 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
       clientLoading,
       clientError: clientError?.message,
       clientFromList: !!clientFromList,
-      client: client
+      client: client,
+      isOpen,
+      internalOpen,
+      clientId
     });
-  }, [client, clientLoading, clientError, clientFromList]);
+  }, [client, clientLoading, clientError, clientFromList, isOpen, internalOpen, clientId]);
 
   // Fetch client tasks for auto-populating scopes
   const { data: clientTasks } = useQuery({
@@ -176,7 +182,7 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
       console.log('🔍 ENGAGEMENT: Fetched client tasks:', tasksData);
       return tasksData;
     },
-    enabled: !!clientId && !!isOpen
+    enabled: !!clientId
   });
 
   // Fetch employees for populating responsible person info
