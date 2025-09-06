@@ -4,6 +4,7 @@ import { storage } from './storage';
 import { authenticateToken } from './auth';
 import { registerRoutes } from './routes';
 import { licensingService } from './services/licensing';
+import { TaskSchedulerService } from './services/task-scheduler';
 import { engagementRoutes } from '../src/routes/engagements';
 import path from 'path';
 
@@ -13,6 +14,10 @@ app.use('/api', engagementRoutes);
 
 console.log('\n🚀 Task scheduler startet - sjekker oppgaver hvert minutt + daglige lisensoppgaver');
 
+// Initialize task scheduler
+const taskScheduler = TaskSchedulerService.getInstance();
+taskScheduler.start();
+
 // Track when daily tasks were last run
 let lastDailyRun = new Date(0); // Start with epoch to ensure first run
 
@@ -20,11 +25,9 @@ setInterval(async () => {
   try {
     const now = new Date();
     const nowStr = now.toLocaleString('nb-NO');
-    console.log(`🔄 Sjekker gjentagende oppgaver... ${nowStr}`);
     
-    // Minutely task: Generate upcoming tasks
-    const totalGenerated = await storage.generateUpcomingTasks('70104b9b-1763-4158-a9b0-5c66cff9756d', 30);
-    console.log(`📋 Fant ${totalGenerated} gjentagende oppgaver å prosessere`);
+    // Minutely task: Process recurring client tasks
+    await taskScheduler.processRecurringTasks();
     
     // Daily task: Create license usage snapshots (run once per day)
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());

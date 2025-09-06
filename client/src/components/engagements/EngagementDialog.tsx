@@ -210,7 +210,8 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
   const mapIntervalToFrequency = (interval: string) => {
     const i = norm(interval);
     if (i.includes('daglig') || i.includes('ukentlig')) return 'løpende';
-    if (i.includes('manedlig') || i.includes('hver mnd') || i.includes('hver måned') || i.includes('2 hver mnd') || i.includes('2hver mnd') || i.includes('2 var mnd') || i.includes('2 vær mnd')) return 'månedlig';
+    if (i.includes('manedlig') || i.includes('hver mnd') || i.includes('hver måned')) return 'månedlig';
+    if (i.includes('2 hver mnd') || i.includes('2hver mnd') || i.includes('2 var mnd') || i.includes('2 vær mnd') || i.includes('annenhver mnd')) return 'kvartalsvis';
     if (i.includes('kvartal')) return 'kvartalsvis';
     if (i.includes('arlig') || i.includes('hvert ar')) return 'årlig';
     return 'ved_behov';
@@ -358,6 +359,14 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
 
         console.log('🔧 ENGAGEMENT: Setting signatories:', signatories);
         form.setValue('signatories', signatories, { shouldValidate: true });
+
+        // Auto-populate DPA with correct processor name
+        const dpas = [{
+          processorName: 'Zaldo AS',
+          country: 'Norge',
+          transferBasis: 'GDPR/EU'
+        }];
+        form.setValue('dpas', dpas, { shouldValidate: true });
 
         // Auto-populate standard pricing
         const standardPricing = [{
