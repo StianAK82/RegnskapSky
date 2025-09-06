@@ -1486,6 +1486,11 @@ export default function ClientDetail() {
                       <div>
                         <h4 className="font-medium">{task.taskName}</h4>
                         <p className="text-sm text-muted-foreground">{task.description}</p>
+                        {task.repeatInterval && (
+                          <p className="text-sm text-blue-600 font-medium">
+                            ({task.repeatInterval})
+                          </p>
+                        )}
                         {task.dueDate && (
                           <p className="text-sm text-muted-foreground">
                             Frist: {new Date(task.dueDate).toLocaleDateString('no-NO')}

@@ -274,7 +274,7 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
             const frequency = mapIntervalToFrequency(repeatInterval);
             
             // Auto-assign responsible person if available in task or use client's default
-            const assignedTo = task.assignedTo || client.responsiblePersonId || null;
+            const assignedTo = task.assignedTo || client.responsiblePersonId || 'none';
             
             return { 
               scopeKey: scopeKey as any, 
@@ -459,7 +459,7 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
       scopeKey: 'bookkeeping',
       frequency: 'månedlig',
       comments: '',
-      responsiblePersonId: client?.responsiblePersonId || '' // Default to client's responsible person
+      responsiblePersonId: client?.responsiblePersonId || 'none' // Default to client's responsible person
     }]);
   };
 
@@ -787,12 +787,12 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
                                     name={`scopes.${index}.responsiblePersonId`}
                                     render={({ field }) => (
                                       <FormItem>
-                                        <Select onValueChange={field.onChange} value={field.value || ''}>
+                                        <Select onValueChange={field.onChange} value={field.value || 'none'}>
                                           <SelectTrigger className="border-0 shadow-none bg-transparent p-0 h-auto text-gray-600">
                                             <SelectValue placeholder="Velg ansvarlig" />
                                           </SelectTrigger>
                                           <SelectContent>
-                                            <SelectItem value="">Ikke tildelt</SelectItem>
+                                            <SelectItem value="none">Ikke tildelt</SelectItem>
                                             {employees?.map((emp: any) => (
                                               <SelectItem key={emp.id} value={emp.id}>
                                                 {emp.firstName} {emp.lastName}
