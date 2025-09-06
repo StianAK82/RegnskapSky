@@ -66,15 +66,16 @@ export class EngagementService {
     const [engagement] = await db
       .insert(engagements)
       .values({
-        id: engagementData.id || crypto.randomUUID(),
         clientId: engagementData.clientId,
         status: engagementData.status || 'draft',
         version: engagementData.version || 1,
         validFrom: engagementData.validFrom,
-        validTo: engagementData.validTo,
         systemName: engagementData.systemName,
-        licenseHolder: engagementData.licenseHolder,
+        licenseHolder: engagementData.licenseHolder || 'client',
         adminAccess: engagementData.adminAccess || false,
+        signatories: engagementData.signatories || [],
+        scopes: engagementData.scopes || [],
+        pricing: engagementData.pricing || [],
         includeStandardTerms: engagementData.includeStandardTerms || true,
         includeDpa: engagementData.includeDpa || true,
         includeItBilag: engagementData.includeItBilag || true,
@@ -82,71 +83,25 @@ export class EngagementService {
       })
       .returning();
 
-    console.log('🔧 ENGAGEMENT: Created engagement, now processing related data...', { engagementId: engagement.id });
+    console.log('🔧 ENGAGEMENT: Created engagement with embedded data:', { 
+      engagementId: engagement.id,
+      signatories: engagementData.signatories?.length || 0,
+      scopes: engagementData.scopes?.length || 0,
+      pricing: engagementData.pricing?.length || 0
+    });
 
-    // Create signatories if provided
-    if (engagementData.signatories && engagementData.signatories.length > 0) {
-      const signatoryInserts = engagementData.signatories.map(sig => ({
-        id: crypto.randomUUID(),
-        engagementId: engagement.id,
-        role: sig.role,
-        name: sig.name,
-        email: sig.email,
-        phone: sig.phone,
-        title: sig.title
-      }));
-      await db.insert(signatories).values(signatoryInserts);
-      console.log('✅ ENGAGEMENT: Created signatories:', signatoryInserts.length);
-    }
+    return engagement;
+  }
 
-    // Create scopes if provided
-    if (engagementData.scopes && engagementData.scopes.length > 0) {
-      const scopeInserts = engagementData.scopes.map(scope => ({
-        id: crypto.randomUUID(),
-        engagementId: engagement.id,
-        scopeKey: scope.scopeKey as any,
-        frequency: scope.frequency as any,
-        comments: scope.comments
-      }));
-      await db.insert(engagementScopes).values(scopeInserts);
-      console.log('✅ ENGAGEMENT: Created scopes:', scopeInserts.length);
-
-      // Create default tasks for each scope
-      await this.createDefaultTasksForEngagement(engagement.id, engagementData.scopes, engagementData.signatories, engagementData.tenantId);
-      
-      // Auto-assign responsible user from signatories to client tasks
-      const responsibleSignatory = engagementData.signatories?.find(s => 
-        s.role === 'responsible_accountant' || s.role === 'accounting_responsible'
-      );
-      
-      if (responsibleSignatory) {
-        try {
-          // Get user ID from email
-          const { db: storageDb } = await import('../../../server/db');
-          const { users } = await import('../../../shared/schema');
-          const { eq } = await import('drizzle-orm');
-          
-          const [user] = await storageDb
-            .select()
-            .from(users)
-            .where(eq(users.email, responsibleSignatory.email))
-            .limit(1);
-          
-          if (user) {
-            console.log('🔧 AUTO-ASSIGN: Found responsible user for engagement creation:', { 
-              email: responsibleSignatory.email, 
-              userId: user.id 
-            });
-            const updatedCount = await this.assignResponsibleToClientTasks(engagement.clientId, user.id);
-            console.log(`✅ AUTO-ASSIGN: Updated ${updatedCount} tasks after engagement creation`);
-          } else {
-            console.warn('⚠️ AUTO-ASSIGN: Responsible user not found:', responsibleSignatory.email);
-          }
-        } catch (error) {
-          console.error('❌ AUTO-ASSIGN: Error during engagement creation auto-assign:', error);
-        }
-      }
-    }
+  // Create default tasks based on engagement scopes (no longer used in new schema)
+  private async createDefaultTasksForEngagement(
+    engagementId: string, 
+    scopes: Array<{ scopeKey: string; frequency: string; comments?: string }>,
+    signatories?: Array<{ role: string; name: string; email: string }>,
+    tenantId?: string
+  ) {
+    // This is now handled by the JSONB fields in engagements table
+    console.log('🔧 ENGAGEMENT: Skipping legacy task creation - using JSONB fields instead');
 
     // Create pricing if provided
     if (engagementData.pricing && engagementData.pricing.length > 0) {

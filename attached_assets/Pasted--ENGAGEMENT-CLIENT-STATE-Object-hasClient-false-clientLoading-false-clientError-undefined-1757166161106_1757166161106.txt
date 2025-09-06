@@ -1,0 +1,44 @@
+🔍 ENGAGEMENT CLIENT STATE: 
+Object {hasClient: false, clientLoading: false, clientError: undefined, clientFromList: true, client: undefined}
+🔍 ENGAGEMENT CLIENT STATE: 
+Object {hasClient: false, clientLoading: false, clientError: undefined, clientFromList: true, client: undefined}
+🔍 ENGAGEMENT CLIENT STATE: 
+Object {hasClient: false, clientLoading: false, clientError: undefined, clientFromList: true, client: undefined}
+🔍 ENGAGEMENT CLIENT STATE: 
+Object {hasClient: false, clientLoading: false, clientError: undefined, clientFromList: true, client: undefined}
+🔍 ENGAGEMENT CLIENT STATE: 
+Object {hasClient: false, clientLoading: false, clientError: undefined, clientFromList: true, client: undefined}
+🔍 ENGAGEMENT CLIENT STATE: 
+Object {hasClient: false, clientLoading: false, clientError: undefined, clientFromList: true, client: undefined}
+🔍 ENGAGEMENT CLIENT STATE: 
+Object {hasClient: false, clientLoading: false, clientError: undefined, clientFromList: true, client: undefined}
+🔍 ENGAGEMENT CLIENT STATE: 
+Object {hasClient: false, clientLoading: false, clientError: undefined, clientFromList: true, client: undefined}
+🔍 ENGAGEMENT CLIENT STATE: 
+Object {hasClient: false, clientLoading: false, clientError: undefined, clientFromList: true, client: undefined}
+🔍 ENGAGEMENT CLIENT STATE: 
+Object {hasClient: false, clientLoading: false, clientError: undefined, clientFromList: true, client: undefined}
+🔍 ENGAGEMENT CLIENT STATE: 
+Object {hasClient: false, clientLoading: false, clientError: undefined, clientFromList: true, client: undefined}
+🔍 ENGAGEMENT CLIENT STATE: 
+Object {hasClient: false, clientLoading: false, clientError: undefined, clientFromList: true, client: undefined}
+🔍 ENGAGEMENT CLIENT STATE: 
+Object {hasClient: false, clientLoading: false, clientError: undefined, clientFromList: true, client: undefined}
+🔍 ENGAGEMENT CLIENT STATE: 
+Object {hasClient: false, clientLoading: false, clientError: undefined, clientFromList: true, client: undefined}
+🔍 ENGAGEMENT CLIENT STATE: 
+Object {hasClient: false, clientLoading: false, clientError: undefined, clientFromList: true, client: undefined}
+🔍 ENGAGEMENT CLIENT STATE: 
+Object {hasClient: false, clientLoading: false, clientError: undefined, clientFromList: true, client: undefined}
+🔍 ENGAGEMENT CLIENT STATE: 
+Object {hasClient: false, clientLoading: false, clientError: undefined, clientFromList: true, client: undefined}
+🔍 ENGAGEMENT CLIENT STATE: 
+Object {hasClient: false, clientLoading: false, clientError: undefined, clientFromList: true, client: undefined}
+🔍 ENGAGEMENT CLIENT STATE: 
+Object {hasClient: false, clientLoading: false, clientError: undefined, clientFromList: true, client: undefined}
+🔍 ENGAGEMENT CLIENT STATE: 
+Object {hasClient: false, clientLoading: false, clientError: undefined, clientFromList: true, client: undefined}
+🔍 FRONTEND: Fetching tasks for client a4767d98-0674-49d9-850e-6c937bc213c1
+🔄 Fetching engagements for client: a4767d98-0674-49d9-850e-6c937bc213c1
+📝 TASK SCHEDULES: Added missing standard task Bokføring with responsible person: undefined
+📝 TASK SCHEDULES: Added missing standard task MVA with responsible person: undefined
