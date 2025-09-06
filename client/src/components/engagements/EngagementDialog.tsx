@@ -290,18 +290,27 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
         // Auto-populate system name if client has one
         if (client.accountingSystem) {
           console.log('🔧 ENGAGEMENT: Setting accounting system:', client.accountingSystem);
-          // Map the system name to match dropdown options
+          // Map the system name to match dropdown options exactly
           const systemMapping: Record<string, string> = {
             'tripletex': 'Tripletex',
             'visma': 'Unimicro', 
             'poweroffice': 'PowerOffice',
             'fiken': 'Fiken',
             'conta': 'Conta',
-            'mamut': 'Unimicro'
+            'mamut': 'Unimicro',
+            'unimicro': 'Unimicro'
           };
-          const mappedSystem = systemMapping[client.accountingSystem.toLowerCase()] || client.accountingSystem;
-          form.setValue('systemName', mappedSystem, { shouldValidate: true });
-          console.log('🔧 ENGAGEMENT: Mapped system name to:', mappedSystem);
+          const normalizedSystemName = client.accountingSystem.toLowerCase().trim();
+          const mappedSystem = systemMapping[normalizedSystemName] || client.accountingSystem;
+          
+          console.log('🔧 ENGAGEMENT: Mapping:', { 
+            original: client.accountingSystem, 
+            normalized: normalizedSystemName,
+            mapped: mappedSystem 
+          });
+          
+          form.setValue('systemName', mappedSystem, { shouldValidate: true, shouldDirty: true });
+          console.log('🔧 ENGAGEMENT: System form value set to:', form.getValues('systemName'));
         }
 
         // Find responsible person from employees - try multiple matching approaches
