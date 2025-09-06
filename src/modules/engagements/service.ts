@@ -64,6 +64,15 @@ export class EngagementService {
     pricing?: Array<any>;
     dpas?: Array<any>;
   }): Promise<Engagement> {
+    console.log('🔍 ENGAGEMENT SERVICE: Raw engagement data before processing:', {
+      signatories: engagementData.signatories,
+      scopes: engagementData.scopes,
+      pricing: engagementData.pricing,
+      dpas: engagementData.dpas,
+      signatoriesType: typeof engagementData.signatories,
+      signatoriesLength: engagementData.signatories?.length
+    });
+
     const [engagement] = await db
       .insert(engagements)
       .values({
