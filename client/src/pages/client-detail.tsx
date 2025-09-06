@@ -980,7 +980,13 @@ export default function ClientDetail() {
                     Klientinformasjon
                   </div>
                   {!isEditingClientInfo ? (
-                    <Button variant="outline" size="sm" onClick={() => setIsEditingClientInfo(true)}>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setIsEditingClientInfo(true)}
+                      data-testid="button-edit-client-info"
+                      className="font-semibold"
+                    >
                       <Edit2 className="mr-2 h-4 w-4" />
                       Rediger
                     </Button>
