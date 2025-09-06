@@ -95,38 +95,6 @@ export class EngagementService {
     return engagement;
   }
 
-  // Create default tasks based on engagement scopes (no longer used in new schema)
-  private async createDefaultTasksForEngagement(
-    engagementId: string, 
-    scopes: Array<{ scopeKey: string; frequency: string; comments?: string }>,
-    signatories?: Array<{ role: string; name: string; email: string }>,
-    tenantId?: string
-  ) {
-    // This is now handled by the JSONB fields in engagements table
-    console.log('🔧 ENGAGEMENT: Skipping legacy task creation - using JSONB fields instead');
-
-    // Create pricing if provided
-    if (engagementData.pricing && engagementData.pricing.length > 0) {
-      const pricingInserts = engagementData.pricing.map(price => ({
-        id: crypto.randomUUID(),
-        engagementId: engagement.id,
-        area: price.area,
-        model: price.model,
-        hourlyRateExVat: price.hourlyRateExVat?.toString(),
-        minTimeUnitMinutes: price.minTimeUnitMinutes,
-        rushMarkupPercent: price.rushMarkupPercent?.toString(),
-        fixedAmountExVat: price.fixedAmountExVat?.toString(),
-        fixedPeriod: price.fixedPeriod,
-        volumeUnitLabel: price.volumeUnitLabel,
-        volumeUnitPriceExVat: price.volumeUnitPriceExVat?.toString(),
-        systemCostsNote: price.systemCostsNote
-      }));
-      await db.insert(engagementPricing).values(pricingInserts);
-      console.log('✅ ENGAGEMENT: Created pricing:', pricingInserts.length);
-    }
-
-    return engagement;
-  }
 
   // Create default tasks based on engagement scopes
   private async createDefaultTasksForEngagement(

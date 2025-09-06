@@ -1,0 +1,376 @@
+Du er senior fullstack-utvikler (TypeScript/Node + Express, React + React Query, Zod). Du jobber i et Replit-prosjekt for et regnskaps-/oppdragsstyringssystem. Mål: implementer nedenforstående uten regressjoner og uten datalekkasjer på tvers av kunder/lisenser.
+
+0) Guardrails (FØLG DISSE)
+
+Lag branch: feat/tenant-client-tasks-suite.
+
+Introduser feature flagg features.clientLifecycleV2 = true (env-override mulig).
+
+Ingen breaking changes i eksisterende ruter; nye ruter er additive.
+
+Alle queries må scopes med tenantId (alias licenseId) fra auth-middleware (JWT).
+
+Alle clientId er UUID string. Fjern/unngå parseInt.
+
+Legg til migrasjoner med safe defaults. Null-downtime.
+
+Skriv enhetstester + Playwright-E2E der relevant.
+
+Kjør ESLint/Typecheck før commit. Oppdater README for nye env-vars/ruter.
+
+Behold historikk (ingen sletter endepunkter i dette leveranset).
+
+1) Kartlegg repo og antakelser
+
+Finne Auth/JWT-middleware → bekreft at tenantId/licenseId kan hentes fra token.
+
+Søk etter steder der clientId konverteres (eks. parseInt) og noter fil/linje.
+
+Finn eksisterende datamodeller/tabeller: clients, tasks, engagements, time_entries (eller tilsvarende), users.
+
+Finn komponenter: ClientCard/Overview, EngagementDialog, ClientTasks, Dashboard, Reports, ReportGenerator, Documents page.
+
+Finn eksisterende rapport-generator og teller-logikk på dashboard.
+
+2) Datamodell – migrasjoner (ikke-destruktivt)
+
+Legg til felter (Prisma/Knex/SQL – bruk det prosjektet har):
+
+clients
+
+contact_name text NULL
+
+email text NULL
+
+phone text NULL
+
+address text NULL
+
+is_active boolean NOT NULL DEFAULT true
+
+Index: (tenant_id, is_active)
+
+Unikhet: (tenant_id, org_number) hvis det ikke finnes fra før.
+
+tasks (standard klientoppgaver)
+
+active boolean NOT NULL DEFAULT true
+
+carry_over boolean NOT NULL DEFAULT false
+
+Index: (tenant_id, client_id, active)
+
+engagements
+
+issuer_tenant_id uuid NOT NULL (lisenshaver/utsteder)
+
+valid_from timestamp with time zone NOT NULL (aksepter ISO string inn)
+
+Index: (tenant_id, client_id)
+
+client_notes (NY tabell for interne notater)
+
+id uuid pk, tenant_id uuid not null, client_id uuid not null,
+text text not null, tags jsonb null, created_by uuid not null,
+created_at timestamptz default now()
+
+Index: (tenant_id, client_id, created_at desc)
+
+Skriv migrasjoner med trygge default-verdier og ingen drop/rename som kan blokkere runtime.
+
+3) Server – felles
+
+Auth-middleware: sørg for req.context = { userId, tenantId }.
+
+Repository-helpers: alle find/insert/update må filtrere på tenantId.
+
+Fjern alle int-parsing av UUID’er.
+
+Zod helpers: datoer skal akseptere ISO string ELLER Date:
+
+const isoDate = z.union([z.string(), z.date()])
+  .transform(v => (typeof v === 'string' ? new Date(v) : v))
+  .refine(d => !isNaN(d.getTime()), 'Invalid date');
+
+4) API-kontrakter (ADDITIVE)
+
+Implementer disse rutene (Express). Alle svar scoper på tenantId.
+
+Klient
+
+POST /api/clients → { id } (oppretter KUN klientens basisdata).
+
+GET /api/clients/:id → client + system + responsibles + counts (kan cache).
+
+PATCH /api/clients/:id → redigerbart klientkort: { contactName?, email?, phone?, address? } (valider med Zod).
+
+PATCH /api/clients/:id/status → { isActive: boolean }:
+
+Når false: sett alle åpne standardoppgaver active=false og nullstill next_due hvis aktuelt. Ikke slett historikk.
+
+Når true: ikke auto-reaktiver oppgaver; bruker reaktiverer i Oppgaveplanlegging.
+
+Regnskapssystem
+
+PUT /api/clients/:id/system → { system: 'Fiken'|'Tripletex'|'Conta'|'Unimicro'|... , licenseHolder?: string, adminAccess?: boolean } (upsert).
+
+Ansvarlige
+
+POST /api/clients/:id/responsibles → { userId, role:'accounting_responsible' }
+
+GET /api/clients/:id/responsibles → liste
+
+(valgfritt) DELETE /api/clients/:id/responsibles/:userId
+
+Oppgaver (standard)
+
+POST /api/clients/:id/tasks/setup → { scopes: {scopeKey, frequency}[] } (oppretter/aktiverer)
+
+POST /api/clients/:id/tasks/assign-responsible → { userId, onlyUnassigned?: boolean }
+
+GET /api/clients/:id/tasks støtter:
+
+period=month|year|all
+
+month=YYYY-MM (default: inneværende)
+
+sort=dueDate|responsible|createdAt
+
+direction=asc|desc
+
+MÅ inkludere carry_over=true tasks fra forrige måned hvis status!='done'.
+
+Returnér 200 med [] (aldri 404 når klient finnes).
+
+Dashboard – tellere og drilldown
+
+GET /api/dashboard/client-counters?month=YYYY-MM (scopet på tenant):
+
+Per klient: open, overdue, thisMonth, yearly (aktive tasks, client.is_active=true).
+
+Bruk samme logikk som GET /tasks slik at tall = drilldown.
+
+Oppdragsavtaler
+
+POST /api/clients/:id/engagements:
+
+Body inkluderer validFrom (ISO aksepteres), metadata, scopes, signatories, juridisk tekstblokker.
+
+Sett issuer_tenant_id = req.context.tenantId.
+
+GET /api/clients/:id/engagements/:engId/pdf?disposition=inline|attachment
+
+Set Content-Disposition etter disposition. Default inline (visning i modal/iframe).
+
+PDF inneholder lisenshaveren (tenant) som avsender, ikke alltid «Zaldo».
+
+Notater (interne)
+
+POST /api/clients/:id/notes → { text, tags?: string[] }
+
+GET /api/clients/:id/notes (sortert created_at desc)
+
+Kun synlig for samme tenant; aldri i klientvendte dokumenter.
+
+5) FE – skjermbilder/komponenter
+
+Aktiver bak feature-flagget.
+
+Klientkort (Overview)
+
+Viser felt: contactName, email, phone, address, system.
+
+Knapp Rediger → ClientEditDialog (React Hook Form + Zod).
+
+Statusbryter Aktiv/Inaktiv (Switch). Bekreftelsesmodal når settes Inaktiv: «Alle standardoppgaver deaktiveres fra lister. Historikk bevares.»
+
+Etter PATCH → invalidér ['/api/clients', id] + ['/api/clients', id, 'tasks'].
+
+Oppgaver (ClientTasks)
+
+Legg til sortering (ansvarlig, forfallsdato), filtre (periode: denne mnd / år / alle).
+
+«Denne måneden» viser alle oppgaver med forfallsdato i måneden + carry-over fra forrige mnd (carry_over=true && status!='done').
+
+Tellere (åpne/forfalt/denne måneden/årlige) matcher dashboard. Klikk på en teller → naviger med query som gir samme datasett.
+
+Når client.isActive=false: vis info-banner og skjul aktiveringshandlinger.
+
+Dashboard
+
+Vis klientrad med tellere som bruker GET /api/dashboard/client-counters.
+
+Klikk på teller åpner klientens oppgaveliste med riktige query-parametre.
+
+Rapporter
+
+Fiks «Timer per klient»: Join av timeføring til klient via clientId, gruppér per klient/ansatt innen valgt periode.
+
+Eksport CSV/XLSX viser korrekte navn (ikke «Ukjent»).
+
+Oppdragsavtale
+
+Se oppdragsavtale-knapp (uten nedlasting): åpner modal med <iframe src={pdfUrl+'&disposition=inline'}>.
+
+Sammendrag viser riktig «Klient», «Regnskapssystem», «Omfang», «Signatører», og juridisk tekst (fra malen).
+
+Notater
+
+Fane/sekjon «Interne notater»: enkel timeline list + skjema for nytt notat (tags valgfritt). Ikke synlig utenfor org/tenant.
+
+A11y/opprydding
+
+Alle knapper uten tekst får aria-label/title.
+
+Fjern aria-expanded fra elementer som ikke er interaktive.
+
+Filinputter får label; eventuelle skjulte inputs knyttes til synlige knapper.
+
+6) Scheduler/Cron (carry-over)
+
+Daglig jobb: finn forrige måneds oppgaver med status!='done' og active=true → sett carry_over=true. (Ikke endre dueDate.)
+
+API inkluderer carry_over=true automatisk når period=month for inneværende måned.
+
+7) Sikkerhet/headers
+
+CSP: fjern unsafe-dynamic og feilsyntaks report-uri i source-list. Bruk separat direktiv report-uri: eller report-to:.
+
+Cookies: legg på Secure; HttpOnly; SameSite=Lax.
+
+Legg X-Content-Type-Options: nosniff.
+
+8) Tester
+
+Unit:
+
+Zod datoer (ISO + Date).
+
+Repositories alltid filtrerer på tenantId.
+
+Dashboard-teller bruker samme filter som drilldown.
+
+E2E (Playwright):
+
+TEN-01: Tenant A ser ikke data fra tenant B (alle API).
+
+CLI-01: Opprett klient → system/responsible/tasks synlig i kortet.
+
+TASK-01: Sortering/filtrering fungerer.
+
+TASK-02: Carry-over dukker i ny måned.
+
+DASH-01: Teller = antall i drilldown.
+
+REP-01: «Timer per klient» samsvarer med timeføringer.
+
+ARC-01: Inaktiv klient skjuler oppgaver på dashboard, historikk beholdes.
+
+ENG-01: «Se oppdragsavtale» viser inline PDF med lisenshaver som issuer.
+
+9) Akseptansekriterier (må oppfylles)
+
+Ny klient → kortet viser system, ansvarlig, og aktive standardoppgaver.
+
+Klientkort kan redigeres; status kan toggles Aktiv/Inaktiv.
+
+Inaktiv klient: alle åpne standardoppgaver skjules fra lister/tellere; historikk i rapporter beholdes.
+
+Dashboard-tellere = drilldown-resultat (identiske filter).
+
+«Denne måneden» inkluderer carry-over fra forrige måned.
+
+«Se oppdragsavtale» viser PDF inline; issuer = lisenshaver, ikke alltid «Zaldo».
+
+Rapporter («Timer per klient» m.fl.) viser korrekte tall.
+
+Ingen 404 fra GET /api/clients/:id/tasks når klient finnes (returner []).
+
+Ingen tenant-lekkasjer (tester beviser det).
+
+10) Endringsskisser (kodeutdrag)
+
+PATCH status (server):
+
+router.patch('/api/clients/:id/status', authed, zodBody(z.object({isActive: z.boolean()})), async (req,res)=>{
+  const {tenantId} = req.context; const {id} = req.params; const {isActive} = req.body;
+  await clientsRepo.update(tenantId, id, { is_active: isActive });
+  if (!isActive) {
+    await tasksRepo.deactivateAllForClient(tenantId, id); // set active=false where status!='done'
+  }
+  res.json({ ok:true });
+});
+
+
+Tasks query inkl. carry-over (server):
+
+function buildTasksFilter({tenantId, clientId, period, targetMonth}:{...}){
+  const whereBase = { tenant_id: tenantId, client_id: clientId, active: true };
+  if (period === 'month') {
+    // due in month OR carry_over=true
+    return { ...whereBase, OR: [
+      { due_date: { gte: firstOfMonth, lt: firstOfNextMonth } },
+      { carry_over: true }
+    ]};
+  }
+  return whereBase;
+}
+
+
+Zod dato:
+
+export const isoDate = z.union([z.string(), z.date()])
+  .transform(v => typeof v === 'string' ? new Date(v) : v)
+  .refine(d => !isNaN(d.getTime()), 'Invalid date');
+
+
+Inline PDF (server):
+
+router.get('/api/clients/:id/engagements/:engId/pdf', authed, async (req,res)=>{
+  const {disposition='inline'} = req.query as any;
+  res.setHeader('Content-Disposition', `${disposition}; filename="engagement.pdf"`);
+  res.setHeader('Content-Type', 'application/pdf');
+  const stream = await engagementsSvc.renderPdf(/* ... */);
+  stream.pipe(res);
+});
+
+
+ClientCard status-switch (FE):
+
+const m = useMutation((isActive:boolean)=> api.patch(`/api/clients/${id}/status`, {isActive}), {
+  onSuccess: ()=> {
+    qc.invalidateQueries(['/api/clients', id]);
+    qc.invalidateQueries(['/api/clients', id, 'tasks']);
+    qc.invalidateQueries(['/api/dashboard/client-counters']);
+  }
+});
+
+11) Opprydding & dokumentasjon
+
+Oppdater README.md med nye ruter, miljøvariabler, feature flagg og migrasjonssteg.
+
+Legg CHANGELOG for denne releasen.
+
+Legg «Rollback»-notat: migrasjoner er additive; toggl feature-flag om noe feiler.
+
+12) Kjør
+
+Kjør migrasjoner.
+
+Kjør lint/typecheck/test.
+
+Kjør E2E lokalt i Replit (headless).
+
+Åpne PR med oversikt over endringer og referanser til tester.
+
+Leveranser:
+
+Alle nye ruter, services og repo-endringer.
+
+Migrasjonsfiler.
+
+FE-komponenter/oppdateringer (ClientCard, ClientTasks, Dashboard, EngagementDialog, Reports).
+
+Tester (unit + e2e).
+
+Dokumentasjon (README/CHANGELOG).

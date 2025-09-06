@@ -71,7 +71,9 @@ export class EngagementController {
     try {
       console.log('🔍 POST /api/clients/:clientId/engagements - Creating engagement:', { 
         clientId: req.params.clientId, 
-        tenantId: req.user!.tenantId 
+        tenantId: req.user!.tenantId,
+        bodyKeys: Object.keys(req.body),
+        fullBody: req.body
       });
 
       // Pass through the full request body without schema filtering for JSONB fields

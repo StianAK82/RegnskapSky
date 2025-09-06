@@ -460,6 +460,12 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
   });
 
   const onSubmit = async (data: EngagementFormData) => {
+    console.log('🚀 ENGAGEMENT SUBMIT: Form data being submitted:', data);
+    console.log('🚀 ENGAGEMENT SUBMIT: Signatories:', data.signatories);
+    console.log('🚀 ENGAGEMENT SUBMIT: Scopes:', data.scopes);
+    console.log('🚀 ENGAGEMENT SUBMIT: Pricing:', data.pricing);
+    console.log('🚀 ENGAGEMENT SUBMIT: DPAs:', data.dpas);
+    
     setIsLoading(true);
     try {
       await createEngagementMutation.mutateAsync(data);
