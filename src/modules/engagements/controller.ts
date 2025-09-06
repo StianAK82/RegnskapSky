@@ -74,11 +74,16 @@ export class EngagementController {
         tenantId: req.user!.tenantId 
       });
 
-      const validatedData = insertEngagementSchema.parse({
+      // Pass through the full request body without schema filtering for JSONB fields
+      const validatedData = {
         ...req.body,
         clientId: req.params.clientId,
-        tenantId: req.user!.tenantId
-      });
+        tenantId: req.user!.tenantId,
+        // Ensure required fields have defaults
+        status: req.body.status || 'draft',
+        validFrom: new Date(req.body.validFrom || new Date()),
+        licenseHolder: req.body.licenseHolder || 'client'
+      };
 
       const engagement = await engagementService.createEngagement(validatedData);
       

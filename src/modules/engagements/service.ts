@@ -62,6 +62,7 @@ export class EngagementService {
     signatories?: Array<{ role: string; name: string; email: string; phone?: string; title?: string }>;
     scopes?: Array<{ scopeKey: string; frequency: string; comments?: string }>;
     pricing?: Array<any>;
+    dpas?: Array<any>;
   }): Promise<Engagement> {
     const [engagement] = await db
       .insert(engagements)
@@ -76,6 +77,7 @@ export class EngagementService {
         signatories: engagementData.signatories || [],
         scopes: engagementData.scopes || [],
         pricing: engagementData.pricing || [],
+        dpas: engagementData.dpas || [],
         includeStandardTerms: engagementData.includeStandardTerms || true,
         includeDpa: engagementData.includeDpa || true,
         includeItBilag: engagementData.includeItBilag || true,
