@@ -1,15 +1,14 @@
 import { db } from "../../../server/db";
 import { 
   clients, 
-  engagements, 
-  signatories, 
-  engagementScopes, 
-  engagementPricing,
+  engagements,
+  clientTasks,
+  employees,
   type Client,
   type InsertClient,
   type Engagement,
   type InsertEngagement
-} from "./schema";
+} from "../../../shared/schema";
 import { eq, and } from "drizzle-orm";
 
 export class EngagementService {
