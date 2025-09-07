@@ -325,7 +325,21 @@ export class DatabaseStorage implements IStorage {
 
   async getClient(id: string): Promise<Client | undefined> {
     const [client] = await db.select().from(clients).where(eq(clients.id, id));
-    return client || undefined;
+    if (!client) return undefined;
+    
+    // Get client tasks and populate tasks array
+    const clientTasksData = await db
+      .select({ taskName: clientTasks.taskName })
+      .from(clientTasks)
+      .where(eq(clientTasks.clientId, id));
+    
+    // Add tasks array to client
+    const clientWithTasks = {
+      ...client,
+      tasks: clientTasksData.map(t => t.taskName)
+    };
+    
+    return clientWithTasks;
   }
 
   async createClient(insertClient: InsertClient): Promise<Client> {
