@@ -66,7 +66,7 @@ const clientSchema = z.object({
   kycStatus: z.enum(['pending', 'approved', 'rejected']).default('pending'),
   amlDocuments: z.any().optional(),
   tasks: z.array(z.string()).optional(),
-  responsiblePersonId: z.string().transform(val => val === "" ? undefined : val).pipe(z.string().uuid().optional()),
+  responsiblePersonId: z.string().optional(),
   recurringTasks: z.any().optional(),
   hourlyReportNotes: z.string().optional(),
   checklistStatus: z.string().optional(),
@@ -357,19 +357,14 @@ export default function Clients() {
   });
 
   const onSubmit = async (data: ClientFormData) => {
-    console.log('🔄 KLIENT SUBMIT: onSubmit called with data:', data);
-    
     // Transform empty string and "none" to undefined for responsiblePersonId
     const cleanedData = {
       ...data,
       responsiblePersonId: (data.responsiblePersonId === '' || data.responsiblePersonId === 'none') ? undefined : data.responsiblePersonId
     };
     
-    console.log('🔄 KLIENT SUBMIT: Cleaned data:', cleanedData);
-    
     try {
       if (editingClient) {
-        console.log('🔄 KLIENT SUBMIT: Updating existing client:', editingClient.id);
         await updateMutation.mutateAsync({ id: editingClient.id, data: cleanedData });
         const clientId = editingClient.id;
         
@@ -382,14 +377,13 @@ export default function Clients() {
           await saveTaskSchedulesMutation.mutateAsync({ clientId, schedules: taskSchedules });
         }
       } else {
-        console.log('🔄 KLIENT SUBMIT: Creating new client...');
         // For new clients: just create and let createMutation.onSuccess handle the rest
         await createMutation.mutateAsync(cleanedData);
       }
       
     } catch (error) {
       // Error handling is done in individual mutations
-      console.error('🔄 KLIENT SUBMIT: Submit error:', error);
+      console.error('Submit error:', error);
     }
   };
 
@@ -575,11 +569,6 @@ export default function Clients() {
                             type="submit"
                             disabled={!form.getValues('name') || createMutation.isPending}
                             className="bg-green-600 hover:bg-green-700"
-                            onClick={() => {
-                              console.log('🔄 KLIENT SUBMIT: Button clicked, form values:', form.getValues());
-                              console.log('🔄 KLIENT SUBMIT: Form errors:', form.formState.errors);
-                              console.log('🔄 KLIENT SUBMIT: Form isValid:', form.formState.isValid);
-                            }}
                           >
                             {createMutation.isPending ? (
                               <i className="fas fa-spinner fa-spin mr-2"></i>
