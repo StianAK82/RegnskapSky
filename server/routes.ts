@@ -1005,12 +1005,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const employees = await storage.getEmployeesByTenant(req.user!.tenantId);
       
-      // Enrich employees with user license status
+      // Enrich employees with user license status and format for frontend
       const employeesWithLicense = await Promise.all(
         employees.map(async (employee) => {
           const user = await storage.getUserByEmail(employee.email);
           return {
             ...employee,
+            // Add name field for frontend compatibility
+            name: `${employee.firstName} ${employee.lastName}`.trim(),
+            // Also include camelCase versions
+            firstName: employee.firstName,
+            lastName: employee.lastName,
             isLicensed: user?.isLicensed || false,
             userId: user?.id
           };
