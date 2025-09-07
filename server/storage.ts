@@ -538,20 +538,52 @@ export class DatabaseStorage implements IStorage {
         throw new Error("Missing required fields for client task");
       }
 
+      // Auto-map employee ID to user ID for task assignment
+      let finalTask = { ...task };
+      
+      if (task.assignedTo) {
+        console.log('🔍 TASK MAPPING: Checking if assignedTo is employee_id:', task.assignedTo);
+        
+        // Check if this is an employee_id that needs mapping to user_id
+        const userIdMapping = await this.mapEmployeeToUserId(task.assignedTo);
+        if (userIdMapping) {
+          console.log('✅ TASK MAPPING: Mapped employee to user:', { 
+            employeeId: task.assignedTo, 
+            userId: userIdMapping 
+          });
+          finalTask.assignedTo = userIdMapping;
+        }
+      }
+
       // Ensure dueDate is properly formatted
-      if (task.dueDate && typeof task.dueDate === 'string') {
-        task.dueDate = new Date(task.dueDate);
+      if (finalTask.dueDate && typeof finalTask.dueDate === 'string') {
+        finalTask.dueDate = new Date(finalTask.dueDate);
       }
 
       const [newTask] = await db
         .insert(clientTasks)
-        .values(task)
+        .values(finalTask)
         .returning();
       
       return newTask;
     } catch (error: any) {
       console.error('Error creating client task:', error);
       throw new Error(`Failed to create client task: ${error.message}`);
+    }
+  }
+
+  // Map employee ID to user ID via email for task assignment
+  async mapEmployeeToUserId(employeeId: string): Promise<string | null> {
+    try {
+      // Use the pre-built mapping table for fast lookup
+      const result = await db.execute(sql`
+        SELECT user_id FROM employee_user_mapping WHERE employee_id = ${employeeId}
+      `);
+      
+      return result.rows[0]?.user_id as string || null;
+    } catch (error) {
+      console.error('❌ TASK MAPPING: Error mapping employee to user:', error);
+      return null;
     }
   }
 

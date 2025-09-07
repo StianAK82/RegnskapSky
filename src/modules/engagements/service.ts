@@ -75,7 +75,9 @@ export class EngagementService {
     const [engagement] = await db
       .insert(engagements)
       .values({
+        id: `eng-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         clientId: engagementData.clientId,
+        tenantId: engagementData.tenantId,
         status: engagementData.status || 'draft',
         version: engagementData.version || 1,
         validFrom: engagementData.validFrom,
@@ -88,8 +90,7 @@ export class EngagementService {
         dpas: JSON.stringify(engagementData.dpas || []),
         includeStandardTerms: engagementData.includeStandardTerms || true,
         includeDpa: engagementData.includeDpa || true,
-        includeItBilag: engagementData.includeItBilag || true,
-        tenantId: engagementData.tenantId
+        includeItBilag: engagementData.includeItBilag || true
       })
       .returning();
 
@@ -246,7 +247,7 @@ export class EngagementService {
     try {
       // Get all open standard tasks for the client that are not manually assigned
       const { db: storageDb } = await import('../../../server/db');
-      const { clientTasks } = await import('../../shared/schema');
+      const { clientTasks } = await import('../../../shared/schema');
       const { eq, and } = await import('drizzle-orm');
 
       const openTasks = await storageDb
@@ -257,7 +258,7 @@ export class EngagementService {
             eq(clientTasks.clientId, clientId),
             eq(clientTasks.taskType, 'standard'),
             eq(clientTasks.status, 'ikke_startet'),
-            eq(clientTasks.isManuallyAssigned, false)
+            // eq(clientTasks.isManuallyAssigned, false) // TODO: Add this field to schema
           )
         );
 
@@ -322,22 +323,18 @@ export class EngagementService {
     return engagement;
   }
 
-  // Get full engagement details with all related data
+  // Get full engagement details with all related data (JSONB version)
   async getEngagementDetails(engagementId: string, tenantId: string) {
     const engagement = await this.getEngagementById(engagementId, tenantId);
     if (!engagement) return null;
 
-    const [engagementSignatories, scopes, pricing] = await Promise.all([
-      db.select().from(signatories).where(eq(signatories.engagementId, engagementId)),
-      db.select().from(engagementScopes).where(eq(engagementScopes.engagementId, engagementId)),
-      db.select().from(engagementPricing).where(eq(engagementPricing.engagementId, engagementId))
-    ]);
-
+    // Parse JSONB fields for client consumption
     return {
       ...engagement,
-      signatories: engagementSignatories,
-      scopes,
-      pricing
+      signatories: engagement.signatories ? JSON.parse(engagement.signatories as string) : [],
+      scopes: engagement.scopes ? JSON.parse(engagement.scopes as string) : [],
+      pricing: engagement.pricing ? JSON.parse(engagement.pricing as string) : [],
+      dpas: engagement.dpas ? JSON.parse(engagement.dpas as string) : []
     };
   }
 
