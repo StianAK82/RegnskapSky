@@ -205,17 +205,23 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
   // Function to map task names to scope categories
   const mapTaskToScope = (taskName: string) => {
     const name = norm(taskName);
-    if (name.includes('bokforing') || name.includes('kontoavstemming') || name.includes('bankavstemming')) return 'bookkeeping';
+    console.log('🔍 SCOPE MAPPING: Mapping task:', taskName, '→ normalized:', name);
+    
+    // Direct task name matches first (more specific)
+    if (name.includes('bokforing') || name.includes('bokføring')) return 'bookkeeping';
+    if (name.includes('kontoavstemming') || name.includes('bankavstemming')) return 'bookkeeping';  
     if (name.includes('mva')) return 'mva';
-    if (name.includes('lonn')) return 'payroll';
-    if (name.includes('arsoppgjor') || name.includes('arsavslutning')) return 'year_end';
-    if (name.includes('skattemelding') || name.includes('skatt')) return 'other'; // Fix: use valid enum value
-    if (name.includes('aksjonar') || name.includes('shareholder') || name.includes('eiere')) return 'other'; // Fix: use valid enum value
-    if (name.includes('revisjon') || name.includes('audit')) return 'other'; // Fix: use valid enum value
-    if (name.includes('rapport') || name.includes('report')) return 'period_reports'; // Fix: use valid enum value
+    if (name.includes('lonn') || name.includes('lønn')) return 'payroll';
+    if (name.includes('arsoppgjor') || name.includes('arsavslutning') || name.includes('årsoppgjør')) return 'year_end';
+    if (name.includes('skattemelding') || name.includes('skatt')) return 'tax_return';
+    if (name.includes('aksjonar') || name.includes('aksjonær') || name.includes('shareholder') || name.includes('eiere')) return 'governance'; 
+    if (name.includes('revisjon') || name.includes('audit')) return 'other';
+    if (name.includes('rapport') || name.includes('report')) return 'period_reports';
     if (name.includes('faktur') || name.includes('invoice')) return 'invoicing';
     if (name.includes('prosjekt') || name.includes('project')) return 'project';
+    
     // Fallback: use valid enum value
+    console.log('🔍 SCOPE MAPPING: No specific match found, using "other" for:', taskName);
     return 'other';
   };
 
