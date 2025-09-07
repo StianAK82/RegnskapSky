@@ -175,7 +175,7 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
 
   // Fetch client tasks for auto-populating scopes
   const { data: clientTasks } = useQuery({
-    queryKey: [`/api/clients/${clientId}/tasks`],
+    queryKey: ['/api/clients', clientId, 'tasks'],
     queryFn: async () => {
       const response = await apiRequest('GET', `/api/clients/${clientId}/tasks`);
       const tasksData = await response.json();
