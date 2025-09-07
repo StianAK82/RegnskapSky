@@ -364,23 +364,21 @@ export default function Clients() {
     };
     
     try {
-      let clientId: string;
-      
       if (editingClient) {
         await updateMutation.mutateAsync({ id: editingClient.id, data: cleanedData });
-        clientId = editingClient.id;
+        const clientId = editingClient.id;
+        
+        // Save task schedules if any are configured (only for editing)
+        const enabledSchedules = Object.fromEntries(
+          Object.entries(taskSchedules).filter(([, config]) => config.enabled)
+        );
+        
+        if (Object.keys(enabledSchedules).length > 0) {
+          await saveTaskSchedulesMutation.mutateAsync({ clientId, schedules: taskSchedules });
+        }
       } else {
-        const newClient = await createMutation.mutateAsync(cleanedData);
-        clientId = newClient.id;
-      }
-
-      // Save task schedules if any are configured
-      const enabledSchedules = Object.fromEntries(
-        Object.entries(taskSchedules).filter(([, config]) => config.enabled)
-      );
-      
-      if (Object.keys(enabledSchedules).length > 0) {
-        await saveTaskSchedulesMutation.mutateAsync({ clientId, schedules: taskSchedules });
+        // For new clients: just create and let createMutation.onSuccess handle the rest
+        await createMutation.mutateAsync(cleanedData);
       }
       
     } catch (error) {
