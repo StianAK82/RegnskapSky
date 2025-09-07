@@ -305,7 +305,14 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
           })
           .filter(Boolean);
 
-        form.setValue('scopes', autoScopes as any, { shouldDirty: true });
+        form.setValue('scopes', autoScopes as any, { shouldDirty: true, shouldValidate: true });
+        
+        // Debug: Check if form state is actually updated
+        console.log('🔧 ENGAGEMENT: Form scopes after setValue:', form.getValues('scopes'));
+        console.log('🔧 ENGAGEMENT: Form watch scopes after setValue:', form.watch('scopes'));
+        
+        // Force trigger form update to ensure UI refreshes
+        form.trigger('scopes');
 
         // Auto-populate system name if client has one
         if (client.accountingSystem) {
