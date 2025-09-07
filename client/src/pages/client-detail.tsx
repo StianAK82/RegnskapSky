@@ -1248,7 +1248,7 @@ export default function ClientDetail() {
                     <div key={engagement.id} className="border rounded-lg p-4">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h3 className="font-semibold text-lg">{engagement.systemName || 'Oppdragsavtale'}</h3>
+                          <h3 className="font-semibold text-lg">{client?.name || 'Oppdragsavtale'}</h3>
                           <p className="text-sm text-gray-600">
                             Opprettet: {new Date(engagement.createdAt).toLocaleDateString('nb-NO')}
                           </p>
