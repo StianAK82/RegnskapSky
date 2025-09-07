@@ -328,13 +328,26 @@ export class EngagementService {
     const engagement = await this.getEngagementById(engagementId, tenantId);
     if (!engagement) return null;
 
-    // Parse JSONB fields for client consumption
+    // Parse JSONB fields for client consumption - handle both string and object cases
+    const parseJsonField = (field: any) => {
+      if (!field) return [];
+      if (typeof field === 'string') {
+        try {
+          return JSON.parse(field);
+        } catch (error) {
+          console.error('Failed to parse JSON field:', error);
+          return [];
+        }
+      }
+      return field; // Already an object
+    };
+
     return {
       ...engagement,
-      signatories: engagement.signatories ? JSON.parse(engagement.signatories as string) : [],
-      scopes: engagement.scopes ? JSON.parse(engagement.scopes as string) : [],
-      pricing: engagement.pricing ? JSON.parse(engagement.pricing as string) : [],
-      dpas: engagement.dpas ? JSON.parse(engagement.dpas as string) : []
+      signatories: parseJsonField(engagement.signatories),
+      scopes: parseJsonField(engagement.scopes),
+      pricing: parseJsonField(engagement.pricing),
+      dpas: parseJsonField(engagement.dpas)
     };
   }
 
