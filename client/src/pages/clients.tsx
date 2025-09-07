@@ -477,13 +477,7 @@ export default function Clients() {
               <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle className="flex items-center justify-between">
-                    {editingClient ? 'Rediger klient' : `Opprett ny klient - Steg ${registrationStep} av 2`}
-                    {!editingClient && (
-                      <div className="flex space-x-2">
-                        <div className={`w-3 h-3 rounded-full ${registrationStep === 1 ? 'bg-blue-500' : 'bg-gray-300'}`}></div>
-                        <div className={`w-3 h-3 rounded-full ${registrationStep === 2 ? 'bg-blue-500' : 'bg-gray-300'}`}></div>
-                      </div>
-                    )}
+                    {editingClient ? 'Rediger klient' : 'Opprett ny klient'}
                   </DialogTitle>
                 </DialogHeader>
                 
@@ -493,8 +487,8 @@ export default function Clients() {
                     {(registrationStep === 1 && !editingClient) && (
                       <div className="space-y-4">
                         <div className="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-400">
-                          <h4 className="font-medium text-blue-800 mb-2">Steg 1: Grunnleggende informasjon</h4>
-                          <p className="text-sm text-blue-600">Skriv inn organisasjonsnummer for å hente automatisk selskapsdata fra Brønnøysundregistrene.</p>
+                          <h4 className="font-medium text-blue-800 mb-2">Grunnleggende informasjon</h4>
+                          <p className="text-sm text-blue-600">Skriv inn organisasjonsnummer för att hämta automatisk företagsdata från Brønnøysundregistrene. Resten av informationen läggs till i klientkortet.</p>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
@@ -545,20 +539,6 @@ export default function Clients() {
                           />
                         </div>
 
-                        <FormField
-                          control={form.control}
-                          name="address"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Adresse</FormLabel>
-                              <FormControl>
-                                <Input {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
                         {companyData && (
                           <div className="bg-green-50 p-4 rounded-lg border-l-4 border-green-400">
                             <h4 className="font-medium text-green-800 mb-2">Selskapsdata hentet</h4>
@@ -578,33 +558,28 @@ export default function Clients() {
                           </div>
                         )}
 
+                        <div className="bg-amber-50 p-4 rounded-lg border-l-4 border-amber-400 mb-4">
+                          <h4 className="font-medium text-amber-800 mb-2">✨ Förenklad klientskapning</h4>
+                          <p className="text-sm text-amber-600">Du kan nu skapa klienten med bara org.nr och firmanamn. Resten av informationen läggs till direkt i klientkortet efter skapandet.</p>
+                        </div>
+
                         <div className="flex justify-end space-x-2 pt-4">
                           <Button type="button" variant="outline" onClick={handleDialogClose}>
                             Avbryt
                           </Button>
                           <Button 
-                            type="button" 
-                            onClick={() => {
-                              if (form.getValues('name')) {
-                                setRegistrationStep(2);
-                              } else {
-                                toast({
-                                  title: 'Manglende informasjon',
-                                  description: 'Vennligst fyll inn firmanavn før du fortsetter',
-                                  variant: 'destructive',
-                                });
-                              }
-                            }}
-                            className="bg-primary hover:bg-blue-700"
+                            type="submit"
+                            disabled={!form.getValues('name')}
+                            className="bg-green-600 hover:bg-green-700"
                           >
-                            Neste <i className="fas fa-arrow-right ml-2"></i>
+                            Skapa klient
                           </Button>
                         </div>
                       </div>
                     )}
 
-                    {/* Step 2: Detailed Configuration */}
-                    {(registrationStep === 2 || editingClient) && (
+                    {/* Step 2: Detailed Configuration - HIDDEN FOR SIMPLIFIED CREATION */}
+                    {editingClient && (
                       <div className="space-y-4">
                         {!editingClient && (
                           <div className="bg-green-50 p-4 rounded-lg border-l-4 border-green-400">

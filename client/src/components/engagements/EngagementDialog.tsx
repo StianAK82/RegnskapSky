@@ -209,12 +209,14 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
     if (name.includes('mva')) return 'mva';
     if (name.includes('lonn')) return 'payroll';
     if (name.includes('arsoppgjor') || name.includes('arsavslutning')) return 'year_end';
-    if (name.includes('skattemelding') || name.includes('skatt')) return 'tax_return';
-    if (name.includes('aksjonar') || name.includes('shareholder') || name.includes('eiere')) return 'governance';
-    if (name.includes('revisjon') || name.includes('audit')) return 'audit';
-    if (name.includes('rapport') || name.includes('report')) return 'reporting';
-    // Fallback: create a generic scope instead of undefined
-    return 'andre_tjenester';
+    if (name.includes('skattemelding') || name.includes('skatt')) return 'other'; // Fix: use valid enum value
+    if (name.includes('aksjonar') || name.includes('shareholder') || name.includes('eiere')) return 'other'; // Fix: use valid enum value
+    if (name.includes('revisjon') || name.includes('audit')) return 'other'; // Fix: use valid enum value
+    if (name.includes('rapport') || name.includes('report')) return 'period_reports'; // Fix: use valid enum value
+    if (name.includes('faktur') || name.includes('invoice')) return 'invoicing';
+    if (name.includes('prosjekt') || name.includes('project')) return 'project';
+    // Fallback: use valid enum value
+    return 'other';
   };
 
   // Function to map repeatInterval to frequency
