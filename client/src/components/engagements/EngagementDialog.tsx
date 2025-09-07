@@ -209,7 +209,12 @@ export function EngagementDialog({ clientId, clientName, open, onOpenChange, tri
     if (name.includes('mva')) return 'mva';
     if (name.includes('lonn')) return 'payroll';
     if (name.includes('arsoppgjor') || name.includes('arsavslutning')) return 'year_end';
-    return undefined;
+    if (name.includes('skattemelding') || name.includes('skatt')) return 'tax_return';
+    if (name.includes('aksjonar') || name.includes('shareholder') || name.includes('eiere')) return 'governance';
+    if (name.includes('revisjon') || name.includes('audit')) return 'audit';
+    if (name.includes('rapport') || name.includes('report')) return 'reporting';
+    // Fallback: create a generic scope instead of undefined
+    return 'andre_tjenester';
   };
 
   // Function to map repeatInterval to frequency
