@@ -235,15 +235,19 @@ export function buildEngagementViewModel(
   
   // Build formatted scopes
   const formattedScopes: FormattedScope[] = [];
+  console.log('🔧 MAPPER: Raw engagement scopes:', engagement.scopes);
   if (engagement.scopes && Array.isArray(engagement.scopes)) {
     engagement.scopes.forEach((scope: any) => {
-      formattedScopes.push({
+      const formattedScope = {
         name: translateScope(scope.scopeKey || scope.name),
         frequency: translateFrequency(scope.frequency) || 'Ikke angitt',
         comments: safeString(scope.comments)
-      });
+      };
+      console.log('🔧 MAPPER: Adding formatted scope:', formattedScope);
+      formattedScopes.push(formattedScope);
     });
   }
+  console.log('🔧 MAPPER: Final formatted scopes count:', formattedScopes.length);
   
   // Build formatted pricing
   const formattedPricing: FormattedPricing[] = [];
